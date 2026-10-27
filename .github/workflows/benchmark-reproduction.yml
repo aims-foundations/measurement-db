@@ -6,8 +6,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    # This preview publishes the already verified identity-only table revision.
-    branches-ignore: [preview/disconnected-subject-identities]
+    # These preview branches reuse the already verified data snapshot.
+    branches-ignore: [preview/disconnected-subject-identities, feat/coverage-explorer]
   workflow_dispatch:
     inputs:
       benchmark:
