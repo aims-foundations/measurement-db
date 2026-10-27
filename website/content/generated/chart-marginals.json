@@ -46,7 +46,7 @@
    "binary": false
   },
   "alpha_sql": {
-   "binary": false
+   "binary": true
   },
   "annotating_errors_wcf": {
    "binary": false
@@ -73,7 +73,7 @@
    "binary": true
   },
   "bbq": {
-   "binary": false
+   "binary": true
   },
   "beavertails": {
    "binary": true
@@ -151,7 +151,7 @@
    "binary": true
   },
   "crow": {
-   "binary": false
+   "binary": true
   },
   "cruxeval": {
    "binary": true
@@ -382,7 +382,7 @@
    "binary": true
   },
   "kormedmcqa": {
-   "binary": false
+   "binary": true
   },
   "kris_bench": {
    "binary": false
@@ -448,7 +448,7 @@
    "binary": true
   },
   "medagentboard": {
-   "binary": false
+   "binary": true
   },
   "medhelm_ehr_sql": {
    "binary": true
@@ -508,7 +508,7 @@
    "binary": false
   },
   "mmlu": {
-   "binary": false
+   "binary": true
   },
   "mmlupro": {
    "binary": true
@@ -529,7 +529,7 @@
    "binary": true
   },
   "morphkv": {
-   "binary": false
+   "binary": true
   },
   "morqa": {
    "binary": false
@@ -628,7 +628,7 @@
    "binary": false
   },
   "pxplore": {
-   "binary": false
+   "binary": true
   },
   "qatch": {
    "binary": false
@@ -649,7 +649,7 @@
    "binary": true
   },
   "realtimeqa": {
-   "binary": false
+   "binary": true
   },
   "reasoning_gym": {
    "binary": false
@@ -727,10 +727,10 @@
    "binary": true
   },
   "swebench_live": {
-   "binary": false
+   "binary": true
   },
   "swepolybench": {
-   "binary": false
+   "binary": true
   },
   "synthpai": {
    "binary": false
@@ -748,7 +748,7 @@
    "binary": false
   },
   "tensortrust": {
-   "binary": false
+   "binary": true
   },
   "theagentcompany": {
    "binary": false
@@ -757,7 +757,7 @@
    "binary": false
   },
   "truthfulqa_mc": {
-   "binary": false
+   "binary": true
   },
   "tulu_human_eval": {
    "binary": true
@@ -787,7 +787,7 @@
    "binary": true
   },
   "wikihow_agent": {
-   "binary": false
+   "binary": true
   },
   "wildvision": {
    "binary": false
@@ -1712,7 +1712,89 @@
   "my_model/": "Unknown",
   "random": "Unknown",
   "rlhf-lmdeploy": "Unknown",
-  "sft-s2-lmdeploy": "Unknown"
+  "sft-s2-lmdeploy": "Unknown",
+  "Microsoft DialoGPT Medium": "Microsoft",
+  "OpenAI GPT-2 XL": "OpenAI",
+  "EleutherAI GPT-Neo 1.3B": "EleutherAI",
+  "EleutherAI GPT-Neo 125M": "EleutherAI",
+  "EleutherAI GPT-Neo 2.7B": "EleutherAI",
+  "EleutherAI Polyglot-Ko 12.8B": "EleutherAI",
+  "PygmalionAI Pygmalion 350M": "PygmalionAI",
+  "BigCode SantaCoder": "Bigcode",
+  "PygmalionAI Pygmalion 1.3B": "PygmalionAI",
+  "PygmalionAI Pygmalion 2.7B": "PygmalionAI",
+  "PygmalionAI Pygmalion 6B": "PygmalionAI",
+  "KoAlpaca Polyglot 5.8B": "Community",
+  "Corianas 111M": "Corianas",
+  "Corianas Quokka 2.7B": "Corianas",
+  "GALPACA 30B": "Georgia Tech Research Institute",
+  "LMSYS Vicuna": "LMSYS",
+  "Corianas Quokka 1.3B": "Corianas",
+  "Corianas Quokka 590M": "Corianas",
+  "Databricks Dolly v2 12B": "Databricks",
+  "Databricks Dolly v2 3B": "Databricks",
+  "Databricks Dolly v2 7B": "Databricks",
+  "MiniGPT-4": "Vision-CAIR",
+  "Alibaba mPLUG-Owl": "Alibaba",
+  "GPT4-X-Alpacadente 30B": "Community",
+  "Chinese-Alpaca-Plus 7B": "Unknown",
+  "PyThaiNLP WangChanGLM 7.5B": "Pythainlp",
+  "OpenLM Research OpenLLaMA 7B": "Openlm Research",
+  "GPT4-X-Alpacadente2 30B": "Community",
+  "KoreanLM": "Quantumai Kr",
+  "StarCoder GPTeacher Code Instruct": "Georgia Tech Research Institute",
+  "Together RedPajama-INCITE 3B": "Together",
+  "GPT4-X-Alpasta 13B": "Community",
+  "Chinese-Alpaca-Plus 13B": "Unknown",
+  "Chinese-LLaMA-Plus 13B": "Unknown",
+  "BigCode Tiny StarCoder": "Bigcode",
+  "CalderaAI 30B Lazarus": "Calderaai",
+  "GoGPT 3B": "Golaxy",
+  "MayaPH FinOPT Franklin": "Mayaph",
+  "MayaPH FinOPT Lincoln": "Mayaph",
+  "MayaPH FinOPT Washington": "Mayaph",
+  "CAMEL 13B": "Camel-Ai",
+  "PygmalionAI Metharme 1.3B": "PygmalionAI",
+  "HuggingFace StarChat Beta": "Hugging Face",
+  "Pyg-Instruct-WizardLM": "Community",
+  "CobraMamba Mamba-GPT 3B": "Cobramamba",
+  "Microsoft WizardCoder 15B": "Microsoft",
+  "CAMEL 33B": "Camel-Ai",
+  "Janemalion 6B": "Community",
+  "OpenChat 7B": "Community",
+  "CalderaAI 13B BlueMethod": "Calderaai",
+  "MayaPH GodziLLa 30B": "Mayaph",
+  "CalderaAI 13B Ouroboros": "Calderaai",
+  "Llama-2-Ko 7B": "Community",
+  "Nous Research Redmond Puffin 13B": "Nous Research",
+  "GoGPT2 7B": "Golaxy",
+  "Nous Research Nous-Hermes Llama 2 13B": "Nous Research",
+  "qCammel 70B": "Community",
+  "qCammel 13B": "Community",
+  "Nous Research Nous-Hermes Llama 2 7B": "Nous Research",
+  "Golaxy GoWizardLM": "Golaxy",
+  "MayaPH GodziLLa 30B Plus": "Mayaph",
+  "CalderaAI 13B Legerdemain": "Calderaai",
+  "Golaxy GoIMS": "Golaxy",
+  "Platypus 2 13B": "Garage-Baind",
+  "MayaPH GodziLLa2 70B": "Mayaph",
+  "Edor Hermes-Platypus2 7B": "Edor",
+  "Edor Stable-Platypus2 7B": "Edor",
+  "LMSYS Vicuna 3B": "LMSYS",
+  "Meta Code Llama 7B": "Meta",
+  "Prometheus 2 7B": "Community",
+  "Alibaba Qwen3-Coder 480B": "Alibaba",
+  "ByteDance Seed-OSS 36B": "ByteDance",
+  "Meta Muse Spark 1.1": "Meta",
+  "Google Gemini 3.6 Flash": "Google",
+  "Anthropic Claude Opus 5": "Anthropic",
+  "Alibaba Qwen3.8 2.4T A95B": "Alibaba",
+  "Google Gemini 3.7 Flash": "Google",
+  "Meta Muse Spark 1.2": "Meta",
+  "Meta Muse Spark 1.3": "Meta",
+  "OpenAI GPT-5.3 Chat": "OpenAI",
+  "UnifiedQA T5 11B": "Unknown",
+  "test-custom-llama": "Community"
  },
  "marginals": [
   {
@@ -4926,6 +5008,13 @@
    "items": 805
   },
   {
+   "slug": "alpha_sql",
+   "model": "Alibaba Qwen2.5-Coder 32B",
+   "items": 1534,
+   "sum": 1065.0,
+   "n": 1533
+  },
+  {
    "slug": "annotating_errors_wcf",
    "model": "OpenAI GPT-4o",
    "items": 15344
@@ -5362,6 +5451,13 @@
    "items": 4500,
    "sum": 2735.0,
    "n": 4500
+  },
+  {
+   "slug": "bbq",
+   "model": "UnifiedQA T5 11B",
+   "items": 145787,
+   "sum": 101456.0,
+   "n": 146121
   },
   {
    "slug": "beavertails",
@@ -6248,6 +6344,27 @@
    "items": 1819,
    "sum": 2478.0,
    "n": 3638
+  },
+  {
+   "slug": "crow",
+   "model": "Meta Code Llama 13B",
+   "items": 358,
+   "sum": 295.0,
+   "n": 1044
+  },
+  {
+   "slug": "crow",
+   "model": "Meta Code Llama 7B",
+   "items": 988,
+   "sum": 298.0,
+   "n": 2672
+  },
+  {
+   "slug": "crow",
+   "model": "Meta Llama 2 13B",
+   "items": 996,
+   "sum": 19.0,
+   "n": 1096
   },
   {
    "slug": "cruxeval",
@@ -13778,6 +13895,48 @@
    "n": 35030
   },
   {
+   "slug": "kormedmcqa",
+   "model": "Amazon Nova 2 Lite",
+   "items": 3009,
+   "sum": 2279.0,
+   "n": 3009
+  },
+  {
+   "slug": "kormedmcqa",
+   "model": "Anthropic Claude Haiku 4.5",
+   "items": 3009,
+   "sum": 2445.0,
+   "n": 3025
+  },
+  {
+   "slug": "kormedmcqa",
+   "model": "Anthropic Claude Sonnet 4",
+   "items": 24,
+   "sum": 22.0,
+   "n": 24
+  },
+  {
+   "slug": "kormedmcqa",
+   "model": "Anthropic Claude Sonnet 4.5",
+   "items": 3009,
+   "sum": 2798.0,
+   "n": 3061
+  },
+  {
+   "slug": "kormedmcqa",
+   "model": "OpenAI GPT-4o",
+   "items": 2933,
+   "sum": 2573.0,
+   "n": 3001
+  },
+  {
+   "slug": "kormedmcqa",
+   "model": "OpenAI GPT-5.1",
+   "items": 3009,
+   "sum": 5488.0,
+   "n": 6018
+  },
+  {
    "slug": "kris_bench",
    "model": "Black Forest Labs FLUX Kontext",
    "items": 4022
@@ -17141,6 +17300,20 @@
    "n": 1000
   },
   {
+   "slug": "medagentboard",
+   "model": "Alibaba Qwen-VL Max",
+   "items": 577,
+   "sum": 1370.0,
+   "n": 1990
+  },
+  {
+   "slug": "medagentboard",
+   "model": "DeepSeek V3",
+   "items": 1422,
+   "sum": 2233.0,
+   "n": 2805
+  },
+  {
    "slug": "medhelm_ehr_sql",
    "model": "Anthropic Claude 3.5 Sonnet",
    "items": 1000,
@@ -18049,6 +18222,21 @@
    "items": 167,
    "sum": 146.0,
    "n": 167
+  },
+  {
+   "slug": "medwatermark_fws",
+   "model": "BioMistral 7B",
+   "items": 594
+  },
+  {
+   "slug": "medwatermark_fws",
+   "model": "EPFL Meditron 7B",
+   "items": 1982
+  },
+  {
+   "slug": "medwatermark_fws",
+   "model": "Meta Llama 3 8B",
+   "items": 594
   },
   {
    "slug": "mj_bench",
@@ -19934,6 +20122,664 @@
    "items": 2000
   },
   {
+   "slug": "mmlu",
+   "model": "BigCode SantaCoder",
+   "items": 14015,
+   "sum": 3458.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "BigCode Tiny StarCoder",
+   "items": 14015,
+   "sum": 3754.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "CAMEL 13B",
+   "items": 14015,
+   "sum": 13289.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "CAMEL 33B",
+   "items": 14015,
+   "sum": 8198.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "CalderaAI 13B BlueMethod",
+   "items": 14015,
+   "sum": 6905.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "CalderaAI 13B Legerdemain",
+   "items": 14015,
+   "sum": 7711.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "CalderaAI 13B Ouroboros",
+   "items": 14015,
+   "sum": 7089.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "CalderaAI 30B Lazarus",
+   "items": 14015,
+   "sum": 7798.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Chinese-Alpaca-Plus 13B",
+   "items": 14015,
+   "sum": 6746.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Chinese-Alpaca-Plus 7B",
+   "items": 14015,
+   "sum": 5345.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Chinese-LLaMA-Plus 13B",
+   "items": 14015,
+   "sum": 5588.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "CobraMamba Mamba-GPT 3B",
+   "items": 14015,
+   "sum": 11077.0,
+   "n": 42126
+  },
+  {
+   "slug": "mmlu",
+   "model": "Corianas 111M",
+   "items": 14015,
+   "sum": 3635.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Corianas Quokka 1.3B",
+   "items": 14015,
+   "sum": 3674.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Corianas Quokka 2.7B",
+   "items": 14015,
+   "sum": 3476.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Corianas Quokka 590M",
+   "items": 14015,
+   "sum": 3514.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Databricks Dolly v2 12B",
+   "items": 14015,
+   "sum": 3641.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Databricks Dolly v2 3B",
+   "items": 14015,
+   "sum": 3535.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Databricks Dolly v2 7B",
+   "items": 14015,
+   "sum": 3526.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Edor Hermes-Platypus2 7B",
+   "items": 14015,
+   "sum": 6507.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Edor Stable-Platypus2 7B",
+   "items": 14015,
+   "sum": 7159.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI GPT-J 6B",
+   "items": 14015,
+   "sum": 7546.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI GPT-Neo 1.3B",
+   "items": 14015,
+   "sum": 3435.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI GPT-Neo 125M",
+   "items": 14015,
+   "sum": 3640.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI GPT-Neo 2.7B",
+   "items": 14015,
+   "sum": 3753.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI GPT-NeoX 20B",
+   "items": 14015,
+   "sum": 3474.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Polyglot-Ko 12.8B",
+   "items": 14015,
+   "sum": 3651.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 1.4B",
+   "items": 14015,
+   "sum": 7215.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 12B",
+   "items": 14015,
+   "sum": 7368.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 160M",
+   "items": 14015,
+   "sum": 7057.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 1B",
+   "items": 14015,
+   "sum": 3482.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 2.8B",
+   "items": 14015,
+   "sum": 7374.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 410M",
+   "items": 14015,
+   "sum": 3585.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 6.9B",
+   "items": 14015,
+   "sum": 7161.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "EleutherAI Pythia 70M",
+   "items": 14015,
+   "sum": 7155.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "GALPACA 30B",
+   "items": 14015,
+   "sum": 5669.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "GPT4-X-Alpacadente 30B",
+   "items": 14015,
+   "sum": 7781.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "GPT4-X-Alpacadente2 30B",
+   "items": 14015,
+   "sum": 7925.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "GPT4-X-Alpasta 13B",
+   "items": 14015,
+   "sum": 6404.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "GoGPT 3B",
+   "items": 14015,
+   "sum": 3532.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "GoGPT 7B",
+   "items": 14015,
+   "sum": 10611.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "GoGPT2 7B",
+   "items": 14015,
+   "sum": 5838.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Golaxy GoIMS",
+   "items": 14015,
+   "sum": 6011.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Golaxy GoWizardLM",
+   "items": 14015,
+   "sum": 5896.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "HuggingFace StarChat Beta",
+   "items": 14015,
+   "sum": 5831.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Janemalion 6B",
+   "items": 14015,
+   "sum": 4027.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "KoAlpaca Polyglot 5.8B",
+   "items": 14015,
+   "sum": 3503.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "KoreanLM",
+   "items": 14015,
+   "sum": 5601.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "LMSYS Vicuna",
+   "items": 14015,
+   "sum": 6471.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "LMSYS Vicuna 13B",
+   "items": 14015,
+   "sum": 14403.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "LMSYS Vicuna 3B",
+   "items": 14015,
+   "sum": 3786.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "LMSYS Vicuna 7B",
+   "items": 14015,
+   "sum": 6847.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Llama-2-Ko 7B",
+   "items": 14015,
+   "sum": 5434.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MayaPH FinOPT Franklin",
+   "items": 14015,
+   "sum": 3222.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MayaPH FinOPT Lincoln",
+   "items": 14015,
+   "sum": 3201.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MayaPH FinOPT Washington",
+   "items": 14015,
+   "sum": 3457.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MayaPH GodziLLa 30B",
+   "items": 14015,
+   "sum": 7487.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MayaPH GodziLLa 30B Plus",
+   "items": 14015,
+   "sum": 3442.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MayaPH GodziLLa2 70B",
+   "items": 14015,
+   "sum": 9925.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta LLaMA 13B",
+   "items": 14015,
+   "sum": 20602.0,
+   "n": 42126
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta LLaMA 30B",
+   "items": 14015,
+   "sum": 43045.0,
+   "n": 70210
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta LLaMA 65B",
+   "items": 14015,
+   "sum": 34894.0,
+   "n": 56168
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta LLaMA 7B",
+   "items": 14015,
+   "sum": 35716.0,
+   "n": 98294
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta Llama 2 13B",
+   "items": 14015,
+   "sum": 44990.0,
+   "n": 84252
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta Llama 2 70B",
+   "items": 14015,
+   "sum": 77394.0,
+   "n": 112336
+  },
+  {
+   "slug": "mmlu",
+   "model": "Meta Llama 2 7B",
+   "items": 14015,
+   "sum": 49825.0,
+   "n": 112336
+  },
+  {
+   "slug": "mmlu",
+   "model": "Microsoft DialoGPT Medium",
+   "items": 14015,
+   "sum": 3353.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Microsoft WizardCoder 15B",
+   "items": 14015,
+   "sum": 3980.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Microsoft WizardLM 13B",
+   "items": 14015,
+   "sum": 17812.0,
+   "n": 42126
+  },
+  {
+   "slug": "mmlu",
+   "model": "Microsoft WizardLM 70B",
+   "items": 14015,
+   "sum": 8960.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "MosaicML MPT 30B",
+   "items": 14015,
+   "sum": 13878.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "MosaicML MPT 7B",
+   "items": 14015,
+   "sum": 13057.0,
+   "n": 42126
+  },
+  {
+   "slug": "mmlu",
+   "model": "Nous Research Nous-Hermes 13B",
+   "items": 14015,
+   "sum": 6941.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Nous Research Nous-Hermes Llama 2 13B",
+   "items": 14015,
+   "sum": 7642.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Nous Research Nous-Hermes Llama 2 7B",
+   "items": 14015,
+   "sum": 6640.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Nous Research Redmond Puffin 13B",
+   "items": 14015,
+   "sum": 7620.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "OpenAI GPT-2",
+   "items": 14015,
+   "sum": 14817.0,
+   "n": 56168
+  },
+  {
+   "slug": "mmlu",
+   "model": "OpenAI GPT-2 XL",
+   "items": 14015,
+   "sum": 3741.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "OpenLM Research OpenLLaMA 7B",
+   "items": 14015,
+   "sum": 7673.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "Platypus 2 13B",
+   "items": 14015,
+   "sum": 8033.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "PyThaiNLP WangChanGLM 7.5B",
+   "items": 14015,
+   "sum": 7079.0,
+   "n": 28084
+  },
+  {
+   "slug": "mmlu",
+   "model": "Pyg-Instruct-WizardLM",
+   "items": 14015,
+   "sum": 3745.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "PygmalionAI Metharme 1.3B",
+   "items": 14015,
+   "sum": 3476.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "PygmalionAI Pygmalion 1.3B",
+   "items": 14015,
+   "sum": 3327.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "PygmalionAI Pygmalion 2.7B",
+   "items": 14015,
+   "sum": 3283.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "PygmalionAI Pygmalion 350M",
+   "items": 14015,
+   "sum": 3617.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "PygmalionAI Pygmalion 6B",
+   "items": 14015,
+   "sum": 3674.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Stanford Alpaca 7B",
+   "items": 14015,
+   "sum": 3604.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "StarCoder GPTeacher Code Instruct",
+   "items": 14015,
+   "sum": 3948.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "TigerBot 7B",
+   "items": 14015,
+   "sum": 4132.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "Together RedPajama-INCITE 3B",
+   "items": 14015,
+   "sum": 3637.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "qCammel 13B",
+   "items": 14015,
+   "sum": 7958.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "qCammel 70B",
+   "items": 14015,
+   "sum": 9866.0,
+   "n": 14042
+  },
+  {
+   "slug": "mmlu",
+   "model": "test-custom-llama",
+   "items": 14015,
+   "sum": 5013.0,
+   "n": 14042
+  },
+  {
    "slug": "mmlupro",
    "model": "01.AI Yi 34B",
    "items": 11873,
@@ -21359,6 +22205,47 @@
    "n": 7930000
   },
   {
+   "slug": "morphkv",
+   "model": "Alibaba Qwen2.5 7B",
+   "items": 392,
+   "sum": 433.0,
+   "n": 1094
+  },
+  {
+   "slug": "morphkv",
+   "model": "Meta Llama 3.1 8B",
+   "items": 435,
+   "sum": 514.0,
+   "n": 1293
+  },
+  {
+   "slug": "morphkv",
+   "model": "Mistral 7B",
+   "items": 437,
+   "sum": 562.0,
+   "n": 1287
+  },
+  {
+   "slug": "morqa",
+   "model": "DeepSeek V3",
+   "items": 3125
+  },
+  {
+   "slug": "morqa",
+   "model": "Google Gemini 1.5 Pro",
+   "items": 5443
+  },
+  {
+   "slug": "morqa",
+   "model": "OpenAI GPT-4o",
+   "items": 5443
+  },
+  {
+   "slug": "morqa",
+   "model": "Prometheus 2 7B",
+   "items": 3125
+  },
+  {
    "slug": "mtbbench",
    "model": "Alibaba Qwen2.5 32B",
    "items": 390,
@@ -22562,6 +23449,106 @@
    "items": 3982
   },
   {
+   "slug": "programbench",
+   "model": "Anthropic Claude Haiku 4.5",
+   "items": 200
+  },
+  {
+   "slug": "programbench",
+   "model": "Anthropic Claude Opus 4.6",
+   "items": 200
+  },
+  {
+   "slug": "programbench",
+   "model": "Anthropic Claude Opus 4.7",
+   "items": 399
+  },
+  {
+   "slug": "programbench",
+   "model": "Anthropic Claude Opus 4.8",
+   "items": 200
+  },
+  {
+   "slug": "programbench",
+   "model": "Anthropic Claude Opus 5",
+   "items": 198
+  },
+  {
+   "slug": "programbench",
+   "model": "Anthropic Claude Sonnet 4.6",
+   "items": 192
+  },
+  {
+   "slug": "programbench",
+   "model": "Google Gemini 3 Flash",
+   "items": 199
+  },
+  {
+   "slug": "programbench",
+   "model": "Google Gemini 3.1 Pro",
+   "items": 198
+  },
+  {
+   "slug": "programbench",
+   "model": "Google Gemini 3.5 Flash",
+   "items": 198
+  },
+  {
+   "slug": "programbench",
+   "model": "Google Gemini 3.6 Flash",
+   "items": 198
+  },
+  {
+   "slug": "programbench",
+   "model": "Google Gemini 3.7 Flash",
+   "items": 199
+  },
+  {
+   "slug": "programbench",
+   "model": "Meta Muse Spark 1.1",
+   "items": 198
+  },
+  {
+   "slug": "programbench",
+   "model": "Meta Muse Spark 1.2",
+   "items": 198
+  },
+  {
+   "slug": "programbench",
+   "model": "Meta Muse Spark 1.3",
+   "items": 400
+  },
+  {
+   "slug": "programbench",
+   "model": "OpenAI GPT-5 mini",
+   "items": 200
+  },
+  {
+   "slug": "programbench",
+   "model": "OpenAI GPT-5.4",
+   "items": 200
+  },
+  {
+   "slug": "programbench",
+   "model": "OpenAI GPT-5.4 mini",
+   "items": 199
+  },
+  {
+   "slug": "programbench",
+   "model": "OpenAI GPT-5.5",
+   "items": 206
+  },
+  {
+   "slug": "programbench",
+   "model": "OpenAI GPT-5.6 Sol",
+   "items": 204
+  },
+  {
+   "slug": "programbench",
+   "model": "Zhipu GLM-5.2",
+   "items": 199
+  },
+  {
    "slug": "proofaug",
    "model": "DeepSeek Math 7B",
    "items": 244,
@@ -22624,6 +23611,20 @@
    "slug": "putnam_axiom",
    "model": "Mistral Large 2",
    "items": 2500
+  },
+  {
+   "slug": "pxplore",
+   "model": "OpenAI GPT-4o",
+   "items": 594,
+   "sum": 315.0,
+   "n": 567
+  },
+  {
+   "slug": "pxplore",
+   "model": "OpenAI GPT-4o mini",
+   "items": 576,
+   "sum": 243.0,
+   "n": 551
   },
   {
    "slug": "qatch",
@@ -22967,6 +23968,146 @@
    "items": 70,
    "sum": 45.0,
    "n": 70
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Alibaba Qwen3.8 2.4T A95B",
+   "items": 240,
+   "sum": 55.0,
+   "n": 360
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Anthropic Claude Fable 5",
+   "items": 240,
+   "sum": 54.0,
+   "n": 360
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Anthropic Claude Haiku 4.5",
+   "items": 285,
+   "sum": 60.0,
+   "n": 570
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Anthropic Claude Opus 4.6",
+   "items": 1155,
+   "sum": 326.0,
+   "n": 2310
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Anthropic Claude Opus 5",
+   "items": 240,
+   "sum": 36.0,
+   "n": 360
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Anthropic Claude Sonnet 4.5",
+   "items": 285,
+   "sum": 64.0,
+   "n": 570
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Anthropic Claude Sonnet 4.6",
+   "items": 1155,
+   "sum": 310.0,
+   "n": 2310
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Google Gemini 2.5 Pro",
+   "items": 1440,
+   "sum": 239.0,
+   "n": 2880
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Google Gemini 3 Pro",
+   "items": 285,
+   "sum": 69.0,
+   "n": 570
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Google Gemini 3.1 Pro",
+   "items": 1155,
+   "sum": 253.0,
+   "n": 2310
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Google Gemini 3.6 Flash",
+   "items": 240,
+   "sum": 59.0,
+   "n": 360
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Google Gemini 3.7 Flash",
+   "items": 240,
+   "sum": 54.0,
+   "n": 360
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Meta Llama 4 Maverick",
+   "items": 1680,
+   "sum": 509.0,
+   "n": 3240
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "Meta Llama 4 Scout",
+   "items": 1680,
+   "sum": 522.0,
+   "n": 3240
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "OpenAI GPT-4.1",
+   "items": 285,
+   "sum": 83.0,
+   "n": 570
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "OpenAI GPT-5.2",
+   "items": 285,
+   "sum": 73.0,
+   "n": 570
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "OpenAI GPT-5.3 Chat",
+   "items": 1155,
+   "sum": 335.0,
+   "n": 2310
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "OpenAI GPT-5.4",
+   "items": 1155,
+   "sum": 340.0,
+   "n": 2310
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "OpenAI GPT-5.5",
+   "items": 240,
+   "sum": 59.0,
+   "n": 360
+  },
+  {
+   "slug": "realtimeqa",
+   "model": "OpenAI GPT-5.6 Sol",
+   "items": 240,
+   "sum": 59.0,
+   "n": 360
   },
   {
    "slug": "reasoning_gym",
@@ -24273,6 +25414,11 @@
    "n": 15024
   },
   {
+   "slug": "summeval",
+   "model": "OpenAI GPT-2",
+   "items": 800
+  },
+  {
    "slug": "sustainable_food",
    "model": "Anthropic Claude 3.5 Sonnet",
    "items": 500,
@@ -24327,6 +25473,167 @@
    "items": 211,
    "sum": 348.0,
    "n": 1056
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Alibaba Qwen3-Coder 480B",
+   "items": 300,
+   "sum": 74.0,
+   "n": 291
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Anthropic Claude 3.7 Sonnet",
+   "items": 1299,
+   "sum": 514.0,
+   "n": 715
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Anthropic Claude Haiku 4.5",
+   "items": 138,
+   "sum": 90.0,
+   "n": 138
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Anthropic Claude Opus 4.6",
+   "items": 845,
+   "sum": 608.0,
+   "n": 1109
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Anthropic Claude Opus 4.8",
+   "items": 300,
+   "sum": 102.0,
+   "n": 292
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Anthropic Claude Sonnet 4.5",
+   "items": 669,
+   "sum": 303.0,
+   "n": 850
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Anthropic Claude Sonnet 4.6",
+   "items": 138,
+   "sum": 99.0,
+   "n": 138
+  },
+  {
+   "slug": "swebench_live",
+   "model": "ByteDance Seed-OSS 36B",
+   "items": 291,
+   "sum": 60.0,
+   "n": 271
+  },
+  {
+   "slug": "swebench_live",
+   "model": "DeepSeek V3",
+   "items": 296,
+   "sum": 125.0,
+   "n": 125
+  },
+  {
+   "slug": "swebench_live",
+   "model": "DeepSeek V3.1",
+   "items": 229,
+   "sum": 77.0,
+   "n": 285
+  },
+  {
+   "slug": "swebench_live",
+   "model": "DeepSeek V4 Pro",
+   "items": 274,
+   "sum": 247.0,
+   "n": 667
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Google Gemini 3 Flash",
+   "items": 203,
+   "sum": 47.0,
+   "n": 153
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Google Gemini 3.1 Pro",
+   "items": 138,
+   "sum": 72.0,
+   "n": 130
+  },
+  {
+   "slug": "swebench_live",
+   "model": "Google Gemini 3.6 Flash",
+   "items": 138,
+   "sum": 78.0,
+   "n": 130
+  },
+  {
+   "slug": "swebench_live",
+   "model": "OpenAI GPT-4.1",
+   "items": 1262,
+   "sum": 315.0,
+   "n": 551
+  },
+  {
+   "slug": "swebench_live",
+   "model": "OpenAI GPT-4o",
+   "items": 1193,
+   "sum": 176.0,
+   "n": 176
+  },
+  {
+   "slug": "swebench_live",
+   "model": "OpenAI GPT-5",
+   "items": 292,
+   "sum": 73.0,
+   "n": 73
+  },
+  {
+   "slug": "swebench_live",
+   "model": "OpenAI GPT-5.2",
+   "items": 229,
+   "sum": 98.0,
+   "n": 320
+  },
+  {
+   "slug": "swebench_live",
+   "model": "OpenAI GPT-5.5",
+   "items": 848,
+   "sum": 789.0,
+   "n": 1638
+  },
+  {
+   "slug": "swebench_live",
+   "model": "OpenAI GPT-5.6 Sol",
+   "items": 460,
+   "sum": 218.0,
+   "n": 458
+  },
+  {
+   "slug": "swepolybench",
+   "model": "Anthropic Claude Opus 4.8",
+   "items": 382,
+   "sum": 196.0,
+   "n": 382
+  },
+  {
+   "slug": "swepolybench",
+   "model": "OpenAI GPT-5",
+   "items": 378,
+   "sum": 129.0,
+   "n": 378
+  },
+  {
+   "slug": "swepolybench",
+   "model": "OpenAI GPT-5 mini",
+   "items": 382,
+   "sum": 107.0,
+   "n": 382
   },
   {
    "slug": "synthpai",
@@ -24673,6 +25980,27 @@
    "items": 480
   },
   {
+   "slug": "tensortrust",
+   "model": "Anthropic Claude Instant",
+   "items": 84239,
+   "sum": 15278.0,
+   "n": 97124
+  },
+  {
+   "slug": "tensortrust",
+   "model": "Google PaLM 2 Bison",
+   "items": 56013,
+   "sum": 14933.0,
+   "n": 64266
+  },
+  {
+   "slug": "tensortrust",
+   "model": "OpenAI GPT-3.5",
+   "items": 433218,
+   "sum": 93295.0,
+   "n": 520336
+  },
+  {
    "slug": "theagentcompany",
    "model": "Alibaba Qwen2.5 72B",
    "items": 175
@@ -24731,6 +26059,664 @@
    "slug": "theagentcompany",
    "model": "OpenAI GPT-4o",
    "items": 175
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "BigCode SantaCoder",
+   "items": 817,
+   "sum": 217.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "BigCode Tiny StarCoder",
+   "items": 817,
+   "sum": 225.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CAMEL 13B",
+   "items": 817,
+   "sum": 543.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CAMEL 33B",
+   "items": 817,
+   "sum": 267.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CalderaAI 13B BlueMethod",
+   "items": 817,
+   "sum": 265.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CalderaAI 13B Legerdemain",
+   "items": 817,
+   "sum": 241.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CalderaAI 13B Ouroboros",
+   "items": 817,
+   "sum": 267.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CalderaAI 30B Lazarus",
+   "items": 817,
+   "sum": 338.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Chinese-Alpaca-Plus 13B",
+   "items": 817,
+   "sum": 237.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Chinese-Alpaca-Plus 7B",
+   "items": 817,
+   "sum": 207.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Chinese-LLaMA-Plus 13B",
+   "items": 817,
+   "sum": 195.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "CobraMamba Mamba-GPT 3B",
+   "items": 817,
+   "sum": 602.0,
+   "n": 2451
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Corianas 111M",
+   "items": 817,
+   "sum": 190.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Corianas Quokka 1.3B",
+   "items": 817,
+   "sum": 201.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Corianas Quokka 2.7B",
+   "items": 817,
+   "sum": 205.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Corianas Quokka 590M",
+   "items": 817,
+   "sum": 194.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Databricks Dolly v2 12B",
+   "items": 817,
+   "sum": 164.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Databricks Dolly v2 3B",
+   "items": 817,
+   "sum": 182.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Databricks Dolly v2 7B",
+   "items": 817,
+   "sum": 187.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Edor Hermes-Platypus2 7B",
+   "items": 817,
+   "sum": 272.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Edor Stable-Platypus2 7B",
+   "items": 817,
+   "sum": 291.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI GPT-J 6B",
+   "items": 817,
+   "sum": 360.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI GPT-Neo 1.3B",
+   "items": 817,
+   "sum": 189.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI GPT-Neo 125M",
+   "items": 817,
+   "sum": 211.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI GPT-Neo 2.7B",
+   "items": 817,
+   "sum": 196.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI GPT-NeoX 20B",
+   "items": 817,
+   "sum": 158.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Polyglot-Ko 12.8B",
+   "items": 817,
+   "sum": 169.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 1.4B",
+   "items": 817,
+   "sum": 384.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 12B",
+   "items": 817,
+   "sum": 340.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 160M",
+   "items": 817,
+   "sum": 402.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 1B",
+   "items": 817,
+   "sum": 185.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 2.8B",
+   "items": 817,
+   "sum": 347.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 410M",
+   "items": 817,
+   "sum": 194.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 6.9B",
+   "items": 817,
+   "sum": 342.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "EleutherAI Pythia 70M",
+   "items": 817,
+   "sum": 400.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GALPACA 30B",
+   "items": 817,
+   "sum": 210.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GPT4-X-Alpacadente 30B",
+   "items": 817,
+   "sum": 299.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GPT4-X-Alpacadente2 30B",
+   "items": 817,
+   "sum": 270.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GPT4-X-Alpasta 13B",
+   "items": 817,
+   "sum": 298.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GoGPT 3B",
+   "items": 817,
+   "sum": 220.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GoGPT 7B",
+   "items": 817,
+   "sum": 438.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "GoGPT2 7B",
+   "items": 817,
+   "sum": 264.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Golaxy GoIMS",
+   "items": 817,
+   "sum": 247.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Golaxy GoWizardLM",
+   "items": 817,
+   "sum": 255.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "HuggingFace StarChat Beta",
+   "items": 817,
+   "sum": 258.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Janemalion 6B",
+   "items": 817,
+   "sum": 171.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "KoAlpaca Polyglot 5.8B",
+   "items": 817,
+   "sum": 187.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "KoreanLM",
+   "items": 817,
+   "sum": 242.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "LMSYS Vicuna",
+   "items": 817,
+   "sum": 247.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "LMSYS Vicuna 13B",
+   "items": 817,
+   "sum": 580.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "LMSYS Vicuna 3B",
+   "items": 817,
+   "sum": 200.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "LMSYS Vicuna 7B",
+   "items": 817,
+   "sum": 266.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Llama-2-Ko 7B",
+   "items": 817,
+   "sum": 184.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MayaPH FinOPT Franklin",
+   "items": 817,
+   "sum": 211.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MayaPH FinOPT Lincoln",
+   "items": 817,
+   "sum": 225.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MayaPH FinOPT Washington",
+   "items": 817,
+   "sum": 179.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MayaPH GodziLLa 30B",
+   "items": 817,
+   "sum": 309.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MayaPH GodziLLa 30B Plus",
+   "items": 817,
+   "sum": 189.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MayaPH GodziLLa2 70B",
+   "items": 817,
+   "sum": 348.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta LLaMA 13B",
+   "items": 817,
+   "sum": 771.0,
+   "n": 2451
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta LLaMA 30B",
+   "items": 817,
+   "sum": 1436.0,
+   "n": 4085
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta LLaMA 65B",
+   "items": 817,
+   "sum": 1194.0,
+   "n": 3268
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta LLaMA 7B",
+   "items": 817,
+   "sum": 1625.0,
+   "n": 5719
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta Llama 2 13B",
+   "items": 817,
+   "sum": 1468.0,
+   "n": 4902
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta Llama 2 70B",
+   "items": 817,
+   "sum": 2590.0,
+   "n": 6536
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Meta Llama 2 7B",
+   "items": 817,
+   "sum": 1778.0,
+   "n": 6536
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Microsoft DialoGPT Medium",
+   "items": 817,
+   "sum": 205.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Microsoft WizardCoder 15B",
+   "items": 817,
+   "sum": 217.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Microsoft WizardLM 13B",
+   "items": 817,
+   "sum": 821.0,
+   "n": 2451
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Microsoft WizardLM 70B",
+   "items": 817,
+   "sum": 316.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MosaicML MPT 30B",
+   "items": 817,
+   "sum": 488.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "MosaicML MPT 7B",
+   "items": 817,
+   "sum": 601.0,
+   "n": 2451
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Nous Research Nous-Hermes 13B",
+   "items": 817,
+   "sum": 289.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Nous Research Nous-Hermes Llama 2 13B",
+   "items": 817,
+   "sum": 286.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Nous Research Nous-Hermes Llama 2 7B",
+   "items": 817,
+   "sum": 273.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Nous Research Redmond Puffin 13B",
+   "items": 817,
+   "sum": 233.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "OpenAI GPT-2",
+   "items": 817,
+   "sum": 770.0,
+   "n": 3268
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "OpenAI GPT-2 XL",
+   "items": 817,
+   "sum": 195.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "OpenLM Research OpenLLaMA 7B",
+   "items": 817,
+   "sum": 395.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Platypus 2 13B",
+   "items": 817,
+   "sum": 267.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "PyThaiNLP WangChanGLM 7.5B",
+   "items": 817,
+   "sum": 346.0,
+   "n": 1634
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Pyg-Instruct-WizardLM",
+   "items": 817,
+   "sum": 160.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "PygmalionAI Metharme 1.3B",
+   "items": 817,
+   "sum": 196.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "PygmalionAI Pygmalion 1.3B",
+   "items": 817,
+   "sum": 176.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "PygmalionAI Pygmalion 2.7B",
+   "items": 817,
+   "sum": 176.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "PygmalionAI Pygmalion 350M",
+   "items": 817,
+   "sum": 195.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "PygmalionAI Pygmalion 6B",
+   "items": 817,
+   "sum": 165.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Stanford Alpaca 7B",
+   "items": 817,
+   "sum": 193.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "StarCoder GPTeacher Code Instruct",
+   "items": 817,
+   "sum": 204.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "TigerBot 7B",
+   "items": 817,
+   "sum": 384.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "Together RedPajama-INCITE 3B",
+   "items": 817,
+   "sum": 177.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "qCammel 13B",
+   "items": 817,
+   "sum": 263.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "qCammel 70B",
+   "items": 817,
+   "sum": 328.0,
+   "n": 817
+  },
+  {
+   "slug": "truthfulqa_mc",
+   "model": "test-custom-llama",
+   "items": 817,
+   "sum": 188.0,
+   "n": 817
   },
   {
    "slug": "tulu_human_eval",
@@ -24961,6 +26947,21 @@
    "items": 41857
   },
   {
+   "slug": "visit_bench",
+   "model": "Alibaba mPLUG-Owl",
+   "items": 752
+  },
+  {
+   "slug": "visit_bench",
+   "model": "MiniGPT-4",
+   "items": 775
+  },
+  {
+   "slug": "visit_bench",
+   "model": "OpenAI GPT-4",
+   "items": 1923
+  },
+  {
    "slug": "visual_riddles",
    "model": "Google Gemini 1.5 Pro",
    "items": 793,
@@ -25078,6 +27079,55 @@
    "items": 69,
    "sum": 37.0,
    "n": 69
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "Alibaba Qwen2 7B",
+   "items": 14287,
+   "sum": 28222.0,
+   "n": 28542
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "AllenAI OLMo 2 7B",
+   "items": 14287,
+   "sum": 28477.0,
+   "n": 28574
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "DeepSeek LLM 7B",
+   "items": 14287,
+   "sum": 42700.0,
+   "n": 42861
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "Google Gemma 7B",
+   "items": 14287,
+   "sum": 28024.0,
+   "n": 28574
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "Meta Llama 3 8B",
+   "items": 14287,
+   "sum": 12343.0,
+   "n": 14287
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "Microsoft Phi-4",
+   "items": 14287,
+   "sum": 14206.0,
+   "n": 14287
+  },
+  {
+   "slug": "wikihow_agent",
+   "model": "OpenChat 7B",
+   "items": 14287,
+   "sum": 11353.0,
+   "n": 14287
   },
   {
    "slug": "wildvision",

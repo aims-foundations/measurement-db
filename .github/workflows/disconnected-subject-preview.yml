@@ -1,0 +1,100 @@
+name: Deploy disconnected subject preview
+on:
+  push:
+    branches: [preview/disconnected-subject-identities]
+    paths: [.github/workflows/disconnected-subject-preview.yml]
+permissions:
+  contents: read
+concurrency:
+  group: disconnected-subject-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: /lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/disconnected-identities-preview-20261027/measurement_db
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      NEXT_TELEMETRY_DISABLED: '1'
+      RAYON_NUM_THREADS: '4'
+      PREVIEW_EVIDENCE: /lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/disconnected-subject-identities/measurement_db/artifacts/analyze_measurements/disconnected_subject_audit_20261027
+    steps:
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify the reviewed build and immutable data snapshot
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==os.environ['GITHUB_SHA']
+          assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip()
+          evidence=Path(os.environ['PREVIEW_EVIDENCE'])
+          release=json.loads((evidence/'hf-preview.json').read_text())
+          prepared=json.loads((evidence/'gallery/assembled.json').read_text())
+          assert prepared['hf_revision']==release['revision']
+          assert release['production_main_revision_after']==release['production_main_revision_before']
+          assert prepared['benchmarks']==270 and len(prepared['updated_benchmarks'])==23
+          for relative,expected in prepared['website_sha256'].items():
+              digest=hashlib.sha256((Path('website')/relative).read_bytes()).hexdigest()
+              assert digest==expected,relative
+          assert prepared['normalized_models']==983 and prepared['links']==4139
+          print('Verified 270 benchmark views, 983 models, and 4139 observed links.')
+          PY
+      - name: Pull preview settings and build
+        run: |
+          pnpm dlx vercel@62.2.0 pull --yes --environment=preview --git-branch=preview/disconnected-subject-identities --token="$VERCEL_TOKEN"
+          pnpm dlx vercel@62.2.0 build --token="$VERCEL_TOKEN"
+          python3 - <<'PY'
+          from pathlib import Path
+          count=sum(p.is_file() for p in Path('.vercel/output').rglob('*'))
+          assert 0<count<10000,count
+          print(f'Upload contains {count} files.')
+          PY
+      - name: Deploy the preview and create its review link
+        env:
+          NODE_OPTIONS: --require=/lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/disconnected-identities-preview-20261027/measurement_db/website/scripts/vercel-fetch.cjs
+        run: |
+          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --target=preview --env HF_TOKEN="$HF_TOKEN" --meta githubCommitRef=preview/disconnected-subject-identities --meta githubCommitSha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+          export SUBJECT_PREVIEW_URL="$url"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.parse import urlsplit, urlencode
+          from scripts.ci.vercel_preview_link import api, active_link
+          deployment=api('/v13/deployments/'+urlsplit(os.environ['SUBJECT_PREVIEW_URL']).netloc)
+          assert deployment.get('target')!='production' and deployment['readyState']=='READY'
+          assert deployment['projectId']==os.environ['VERCEL_PROJECT_ID']
+          host='measurement-db-disconnected-subjects.vercel.app'
+          try:
+              old=api('/v4/aliases/'+host)
+          except HTTPError as error:
+              if error.code!=404:raise
+          else:
+              assert old['projectId']==os.environ['VERCEL_PROJECT_ID']
+              assert api('/v13/deployments/'+old['deploymentId']).get('target')!='production'
+          api('/v2/deployments/'+deployment['id']+'/aliases','POST',{'alias':host})
+          alias=api('/v4/aliases/'+host)
+          if not active_link(alias):
+              api('/aliases/'+alias['uid']+'/protection-bypass','PATCH',{'ttl':604800})
+              alias=api('/v4/aliases/'+host)
+          token=active_link(alias);assert token
+          result={'deployment':os.environ['SUBJECT_PREVIEW_URL'],'alias':host,
+                  'review_url':'https://'+host+'/measurement-db/network?'+urlencode({'_vercel_share':token}),
+                  'code_revision':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID']}
+          path=Path(os.environ['PREVIEW_EVIDENCE'])/'vercel-preview.json'
+          path.write_text(json.dumps(result,indent=2)+'\n');path.chmod(0o600)
+          print('Preview deployed: '+host)
+          PY
+          for path in /measurement-db /measurement-db/network /measurement-db/programbench /measurement-db/benchmark-data/programbench/records/manifest.json; do
+            pnpm dlx vercel@62.2.0 curl "$path" --deployment "$url" -- --fail --silent --show-error --max-time 120 --output /dev/null
+          done

@@ -6,7 +6,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    branches: ['**']
+    # This preview publishes the already verified identity-only table revision.
+    branches-ignore: [preview/disconnected-subject-identities]
   workflow_dispatch:
     inputs:
       benchmark:
