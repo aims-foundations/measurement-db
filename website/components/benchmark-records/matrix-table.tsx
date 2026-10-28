@@ -25,7 +25,7 @@ export function MatrixTable({
   const starts = new Set(groups.slice(1).map((group) => group.start));
   const ends = new Set(groups.map((group) => group.start + group.length - 1));
   const edges = (i: number) =>
-    grouped && starts.has(i) ? "border-l-8 border-l-[var(--paper)]" : "";
+    grouped && starts.has(i) ? "border-l-8 border-l-white" : "";
   const outline = (i: number) => ({
     boxShadow: grouped
       ? [
@@ -49,7 +49,7 @@ export function MatrixTable({
               <th
                 rowSpan={2}
                 scope="col"
-                className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--paper)] p-3 text-left"
+                className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--fog-light)] p-3 text-left"
               >
                 Model / item
               </th>
@@ -58,7 +58,7 @@ export function MatrixTable({
                   key={group.start}
                   colSpan={group.length}
                   scope="colgroup"
-                  className={`sticky top-0 z-20 bg-[var(--paper)] p-0 text-left font-normal ${edges(group.start)}`}
+                  className={`sticky top-0 z-20 bg-[var(--fog-light)] p-0 text-left font-normal ${edges(group.start)}`}
                 >
                   <TestletHeader group={group} />
                 </th>
@@ -69,7 +69,7 @@ export function MatrixTable({
             {!grouped && (
               <th
                 scope="col"
-                className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--paper)] p-3 text-left"
+                className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--fog-light)] p-3 text-left"
               >
                 Model / item
               </th>
@@ -78,7 +78,7 @@ export function MatrixTable({
               <th
                 key={id}
                 scope="col"
-                className={`sticky z-10 min-w-24 border-b border-[var(--line)] bg-[var(--paper)] p-2 ${edges(i)}`}
+                className={`sticky z-10 min-w-24 border-b border-[var(--line)] bg-[var(--fog-light)] p-2 ${edges(i)}`}
                 style={{
                   top: grouped ? TESTLET_HEADER_HEIGHT : 0,
                   ...outline(i),

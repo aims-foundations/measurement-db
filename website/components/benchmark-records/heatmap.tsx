@@ -22,8 +22,12 @@ export function Heatmap({
   theta?: Record<string, number>;
   onSelect: (selection: CellSelection) => void;
 }) {
-  const grouped = columnGroups(view).some((group) => group.testletId !== null);
+  const groups = columnGroups(view).filter((group) => group.testletId !== null);
+  const grouped = groups.length > 0;
   const top = grouped ? TESTLET_HEADER_HEIGHT : 0;
+  const columns = theta
+    ? "grid-cols-[80px_minmax(100px,1fr)_32px_40px] sm:grid-cols-[minmax(100px,170px)_minmax(160px,1fr)_48px_56px]"
+    : "grid-cols-[80px_minmax(100px,1fr)_40px] sm:grid-cols-[minmax(100px,170px)_minmax(160px,1fr)_56px]";
   if (!subjects.length || !view.itemIds.length)
     return (
       <p className="py-8 text-sm text-[var(--muted)]">
@@ -32,12 +36,17 @@ export function Heatmap({
     );
   return (
     <div className="overflow-auto rounded-md border border-[var(--line)] bg-white p-3">
-      <div
-        className="grid min-w-[440px] gap-x-3"
-        style={{
-          gridTemplateColumns: `minmax(100px,170px) minmax(160px,1fr) ${theta ? "48px " : ""}56px`,
-        }}
-      >
+      {grouped && (
+        <details className="mb-3 text-xs text-[var(--muted)] sm:hidden">
+          <summary className="cursor-pointer">Testlets on this page</summary>
+          <ol className="mt-2 list-inside list-decimal space-y-2 break-all">
+            {groups.map((group) => (
+              <li key={group.testletId}>{group.testletId}</li>
+            ))}
+          </ol>
+        </details>
+      )}
+      <div className={`grid min-w-[260px] gap-x-2 sm:gap-x-3 ${columns}`}>
         <div className="pb-2 text-xs text-[var(--muted)]">Model</div>
         <div className="pb-2 text-xs text-[var(--muted)]">
           {view.itemIds.length.toLocaleString()} items

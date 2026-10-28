@@ -16,7 +16,7 @@ export function TestletHeader({ group }: { group: ColumnGroup }) {
     <div
       data-testlet-id={group.testletId ?? undefined}
       title={`${label} · ${detail}`}
-      className="flex min-w-0 flex-col justify-center overflow-hidden border-x border-t border-black/25 bg-[var(--paper)] px-2 text-center"
+      className="flex min-w-0 flex-col justify-center overflow-hidden border-x border-t border-black/25 bg-[var(--fog-light)] px-2 text-center"
       style={{ height: TESTLET_HEADER_HEIGHT }}
     >
       <span className="truncate text-xs font-medium">{label}</span>
