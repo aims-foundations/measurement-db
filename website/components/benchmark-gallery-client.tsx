@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BenchmarkSearchClient } from "@/components/benchmark-search-client";
 import { CatalogResults } from "@/components/catalog-results";
+import { compareCatalogOrder } from "@/lib/catalog-order";
 import { withBase } from "@/lib/base-path";
 import type { LocalBenchmarkSearchDocument } from "@/lib/search-types";
 import {
@@ -47,9 +48,10 @@ const SATURATION_OPTIONS: {
 const saturationKey = (s: boolean | null): SaturationKey =>
   s === null ? "unknown" : s ? "yes" : "no";
 
-type SortKey = "group" | "subjects" | "items" | "name";
+type SortKey = "agentic" | "group" | "subjects" | "items" | "name";
 
 const SORT_CHOICES = [
+  { value: "agentic", label: "Agentic first" },
   { value: "group", label: "Year · newest first" },
   { value: "name:asc", label: "Name · A to Z" },
   { value: "name:desc", label: "Name · Z to A" },
@@ -68,7 +70,7 @@ type FilterPanelKey =
   | "guide"
   | "mobile";
 
-// Benchmarks are grouped by release year, newest first, with everything
+// The optional year sort groups benchmarks newest first, with everything
 // before 2023 collapsed into a single "Earlier" bucket (undated cards land
 // there too). A benchmark's domain is a *filter*, not its shelf — so one that
 // spans several domains (e.g. AlgoTune → math + coding) appears once, under its
@@ -496,7 +498,7 @@ export function BenchmarkGalleryClient({
   const [minSubjects, setMinSubjects] = useState<number | null>(null);
   const [minItems, setMinItems] = useState<number | null>(null);
   const [minAttacks, setMinAttacks] = useState<number | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("group");
+  const [sortKey, setSortKey] = useState<SortKey>("agentic");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
@@ -668,7 +670,9 @@ export function BenchmarkGalleryClient({
   const sorted = useMemo(() => {
     const arr = [...filtered];
     const mul = dir === "asc" ? 1 : -1;
-    if (sortKey === "name") {
+    if (sortKey === "agentic") {
+      arr.sort(compareCatalogOrder);
+    } else if (sortKey === "name") {
       arr.sort((a, b) => a.name.localeCompare(b.name) * mul);
     } else {
       const v = (b: GalleryItem) =>
@@ -701,7 +705,9 @@ export function BenchmarkGalleryClient({
   const grouped = sortKey === "group";
 
   const sortChoice =
-    sortKey === "group" ? "group" : (`${sortKey}:${dir}` as const);
+    sortKey === "agentic" || sortKey === "group"
+      ? sortKey
+      : (`${sortKey}:${dir}` as const);
 
   const evidenceCount = Number(onlyItemResponses) + satSel.size;
   const moreCount =
@@ -722,12 +728,12 @@ export function BenchmarkGalleryClient({
   }
 
   function changeSort(value: string) {
-    if (value === "group") {
-      setSortKey("group");
+    if (value === "agentic" || value === "group") {
+      setSortKey(value);
       return;
     }
     const [nextKey, nextDir] = value.split(":") as [
-      Exclude<SortKey, "group">,
+      Exclude<SortKey, "agentic" | "group">,
       "asc" | "desc",
     ];
     setSortKey(nextKey);
