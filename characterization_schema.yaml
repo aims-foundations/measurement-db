@@ -17,6 +17,7 @@ properties:
       benchmarks: { $ref: '#/$defs/table' }
       responses: { $ref: '#/$defs/table' }
       traces: { $ref: '#/$defs/table' }
+      attempts: { $ref: '#/$defs/table' }
       assets: { $ref: '#/$defs/table' }
   source_claims:
     type: object

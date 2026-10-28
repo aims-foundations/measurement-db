@@ -1080,3 +1080,48 @@ test("HTML and embedded configuration have explicit readable views with unknown 
     'Published initial task configuration:\n{"value":0}',
   );
 });
+
+test("multiple test outcomes can read one shared execution without changing legacy trace lookup", async () => {
+  const manifest = {
+    benchmark: { benchmark_id: "testlet-fixture" },
+    tables: {
+      attempts: { key: "attempt_id", rows: 1, pages: 1 },
+      traces: { key: "response_id", rows: 1, pages: 1 },
+    },
+  };
+  const requests = [];
+  const data = {
+    "attempts/index.json": { execution: 0 },
+    "attempts/0.json": {
+      execution: {
+        attempt_id: "execution",
+        subject_id: "model",
+        raw_attempt_id: "run/task",
+        trace: "complete shared answer",
+      },
+    },
+    "traces/index.json": { legacy: 0 },
+    "traces/0.json": {
+      legacy: { response_id: "legacy", trace: "legacy answer" },
+    },
+  };
+  const source = new RecordSource(
+    "https://example.test/records/",
+    manifest,
+    async (url) => {
+      const path = String(url).split("/records/")[1].replace(/^\/+/, "");
+      requests.push(path);
+      assert.ok(data[path], path);
+      return new Response(JSON.stringify(data[path]));
+    },
+  );
+  const first = await source.get("attempts", "execution", signal());
+  const second = await source.get("attempts", "execution", signal());
+  assert.deepEqual(first, second);
+  assert.equal(first.trace, "complete shared answer");
+  assert.equal(requests.filter((p) => p === "attempts/0.json").length, 1);
+  assert.equal(
+    (await source.get("traces", "legacy", signal())).trace,
+    "legacy answer",
+  );
+});

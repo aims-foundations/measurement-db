@@ -177,3 +177,21 @@ class ComparisonTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def test_old_review_survives_only_null_structural_links():
+    import pytest
+    tables = {name: pd.DataFrame({'id': ['unchanged']}) for name in ['subjects','items','benchmarks','responses']}
+    review = example()
+    review['tables'] = characterize_tables(tables)
+    upgraded = {name: frame.copy() for name, frame in tables.items()}
+    upgraded['items']['testlet_id'] = None
+    upgraded['responses']['attempt_id'] = None
+    check_tables(review, upgraded)
+    upgraded['items']['testlet_id'] = 'new-group'
+    with pytest.raises(CharacterizationError):
+        check_tables(review, upgraded)
+    upgraded['items']['testlet_id'] = None
+    upgraded['responses'].loc[0,'id'] = 'changed'
+    with pytest.raises(CharacterizationError):
+        check_tables(review, upgraded)

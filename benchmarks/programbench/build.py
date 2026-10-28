@@ -11,14 +11,14 @@ import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.build_base import BenchmarkBuild, ExactMatcher
 
 
 class ProgramBench(BenchmarkBuild):
     def download(self):
         return self.fetch_sources('*')
 
-    def build_tables(self) -> dict[str, pd.DataFrame]:
+    def build_subject_item_response_rows(self):
         parameters = self.build_parameters
 
         # 1. Read the immutable registry and its published per-test verdicts.
@@ -39,7 +39,6 @@ class ProgramBench(BenchmarkBuild):
             if key not in set(ignored.get(row.task_id, []))} for row in scores.itertuples()]
         if not scores.published_tests.map(lambda tests: all(type(value) is bool for value in tests.values())).all():
             raise ValueError('Published test verdicts must be boolean')
-        scores['response'] = scores.active_tests.map(lambda tests: sum(tests.values()) / len(tests) if tests else 0.)
 
         # 2. Join every recorded trajectory, including attempts without a grade.
         trajectory_rows, evaluation_rows = [], []
@@ -62,7 +61,6 @@ class ProgramBench(BenchmarkBuild):
         if calls.trajectory.isna().any() or not calls.trajectory.map(lambda value:
             [message.get('role') for message in value['messages'][:2]] == ['system', 'user']).all():
             raise ValueError('Each attempt must have its recorded initial system and user messages')
-        calls['response_key'] = calls.index
         calls['config'] = calls.trajectory.map(lambda value: value['info']['config'])
         calls['mini_version'] = calls.trajectory.map(lambda value: value['info']['mini_version'])
 
@@ -84,32 +82,48 @@ class ProgramBench(BenchmarkBuild):
                 row.config['model'].get('model_kwargs', {}).get('reasoning', {}).get('effort'))
             for row in subjects.itertuples()]
 
-        # 4. Preserve the actual initial request, named environment and grading scope.
-        items = calls.copy()
-        items['item_key'] = items.response_key
-        items['active_test_names'] = items.active_tests.map(lambda value: sorted(value) if isinstance(value, dict) else None)
-        items['test_set_sha256'] = items.active_test_names.map(lambda value: hashlib.sha256(json.dumps(value).encode()).hexdigest())
-        items['raw_item_id'] = items.task_id + ':' + items.test_set_sha256.str[:16]
-        items['content'] = [json.dumps(dict(messages=row.trajectory['messages'][:2],
-            environment=dict(image=row.config['environment']['image'], cwd=row.config['environment']['cwd'])),
-            ensure_ascii=False, allow_nan=False) for row in items.itertuples()]
-        items['features'] = items[['task_id', 'grader_version', 'test_set_sha256']].to_dict('records')
-        items['grading_criterion'] = [dict(rule=self.grading['rule']) for _ in items.index]
-        items['verifier'] = [Judge(spec=json.dumps(dict(**self.grading['verifiers']['published'],
-            grader_version=row.grader_version, active_test_names=row.active_test_names), sort_keys=True))
-            for row in items.itertuples()]
+        subject_ids = {
+            row.subject_key: self.add_subject(row.raw_label, features=row.features)
+            for row in subjects.itertuples()
+        }
 
-        # 5. Retain native records in full, without turning absent evaluations into failures.
-        traces = calls[['response_key']].copy()
-        traces['trace'] = [json.dumps(dict(source_run=row.source_run, task_id=row.task_id,
-            trajectory=row.trajectory, evaluation=row.evaluation if isinstance(row.evaluation, dict) else None,
-            published_tests=row.published_tests if isinstance(row.published_tests, dict) else None),
-            ensure_ascii=False, allow_nan=False) for row in calls.itertuples()]
-        calls['item_key'] = calls.response_key
-        calls['test_condition'] = 'run=' + calls.source_run + ';grader=' + calls.grader_version
-        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
-            responses=calls[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
+        # One execution owns the complete trajectory and native evaluation.
+        # Each active behavioral test grades that same generated program.
+        item_ids = {}
+        current_run = None
+        for row in calls.itertuples():
+            if row.source_run != current_run:
+                current_run = row.source_run
+                print(f"[programbench] Converting {current_run}", flush=True)
+            subject_id = subject_ids[row.subject_key]
+            trace = dict(source_run=row.source_run, task_id=row.task_id,
+                trajectory=row.trajectory,
+                evaluation=row.evaluation if isinstance(row.evaluation, dict) else None,
+                published_tests=row.published_tests if isinstance(row.published_tests, dict) else None)
+            attempt_id = self.add_attempt(subject_id=subject_id,
+                raw_attempt_id=row.source_run + '/' + row.task_id,
+                trace=json.dumps(trace, ensure_ascii=False, allow_nan=False))
+            # An unreleased/empty evaluation defines no individual test outcomes.
+            # Preserve the attempt above rather than inventing a failed test.
+            if not isinstance(row.active_tests, dict):
+                continue
+            content = json.dumps(dict(messages=row.trajectory['messages'][:2],
+                environment=dict(image=row.config['environment']['image'], cwd=row.config['environment']['cwd'])),
+                ensure_ascii=False, allow_nan=False)
+            for test_name, passed in row.active_tests.items():
+                key = (row.task_id, content, row.grader_version, test_name)
+                if key not in item_ids:
+                    spec = dict(**self.grading['verifiers']['published'],
+                        grader_version=row.grader_version, test_name=test_name)
+                    item_ids[key] = self.add_item(
+                        raw_item_id=row.task_id + ':' + test_name,
+                        testlet_id=row.task_id, content=content,
+                        grading_criterion=dict(rule=self.grading['rule']),
+                        verifier=ExactMatcher(spec=json.dumps(spec, sort_keys=True)))
+                self.add_response(subject_id=subject_id, item_id=item_ids[key],
+                    response=float(passed), attempt_id=attempt_id, trace=None,
+                    test_condition=None)
+        print(f"[programbench] Registered {len(item_ids):,} behavioral-test items", flush=True)
 
 
 if __name__ == '__main__':

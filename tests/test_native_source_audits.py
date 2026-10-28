@@ -7776,6 +7776,7 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
         folder = ROOT / 'benchmarks/programbench'
         self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
         self.metadata['build']['parameters']['runs'] = {'run_a':'run_a.tar.gz', 'run_b':'run_b.tar.gz'}
+        self.metadata['build']['parameters']['subject_labels'] = {'fixture/run_a':'fixture-renamed-model'}
         (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         self.documents = {'registry': {'ignored_tests.json': {'task_one':['suite/ignored']}}}
         for run in ['run_a','run_b']:
@@ -7816,45 +7817,48 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
                 '--source',str(self.raw),'--output',str(self.directory.parent/'tables')])
         self.frames = {path.stem:pd.read_parquet(path) for path in (self.directory.parent/'tables').glob('*.parquet')}
 
-    def test_native_fractions_failed_retries_ungraded_attempt_and_complete_traces(self):
+    def test_binary_tests_share_attempts_and_preserve_ungraded_executions(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _programbench
         self.assertEqual(_programbench(self.directory,self.frames,self.metadata),dict(source_responses=4,
-            source_subjects=3,source_items=3,source_traces=4,source_runs=2,source_tasks=2,
-            source_native_test_verdicts=6,source_graded_attempts=3,source_evaluation_errors=1,source_ungraded_attempts=1))
-        self.assertEqual(sorted(self.frames['responses'].response.dropna()),[0.,0.5,0.5])
-        self.assertEqual(self.frames['responses'].loc[self.frames['responses'].response.eq(0.5),'item_id'].nunique(),1)
+            source_subjects=3,source_items=2,source_traces=0,source_attempts=4,source_runs=2,source_tasks=2,
+            source_testlets=1,source_native_test_verdicts=6,source_graded_attempts=3,
+            source_evaluation_errors=1,source_ungraded_attempts=1))
+        self.assertEqual(sorted(self.frames['responses'].response),[0.,0.,1.,1.])
+        self.assertEqual(self.frames['items'].testlet_id.unique().tolist(),['task_one'])
+        self.assertEqual(self.frames['responses'].attempt_id.nunique(),2)
+        self.assertEqual(len(self.frames['attempts']),4)
 
     def test_audit_rejects_changed_inputs_scores_and_native_records(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _programbench, _programbench_sources
         source = _programbench_sources(self.directory,self.metadata)
-        changes = ['fraction','null_to_zero','subject','item','prompt','image','verifier','grading_rule','trace_clip',
-            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort']
+        changes = ['grade','subject','item','testlet','attempt','prompt','image','verifier','grading_rule','trace_clip',
+            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort','lost_ungraded_attempt','extra_unlinked_grade','source_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
-                responses,items,subjects,traces = [frames[name] for name in ['responses','items','subjects','traces']]
-                if change=='fraction': responses.loc[responses.response.eq(0.5),'response']=1.
-                elif change=='null_to_zero': responses.loc[responses.response.isna(),'response']=0.
+                responses,items,subjects,attempts = [frames[name] for name in ['responses','items','subjects','attempts']]
+                if change=='grade': responses.loc[0,'response']=1-float(responses.loc[0,'response'])
                 elif change=='subject': responses.loc[0,'subject_id']=next(value for value in subjects.subject_id if value!=responses.loc[0,'subject_id'])
                 elif change=='item': responses.loc[0,'item_id']=next(value for value in items.item_id if value!=responses.loc[0,'item_id'])
+                elif change=='testlet':items.loc[0,'testlet_id']='task_two'
+                elif change=='attempt':responses.loc[0,'attempt_id']='missing'
                 elif change in {'prompt','image'}:
                     value=json.loads(items.loc[0,'content'])
                     if change=='prompt':value['messages'][1]['content']='A reconstructed placeholder'
                     else:value['environment']['image']='fixture/current:latest'
                     items.loc[0,'content']=json.dumps(value)
                 elif change=='verifier':
-                    index=next(i for i,value in enumerate(items.verifier) if json.loads(json.loads(value)['spec'])['active_test_names'])
-                    value=json.loads(items.loc[index,'verifier']);spec=json.loads(value['spec']);spec['active_test_names'].pop();value['spec']=json.dumps(spec);items.loc[index,'verifier']=json.dumps(value)
-                elif change=='grading_rule':items.loc[0,'grading_criterion']=json.dumps(dict(rule='Binary threshold'))
+                    value=json.loads(items.loc[0,'verifier']);spec=json.loads(value['spec']);spec['test_name']='suite/ignored';value['spec']=json.dumps(spec);items.loc[0,'verifier']=json.dumps(value)
+                elif change=='grading_rule':items.loc[0,'grading_criterion']=json.dumps(dict(rule='Wrong criterion'))
                 elif change.startswith('trace_'):
-                    index=next(i for i,value in enumerate(traces.trace) if json.loads(value)['published_tests'])
-                    value=json.loads(traces.loc[index,'trace'])
+                    index=next(i for i,value in enumerate(attempts.trace) if json.loads(value)['published_tests'])
+                    value=json.loads(attempts.loc[index,'trace'])
                     if change=='trace_clip':value['trajectory']['messages'][2]['output'][0]['content']='clipped'
                     elif change=='trace_task':value['task_id']='task_two'
                     elif change=='trace_grade':value['published_tests']['suite/pass']=False
                     elif change=='trace_settings':value['trajectory']['info']['config']['model']['model_kwargs']['temperature']=1.
                     else:value['evaluation']['test_results'].pop(0)
-                    traces.loc[index,'trace']=json.dumps(value)
+                    attempts.loc[index,'trace']=json.dumps(value)
                 elif change=='trial':responses.loc[0,'trial']=2
                 elif change=='condition':responses.loc[0,'test_condition']='different'
                 elif change=='drop':frames['responses']=responses.iloc[1:].copy()
@@ -7862,6 +7866,9 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
                 elif change=='model':subjects.loc[0,'display_name']='A guessed checkpoint'
                 elif change=='version':subjects.loc[0,'harness_version']='current'
                 elif change=='effort':subjects.loc[0,'reasoning_effort']='high'
+                elif change=='lost_ungraded_attempt':frames['attempts']=attempts.iloc[:-1].copy()
+                elif change=='extra_unlinked_grade':frames['responses']=pd.concat([responses,responses.iloc[:1].assign(attempt_id=None)],ignore_index=True)
+                elif change=='source_alias':subjects.loc[0,'subject_features_extra']=subjects.loc[0,'subject_features_extra'].replace('source_display_name=fixture/run_a','source_display_name=wrong')
                 with self.assertRaises((ValueError,KeyError)):
                     _programbench(self.directory,frames,self.metadata,source)
 

@@ -105,6 +105,7 @@ class BenchmarkBuild(ABC):
         ] = set()
         self._response_ids: set[str] = set()
         self._asset_rows: dict[str, dict[str, object]] = {}
+        self._attempt_rows: dict[str, dict[str, object]] = {}
         self._asset_id_by_source_path: dict[Path, str] = {}
         self._item_asset_ids: dict[str, set[str]] = {}
         self._item_response_scales: dict[str, dict] = {}
@@ -427,6 +428,7 @@ class BenchmarkBuild(ABC):
         *,
         raw_item_id: str,
         content: str | None,
+        testlet_id: str | None = None,
         attachments: list[dict[str, object]] | None = None,
         grading_criterion: dict | str,
         verifier: Judge | ExactMatcher,
@@ -596,6 +598,7 @@ class BenchmarkBuild(ABC):
             benchmark_id,
             raw_item_id,
             content,
+            testlet_id=testlet_id,
             asset_manifest=asset_manifest,
             grading_criterion=grading_criterion,
             verifier=verifier,
@@ -614,6 +617,27 @@ class BenchmarkBuild(ABC):
         self._item_response_scales[item_id] = response_scale
         return item_id
 
+    def add_attempt(self, *, subject_id: str, raw_attempt_id: str, trace: str | None) -> str:
+        """Register one released execution, shared by any number of item grades."""
+        if self._active_benchmark_id is None:
+            raise BuildContractError("add_attempt() requires an active build")
+        if not isinstance(raw_attempt_id, str) or not raw_attempt_id.strip():
+            raise BuildContractError("raw_attempt_id must be a nonempty string")
+        if trace is not None and not isinstance(trace, str):
+            raise BuildContractError("attempt trace must be a string or None")
+        try:
+            _tables.get_subject_registration(subject_id)
+        except KeyError:
+            raise BuildContractError("attempt references an unregistered subject") from None
+        payload = json.dumps(["attempt:v1", self.slug, subject_id, raw_attempt_id], ensure_ascii=False)
+        attempt_id = hashlib.sha256(payload.encode()).hexdigest()[:16]
+        row = dict(attempt_id=attempt_id, benchmark_id=self.slug, subject_id=subject_id,
+                   raw_attempt_id=raw_attempt_id, trace=trace)
+        prior = self._attempt_rows.setdefault(attempt_id, row)
+        if prior != row:
+            raise BuildContractError(f"conflicting registration for attempt {attempt_id}")
+        return attempt_id
+
     def add_response(
         self,
         *,
@@ -625,6 +649,7 @@ class BenchmarkBuild(ABC):
         trial: int = 1,
         test_condition: str | None = None,
         interactors: str | None = None,
+        attempt_id: str | None = None,
         **extra_columns: object,
     ) -> str:
         """Validate and commit one final response row, then return its ID.
@@ -678,6 +703,10 @@ class BenchmarkBuild(ABC):
             raise BuildContractError(
                 f"{self.slug}: add_response() item_id must be a string"
             )
+        if attempt_id is not None:
+            attempt = self._attempt_rows.get(attempt_id) if isinstance(attempt_id, str) else None
+            if attempt is None or attempt["subject_id"] != subject_id:
+                raise BuildContractError("response references an absent attempt or a different subject")
         if (
             isinstance(trial, bool)
             or not isinstance(trial, Integral)
@@ -778,12 +807,13 @@ class BenchmarkBuild(ABC):
                 "test_condition": test_condition,
                 "interactors": interactors,
                 "response": response,
+                "attempt_id": attempt_id,
             }
         )
         hash_row = {
             column: value
             for column, value in stored_row.items()
-            if column != "response_id"
+            if column not in {"response_id", "attempt_id"}
         }
         response_id = _measurement_ids.response_id_from_row(
             _measurement_ids.response_identity_v1(hash_row, reference_answer)
@@ -978,17 +1008,19 @@ class BenchmarkBuild(ABC):
             "items": {"item_key", "raw_item_id", "content", "grading_criterion", "verifier"},
             "responses": {"response_key", "subject_key", "item_key", "response"},
             "traces": {"response_key", "trace"},
+            "attempts": {"attempt_key", "subject_key", "raw_attempt_id", "trace"},
         }
         optional = {
             "subjects": {"features", "access_date"},
-            "items": {"attachments", "features", "verifier_features"},
+            "items": {"attachments", "features", "verifier_features", "testlet_id"},
             # reference_answer is the existing add_response compatibility input;
             # it is never an output column. Explicit None preserves legacy IDs.
-            "responses": {"trial", "test_condition", "interactors", "reference_answer"},
+            "responses": {"trial", "test_condition", "interactors", "reference_answer", "attempt_key"},
             "traces": set(),
+            "attempts": set(),
         }
         primary_keys = {"subjects": "subject_key", "items": "item_key",
-                        "responses": "response_key", "traces": "response_key"}
+                        "responses": "response_key", "traces": "response_key", "attempts": "attempt_key"}
         if not isinstance(supplied, dict) or not {"subjects", "items", "responses"} <= supplied.keys():
             raise BuildContractError("build_tables() must return subjects, items, and responses DataFrames")
         if supplied.keys() - required.keys():
@@ -1004,8 +1036,9 @@ class BenchmarkBuild(ABC):
             extra = set(frame.columns) - required[name] - optional[name]
             if missing or extra:
                 raise BuildContractError(f"build_tables().{name}: missing columns {sorted(missing)}, unknown columns {sorted(extra)}")
-            for key in set(frame.columns) & {"subject_key", "item_key", "response_key"}:
-                valid = frame[key].map(lambda value: isinstance(value, (str, Integral)) and not isinstance(value, bool))
+            for key in set(frame.columns) & {"subject_key", "item_key", "response_key", "attempt_key"}:
+                values = frame[key].dropna() if (name, key) == ("responses", "attempt_key") else frame[key]
+                valid = values.map(lambda value: isinstance(value, (str, Integral)) and not isinstance(value, bool))
                 if not valid.all():
                     raise BuildContractError(f"build_tables().{name}.{key} requires non-null string or integer keys")
             if frame[primary_keys[name]].duplicated().any():
@@ -1025,6 +1058,22 @@ class BenchmarkBuild(ABC):
             self.add_subject(**{key: value for key, value in row.items() if key != "subject_key"})
             for row in subjects.to_dict("records")
         ]
+        if "attempts" in tables:
+            if not tables["attempts"].subject_key.isin(subjects.subject_key).all():
+                raise BuildContractError("build_tables().attempts references an unknown subject_key")
+            attempts = tables["attempts"].merge(subject_ids, on="subject_key", how="left", validate="many_to_one")
+            attempt_ids = attempts[["attempt_key"]].copy()
+            attempt_ids["attempt_id"] = [
+                self.add_attempt(subject_id=row.subject_id, raw_attempt_id=row.raw_attempt_id, trace=row.trace)
+                for row in attempts.itertuples()
+            ]
+            if "attempt_key" in responses:
+                missing = responses.attempt_key.notna() & ~responses.attempt_key.isin(attempt_ids.attempt_key)
+                if missing.any():
+                    raise BuildContractError("responses references an unknown attempt_key")
+                responses = responses.merge(attempt_ids, on="attempt_key", how="left", validate="many_to_one").drop(columns="attempt_key")
+        elif "attempt_key" in responses:
+            raise BuildContractError("responses.attempt_key requires an attempts table")
         item_ids = items[["item_key"]].copy()
         item_ids["item_id"] = [
             self.add_item(**{key: value for key, value in row.items() if key != "item_key"})
@@ -1091,6 +1140,7 @@ class BenchmarkBuild(ABC):
             [self._asset_rows[key] for key in sorted(self._asset_rows)],
             columns=_tables.parquet_columns("assets"),
         )
+        attempts = pd.DataFrame(list(self._attempt_rows.values()), columns=_tables.parquet_columns("attempts"))
         try:
             registered_asset_ids = _tables.validate_asset_relations(
                 registered_items,
@@ -1206,6 +1256,10 @@ class BenchmarkBuild(ABC):
                 )
             if not traces.empty:
                 _tables.write_parquet(traces, staging_dir / "traces.parquet")
+            if not attempts.empty:
+                # Shared executions can be large; selecting one must not require
+                # decompressing unrelated trajectories in the browser.
+                _tables.write_parquet(attempts, staging_dir / "attempts.parquet", row_group_size=1)
             if not assets.empty:
                 # One file payload per row group permits readers to retrieve a
                 # selected asset without decoding unrelated byte blobs.
@@ -1214,7 +1268,7 @@ class BenchmarkBuild(ABC):
                     row_group_size=1,
                 )
             _tables.save(staging_dir, expected_benchmark_id=self.slug, additional_tables={
-                name: table for name, table in (("responses", resp), ("traces", traces), ("assets", assets))
+                name: table for name, table in (("responses", resp), ("traces", traces), ("attempts", attempts), ("assets", assets))
                 if table is not None and not table.empty
             })
 
@@ -1230,6 +1284,7 @@ class BenchmarkBuild(ABC):
                 "benchmarks.parquet",
                 "responses.parquet",
                 "traces.parquet",
+                "attempts.parquet",
             )
             for output_name in output_names:
                 staged_path = staging_dir / output_name
@@ -1315,6 +1370,7 @@ class BenchmarkBuild(ABC):
         self._response_keys = set()
         self._response_ids = set()
         self._asset_rows = {}
+        self._attempt_rows = {}
         self._asset_id_by_source_path = {}
         self._item_asset_ids = {}
         self._item_response_scales = {}
@@ -1402,6 +1458,7 @@ class BenchmarkBuild(ABC):
         self._response_keys = set()
         self._response_ids = set()
         self._asset_rows = {}
+        self._attempt_rows = {}
         self._asset_id_by_source_path = {}
         self._item_asset_ids = {}
         self._item_response_scales = {}

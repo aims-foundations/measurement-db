@@ -24788,7 +24788,8 @@ def _programbench_sources(directory, metadata):
                 verifier=dict(**metadata['grading']['verifiers']['published'], grader_version=version, active_test_names=names))
             trace = dict(source_run=run, task_id=task, trajectory=trajectory, evaluation=evaluation, published_tests=tests)
             native[run, task] = dict(subject=model, item=identity, grade=score,
-                trace_sha256=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), grader_version=version)
+                trace_sha256=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), grader_version=version,
+                tests=active if tests is not None else {})
     return dict(native=native, subjects=subjects, items=items, counts=dict(counts), runs=len(registered))
 
 
@@ -24799,52 +24800,85 @@ def _programbench(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         key = features['source_run'], features['configuration_sha256']
         original = source['subjects'][key]
-        _check(features, dict(source_run=key[0], configuration_sha256=key[1], model_alias=original['model_alias'], provider=original['provider']),
-            'ProgramBench complete recorded model/configuration identity')
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(original['model_alias'], original['model_alias'])
+        expected_features = dict(source_run=key[0], configuration_sha256=key[1],
+            model_alias=original['model_alias'], provider=original['provider'])
+        if label != original['model_alias']:
+            expected_features['source_display_name'] = original['model_alias']
+        _check(features, expected_features, 'ProgramBench complete recorded model/configuration identity')
         _check((row.display_name,row.harness,row.harness_version),
-            (original['model_alias'],metadata['build']['parameters']['labels']['harness'],original['mini_version']),
-            'ProgramBench original model label, provider and scaffold version')
+            (label,metadata['build']['parameters']['labels']['harness'],original['mini_version']),
+            'ProgramBench explicit source model mapping and recorded scaffold version')
         _check(all(_subject_field_is_expected(row, field) for field in ['provider', 'normalized_name', 'release_date']), True, 'ProgramBench exact registered model mapping')
         _check(None if pd.isna(row.reasoning_effort) else row.reasoning_effort, original['reasoning_effort'],
             'ProgramBench original reasoning setting without inferred defaults')
         subjects[row.subject_id] = key
         seen_subjects[key] += 1
     _check(seen_subjects, Counter({key:1 for key in source['subjects']}), 'ProgramBench all recorded configurations')
-    items, seen_items = {}, Counter()
+    expected_items = set()
+    for original in source['native'].values():
+        content_hash, task, version, _ = original['item']
+        expected_items.update((content_hash, task, version, name) for name in original['tests'])
+    @lru_cache(maxsize=128)
+    def stimulus_hash(content):
+        # Tests share a stimulus. Compare every exact string while parsing each
+        # repeated prompt once; this remains independent of builder identities.
+        return _digest(json.dumps(json.loads(content), sort_keys=True))
+    items = {}
     for row in tables['items'].itertuples():
-        features = _features(row.item_features)
-        content = json.loads(row.content)
-        key = _digest(json.dumps(content, sort_keys=True)), features['task_id'], features['grader_version'], features['test_set_sha256']
-        original = source['items'][key]
-        _check(features, original['features'], 'ProgramBench source task and exact grading scope')
-        _check(row.raw_item_id, original['alias'], 'ProgramBench task alias and test selection')
-        _check(json.loads(row.grading_criterion), dict(reference_answer=None,rule=metadata['grading']['rule']), 'ProgramBench native fractional scale')
         verifier = json.loads(row.verifier)
-        _check(json.loads(verifier['spec']), original['verifier'], 'ProgramBench versioned grader and complete test-name selection')
-        _check(verifier['class'], 'judge', 'ProgramBench original grading protocol')
-        _check(pd.isna(row.asset_manifest), True, 'ProgramBench named environments are not falsely described as captured container bytes')
+        spec = json.loads(verifier['spec'])
+        key = (stimulus_hash(row.content), row.testlet_id,
+               spec['grader_version'], spec['test_name'])
+        _check(key in expected_items, True, 'ProgramBench exact source stimulus and test identity')
+        _check(row.raw_item_id, row.testlet_id + ':' + spec['test_name'], 'ProgramBench full native test identifier')
+        _check(pd.isna(row.item_features), True, 'ProgramBench structural membership is not an item feature')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']), 'ProgramBench binary test criterion')
+        _check(spec, dict(**metadata['grading']['verifiers']['published'],
+            grader_version=key[2], test_name=key[3]), 'ProgramBench versioned per-test verifier')
+        _check(verifier['class'], 'exact_matcher', 'ProgramBench recorded deterministic test verdict')
+        _check(pd.isna(row.asset_manifest), True, 'ProgramBench historical container bytes are not fabricated')
         items[row.item_id] = key
-        seen_items[key] += 1
-    _check(seen_items, Counter({key:1 for key in source['items']}), 'ProgramBench complete inputs and grading identities')
-    traces = tables['traces'].set_index('response_id').trace.to_dict()
-    _check(len(traces), len(tables['traces']), 'ProgramBench unique trace links')
-    seen = Counter()
-    for row in tables['responses'].itertuples():
-        trace = json.loads(traces[row.response_id])
+    _check(Counter(items.values()), Counter({key:1 for key in expected_items}), 'ProgramBench complete distinct behavioral tests')
+
+    attempts, seen_attempts = {}, Counter()
+    for row in tables['attempts'].itertuples():
+        trace = json.loads(row.trace)
         key = trace['source_run'], trace['task_id']
         original = source['native'][key]
-        _check(_digest(json.dumps(trace,sort_keys=True,ensure_ascii=False,allow_nan=False)), original['trace_sha256'],
-            'ProgramBench full native trajectory, evaluation and test verdicts')
-        _check((subjects[row.subject_id],items[row.item_id]), (original['subject'],original['item']),
-            'ProgramBench original subject-task association')
-        _check(None if pd.isna(row.response) else row.response, original['grade'], 'ProgramBench exact fractional score or unavailable evaluation')
-        _check(row.test_condition, 'run='+key[0]+';grader='+original['grader_version'], 'ProgramBench source run and grading version')
-        _check(row.trial, 1, 'ProgramBench one native attempt per run and task')
+        _check(_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), original['trace_sha256'],
+            'ProgramBench full original execution, statuses, retries and test map')
+        _check(row.raw_attempt_id, '/'.join(key), 'ProgramBench original attempt identity')
+        _check(subjects[row.subject_id], original['subject'], 'ProgramBench attempt subject')
+        attempts[row.attempt_id] = key
+        seen_attempts[key] += 1
+    _check(seen_attempts, Counter({key:1 for key in source['native']}), 'ProgramBench every released attempt including unevaluated executions')
+
+    _check(tables['responses'].attempt_id.notna().all(), True, 'ProgramBench every test outcome has an execution link')
+    seen = Counter()
+    for attempt_id, group in tables['responses'].groupby('attempt_id', sort=False):
+        key = attempts[attempt_id]
+        original = source['native'][key]
+        expected = original['tests']
+        actual = {}
+        for row in group.itertuples():
+            content_hash, task, version, test_name = items[row.item_id]
+            _check((content_hash, task, version), original['item'][:3], 'ProgramBench original task, stimulus and grader')
+            _check(subjects[row.subject_id], original['subject'], 'ProgramBench test outcome subject')
+            _check(row.response, float(expected[test_name]), 'ProgramBench exact binary verdict')
+            _check(test_name not in actual, True, 'ProgramBench one outcome per active test and attempt')
+            _check(row.trial, 1, 'ProgramBench no artificial trials from repeated evaluator records')
+            _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'ProgramBench source run belongs to the attempt')
+            actual[test_name] = bool(row.response)
+        _check(actual, expected, 'ProgramBench complete active test set per execution')
         seen[key] += 1
-    _check(seen, Counter({key:1 for key in source['native']}), 'ProgramBench every published attempt exactly once')
-    _check(set(traces), set(tables['responses'].response_id), 'ProgramBench complete trace coverage')
-    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
-        source_runs=source['runs'], source_tasks=len({key[1] for key in seen}), **source['counts'])
+    _check(seen, Counter({key:1 for key, value in source['native'].items() if value['tests']}),
+           'ProgramBench no fabricated outcomes for empty or absent evaluations')
+    _check(len(tables.get('traces', [])), 0, 'ProgramBench shared trajectories are stored once per attempt')
+    return dict(source_responses=len(tables['responses']), source_subjects=len(subjects), source_items=len(items),
+        source_traces=0, source_attempts=len(attempts), source_runs=source['runs'],
+        source_tasks=len({key[1] for key in seen_attempts}),
+        source_testlets=tables['items'].testlet_id.nunique(), **source['counts'])
 
 
 def _psychosis_bench_sources(directory, metadata):

@@ -22,7 +22,12 @@ export function AnswerPanel({
   showName?: boolean;
   presentation: Presentation;
 }) {
-  const answer = useRecord(source, "traces", observation.response_id);
+  const table = observation.attempt_id ? "attempts" : "traces";
+  const answer = useRecord(
+    source,
+    table,
+    observation.attempt_id ?? observation.response_id,
+  );
   const scores =
     answer.status === "ready"
       ? presentation.answerScores?.(answer.value?.trace ?? "")
@@ -47,7 +52,7 @@ export function AnswerPanel({
       ) : answer.status === "error" ? (
         <SourceError
           source={source}
-          table="traces"
+          table={table}
           message={answer.message}
           paged={answer.paged}
           onRetry={answer.retry}

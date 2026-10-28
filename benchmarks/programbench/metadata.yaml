@@ -2,23 +2,21 @@ benchmark:
   release: public
   release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: ProgramBench
-  description: Published ProgramBench attempts to reconstruct executable behavior from a compiled program and its
-    documentation, with native fractional behavioral-test scores and complete recorded agent trajectories.
-  testing_condition: 'The versioned official registry identifies 25 submission runs. Keep every published trajectory,
-    including the one attempt with no released evaluation. Preserve the two recorded initial messages and the exact
-    named container environment; original historical container bytes are not included and no modern image or prompt
-    is substituted. Model aliases, decoding and scaffold configurations come from the saved trajectory, not a current
-    template. There are 28 distinct recorded configurations. Keep the original test verdicts and the registry ignore
-    policy; test identifiers and grader versions are part of item grading identity. Source evaluation files can
-    repeat test identifiers; the published map uses the last result for each identifier, as in the upstream packaging
-    function. Original repeated test records remain in the trace. No model, compilation, container or grader is
-    run. This is a newer source snapshot than the legacy 15-run website scrape: sixteen legacy cells lack corresponding
-    records in these published forks and are retained in the archived old collection. Scores must be compared with
-    their source snapshot and grading scope.'
+  description: Individual behavioral-test outcomes from published ProgramBench attempts to reconstruct executable
+    programs. Tests belonging to the same original program task form a testlet; each execution retains its complete trajectory.
+  testing_condition: 'Import all 25 submission runs in the versioned registry and their 28 recorded configurations.
+    Each published active test verdict is one binary observation. Preserve the full branch/test identifier and
+    grader version; source evaluation files can repeat identifiers, and the published map uses the final result.
+    Retain all repeated native records, statuses, errors and original model settings in the shared attempt trace.
+    An attempt with no released evaluation or an empty test map remains an attempt without fabricated test observations.
+    The original two initial messages and named container environment remain the item stimulus. Historical container
+    bytes are not reconstructed. Tests are grading information, not instructions presented to the model. No model,
+    compilation, container or grader is run. Task-level fractions can be reconstructed from each recorded attempt’s published
+    active tests; macro-averaging over tasks must not be replaced by pooling all individual tests.'
   paper_url: https://arxiv.org/abs/2605.03546
   data_source_url: https://github.com/facebookresearch/ProgramBench
   subject_type: model configuration
-  item_type: task
+  item_type: behavioral test within a program testlet
   license: The official registry declares MIT. The pinned result repositories do not declare redistribution terms;
     their captured inputs and derived tables remain local pending clarification. Referenced task programs and
     container contents retain their own upstream licenses.
@@ -38,13 +36,15 @@ benchmark:
   - software_engineering
   - agents_and_tool_use
   multi_single_turn: multi_turn
-  response_type: continuous_bounded
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values: [0, 1]
     direction: higher_is_better
-  categorical: false
+    meanings:
+      '0': did not pass under the published evaluator
+      '1': passed
+  categorical: true
   release_date: 2026-05
   granularity: item
   version: c19e570f64719c8326ccdcc7af803447cb89d1a6
@@ -267,17 +267,15 @@ sources:
     size: 367504502
     sha256: 0cd1a4f741dce6cfb60fee3bad99431a7f1be49271c6fe8fa15670b26973455f
 grading:
-  rule: Fraction of the released active behavioral-test verdicts that are true, using the exact per-task test identifiers
-    in this verifier and the versioned official registry ignore policy. The upstream aggregation defines an explicitly
-    published empty test map as zero. A recorded attempt with no published evaluation remains null. Preserve this
-    fraction rather than replacing it with the older 0/1/2 Resolved/Almost-Resolved categorization. Evaluation-result
-    statuses are passed only when the native status is passed; duplicate test identifiers follow the original last-result-wins
-    map.
+  rule: >-
+    The released Boolean verdict for this exact behavioral test: 1 for true and 0 for false.
+    Preserve the official active-test selection and last-result-wins packaging policy. A false verdict means
+    the test did not pass under the original evaluator; its native failure, error, skipped or not-run status
+    remains in the shared attempt trace. An absent evaluation does not create a zero observation.
   verifiers:
     published:
-      kind: published_behavioral_test_fraction
+      kind: published_behavioral_test_verdict
       registry_revision: c19e570f64719c8326ccdcc7af803447cb89d1a6
       source: https://github.com/ProgramBench/submissions/blob/c19e570f64719c8326ccdcc7af803447cb89d1a6/scripts/compile_leaderboard.py
-      field: _stats/score.json
+      field: _stats/score.json[task_id][test_name]
       selection: Remove names in ignored_tests.json for the same task.
-      empty_map: 0 only for an explicitly published empty map; absent evaluation remains null.

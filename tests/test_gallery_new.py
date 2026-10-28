@@ -124,6 +124,33 @@ def read_table(output, name):
     return {identity: pages[page][identity] for identity, page in index.items()}
 
 
+def test_shared_attempt_answers_are_exported_once_and_keep_response_links(tmp_path):
+    source, data = fixture(tmp_path)
+    tables = source / "formatted_tables"
+    attempts = [{"attempt_id": f"a{s}", "subject_id": f"s{s}", "trace": f"Shared program {s}"}
+                for s in range(2)]
+    responses = [{**row, "attempt_id": row["subject_id"].replace("s", "a")} for row in data["responses"]]
+    pq.write_table(pa.Table.from_pylist(attempts), tables / "attempts.parquet")
+    pq.write_table(pa.Table.from_pylist(responses), tables / "responses.parquet")
+    (tables / "traces.parquet").unlink()
+    output = tmp_path / "gallery"
+    gallery.build([source], output, page_size=5)
+    manifest = json.loads((output / "0/manifest.json").read_text())
+    assert manifest["tables"]["attempts"]["rows"] == 2
+    assert "traces" not in manifest["tables"]
+    answers = read_table(output / "0", "attempts")
+    observed = read_table(output / "0", "responses")
+    assert len(observed) == 48
+    for response in observed.values():
+        assert answers[response["attempt_id"]]["subject_id"] == response["subject_id"]
+    lazy = tmp_path / "lazy"
+    gallery.build([source], lazy, parquet_base="https://fixture.invalid/pinned")
+    descriptor = json.loads((lazy / "0/manifest.json").read_text())["tables"]["attempts"]
+    assert descriptor["key"] == "attempt_id"
+    assert descriptor["parquet"]["url"].endswith("/attempts.parquet")
+    check(tables, lazy / "0")
+
+
 @pytest.mark.parametrize("kind", ["binary", "pairwise", "mixed", "item_bank"])
 def test_every_record_retains_ids_grades_metadata_and_exact_answers(tmp_path, kind):
     source, data = fixture(tmp_path, kind=kind)

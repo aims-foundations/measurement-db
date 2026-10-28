@@ -9,6 +9,7 @@ export type Subject = SourceRecord & {
 
 export type Item = SourceRecord & {
   item_id: string;
+  testlet_id?: string | null;
   content: string | null;
   grading_criterion: string;
   asset_manifest: string | null;
@@ -16,6 +17,7 @@ export type Item = SourceRecord & {
 
 export type Observation = SourceRecord & {
   response_id: string;
+  attempt_id?: string | null;
   subject_id: string;
   item_id: string;
   trial: number;
@@ -25,6 +27,12 @@ export type Observation = SourceRecord & {
 };
 
 export type Trace = SourceRecord & { response_id: string; trace: string };
+export type Attempt = SourceRecord & {
+  attempt_id: string;
+  subject_id: string;
+  raw_attempt_id: string;
+  trace: string | null;
+};
 export type Asset = SourceRecord & {
   asset_id: string;
   data_url?: string;
@@ -42,6 +50,7 @@ export type TableRows = {
   items: Item;
   responses: Observation;
   traces: Trace;
+  attempts: Attempt;
   assets: Asset;
 };
 export type TableName = keyof TableRows;

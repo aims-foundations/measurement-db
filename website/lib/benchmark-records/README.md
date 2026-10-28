@@ -111,7 +111,7 @@ Reciprocal comparison links are disabled for partial items because uniqueness
 cannot be established from an incomplete set of attempts. Full published Rasch
 fits remain separately labeled. Items without observations still have pages.
 
-`record_parquet.py` indexes exact original items, traces, and attachments. Their
+`record_parquet.py` indexes exact original items, traces, shared attempts, and attachments. Their
 content stays in pinned Parquet and loads on selection through the authenticated
 source route. `record_packs.py` packs independently compressed JSON pages into
 static byte ranges, avoiding hundreds of thousands of deployment files. The
@@ -120,6 +120,13 @@ the client. Source reads stop before downloading or decompressing more than
 16 MiB for one selected record; oversized source pages offer the original pinned
 Parquet table for download. Values are never silently truncated. UI changes leave
 these record bundles unchanged.
+
+Schema v4 observations may include `attempt_id`. The answer panel uses that link
+to read the shared execution from `attempts`; otherwise it reads the legacy
+response-specific `traces` record. Both use the same lazy loading, cache, and
+bounded-preview transport. `items.testlet_id` is retained as source data; it does
+not change paging or imply that a page contains a complete testlet. Page means
+still describe the displayed item outcomes, not a benchmark's official aggregate.
 
 `scripts/ci/check_gallery_records.py` verifies every source lookup position and
 compares full-record checksums, counts, and item coverage for all observation

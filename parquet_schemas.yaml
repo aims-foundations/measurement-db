@@ -1,14 +1,14 @@
-# Parquet schema version 3 (stored in measurement_db.schema_version metadata).
-# Single source of truth for the canonical columns in the six per-benchmark
+# Parquet schema version 4 (stored in measurement_db.schema_version metadata).
+# Single source of truth for the canonical columns in the per-benchmark
 # parquet schemas. Every benchmark writes exactly these columns, in this order,
 # with these types and nullability. Benchmark-specific extra columns are rejected.
 #
 # The operational owners are:
 #   * `scripts/build_measurement_tables/validate_measurement_tables.py`
-#       — loads these schemas and validates all six table types
+#       — loads these schemas and validates every table type
 #   * `scripts/build_measurement_tables/write_measurement_tables.py`
 #       — writes subjects / items / benchmarks
-#   * `build_base.py` — writes responses / traces / assets
+#   * `build_base.py` — writes responses / traces / attempts / assets
 #
 # ENFORCED, not just documentation: `validate_table` checks every table's
 # canonical columns against this file immediately before it is written
@@ -125,6 +125,16 @@ items:
       type: string
       nullable: false
       description: Original item identifier from the upstream data, kept for traceability.
+    - name: testlet_id
+      type: string
+      nullable: true
+      description: >-
+        Explicit membership in a group of items sharing an upstream task or
+        stimulus, scoped by benchmark_id. Use a stable upstream task identifier
+        including its task version when available. Null means membership is
+        unrecorded, not proof that an item is independent. This relationship is
+        separate from item_features and does not participate in item identity.
+        It does not identify an execution; responses.attempt_id does that.
     - name: content
       type: string
       nullable: true
@@ -458,6 +468,15 @@ responses:
         Derived by BenchmarkBuild.add_response using the version-1 identity
         payload so schema cleanup does not change existing IDs. Treat this
         as an opaque identifier, not a hash of the current exported columns.
+    - name: attempt_id
+      type: string
+      nullable: true
+      description: >-
+        Optional foreign key to attempts.attempt_id. Outcomes assessed from
+        the same recorded execution or generated artifact share this value.
+        The attempt must have the same subject and benchmark as this response.
+        Null means the execution relationship was not recorded. This link is
+        not an observation condition and does not change response identity.
     - name: benchmark_id
       type: string
       nullable: false
@@ -505,6 +524,36 @@ responses:
         No row means no available observation, not proof that no attempt occurred.
         Builder calls use explicit None for an ungraded attempt and reject NaN;
         pandas missing sentinels in assembled tables are serialized as null.
+
+attempts:
+  file: "{dataset}/formatted_tables/attempts.parquet"
+  primary_key: [attempt_id]
+  description: >-
+    Optional shared executions, including released attempts without usable
+    grades. One row per upstream execution or generated artifact, regardless
+    of how many items grade it. Shared trajectories are stored once here;
+    traces.parquet remains available for evidence specific to one response.
+  columns:
+    - name: attempt_id
+      type: string
+      nullable: false
+      description: Stable identifier derived from benchmark, subject, and the upstream attempt identifier.
+    - name: benchmark_id
+      type: string
+      nullable: false
+      description: Owning benchmark; agrees with every linked response.
+    - name: subject_id
+      type: string
+      nullable: false
+      description: Foreign key to subjects.subject_id; the subject that produced this execution.
+    - name: raw_attempt_id
+      type: string
+      nullable: false
+      description: Exact upstream execution identifier, qualified by source run where necessary.
+    - name: trace
+      type: string
+      nullable: true
+      description: Complete released execution or generated artifact and its provenance; null when unavailable.
 
 traces:
   file: "{dataset}/formatted_tables/traces.parquet"

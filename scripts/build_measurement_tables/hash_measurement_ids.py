@@ -365,7 +365,7 @@ def response_identity_v1(
     payload = {name: row[name] for name in canonical}
     payload.update(reference_answer=reference_answer, trace=None)
     payload.update({key: value for key, value in row.items()
-                    if key not in payload and key != "response_id"})
+                    if key not in payload and key not in {"response_id", "attempt_id"}})
     return payload
 
 

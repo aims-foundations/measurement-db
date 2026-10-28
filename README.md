@@ -46,12 +46,15 @@ Curating a benchmark is not simply a data-cleaning task. It requires reconstruct
 We welcome contributions from benchmark authors, evaluation researchers, practitioners, and students. The complete and maintained instructions are available in the [Instructions for Item-level Measurement Data Curation](link). Questions may be submitted by opening an issue. Completed curation work may be submitted for review through a pull request to this repository.
 
 
-The six public datasets follow schema version 3, defined in
-[`parquet_schemas.yaml`](parquet_schemas.yaml). This release replaces legacy
-grading fields, fixes table types, and includes grading protocols in item
-identity. Item and dependent response IDs therefore change; download all tables
-from the same Hugging Face revision when joining them. On Hugging Face the
-response table is named `response.parquet`; local builders write `responses.parquet`.
+Canonical table schemas are defined in [`parquet_schemas.yaml`](parquet_schemas.yaml).
+Schema version 4 adds nullable `items.testlet_id`, nullable `responses.attempt_id`,
+and optional `attempts.parquet` for one shared execution with multiple item grades.
+These structural relationships do not change existing item or response IDs.
+Use `python -m scripts.build_measurement_tables.migrate_testlet_schema SOURCE OUTPUT`
+to migrate a v3 table directory into a new directory with null links and exact
+readback verification. ProgramBench's binary test conversion uses its builder.
+Always join tables from one coherent release. Canonical response files are named
+`responses.parquet`; readers may also encounter the legacy `response.parquet` name.
 Each item requires a `grading_criterion` and a `verifier`. The criterion is a
 JSON object containing a `reference_answer`, a `rule`, or both (nonempty strings);
 the verifier describes the grader or implementation that applies it. Both enter
@@ -78,7 +81,7 @@ means no available observation. Canonical Parquet types are fixed, including
 nullable `float64` grades and `int64` trial indices. See
 [`parquet_schemas.yaml`](parquet_schemas.yaml) for the complete contract.
 
-Each of the six table types has one fixed schema across all benchmarks: the
+Each table type has one fixed schema across all benchmarks: the
 same columns, order, types, and nullability. Unknown values use nullable fields;
 benchmark-specific columns are rejected. Keep source evidence in the pinned
 raw inputs and document grade transformations in the builder. Derived analysis
@@ -88,8 +91,10 @@ tables when a benchmark has no such data; when present, their schemas are fixed.
 `validate_dataset(tables, expected_benchmark_id=...)` checks a complete benchmark
 across its tables: keys and references, grade domains, trace and asset links,
 and summary statistics recomputed from the rows. Completed builders run this
-check before replacing their outputs. Migration and publishing tools import
-the same validator; validating individual tables alone is insufficient.
+check before replacing their outputs. Release checks use the same validator;
+validating individual tables alone is insufficient. The additive migration
+separately verifies that every original value is unchanged; it does not replace
+the source release's dataset and provenance checks.
 
 `metadata.yaml` records benchmark facts and upstream provenance. Under build
 contract 2, `sources.upstream` lists source URLs and revisions. Named entries also
@@ -281,9 +286,10 @@ patches linked to their source runs.
 | Input table | Required columns | Optional columns |
 | --- | --- | --- |
 | `subjects` | `subject_key`, `raw_label` | `features`, `access_date` |
-| `items` | `item_key`, `raw_item_id`, `content`, `grading_criterion`, `verifier` | `attachments`, `features`, `verifier_features` |
-| `responses` | `response_key`, `subject_key`, `item_key`, `response` | `trial`, `test_condition`, `interactors` |
+| `items` | `item_key`, `raw_item_id`, `content`, `grading_criterion`, `verifier` | `attachments`, `features`, `verifier_features`, `testlet_id` |
+| `responses` | `response_key`, `subject_key`, `item_key`, `response` | `trial`, `test_condition`, `interactors`, `attempt_key` |
 | `traces` | `response_key`, `trace` | — |
+| `attempts` | `attempt_key`, `subject_key`, `raw_attempt_id`, `trace` | — |
 
 Keys are temporary string or integer identifiers linking these input tables;
 they are not exported. Each table's own key must be unique and non-null, and
@@ -292,7 +298,13 @@ the existing registration rules, so different source keys can resolve to the
 same subject or item. If `trial` is omitted, attempts are numbered from one in
 response-table order within each canonical subject, item, condition, and
 interactor combination. Supply `trial` explicitly when the source records it.
-Trace rows link through `response_key` and preserve the complete text.
+Trace rows link through `response_key` and preserve the complete text. Shared executions
+link through `attempt_key`; their complete text is stored once in `attempts`. Row builders
+use `add_attempt(subject_id=..., raw_attempt_id=..., trace=...)` and pass its returned
+ID to `add_response(attempt_id=...)`. Repeated measurements still need distinct
+trials within the existing observation key; an attempt link does not replace it.
+Testlets and attempts are optional: existing
+builders emit null links without changes.
 
 Use the source's model identifier as a subject's `raw_label` when it is known,
 for example `claude-haiku-4-5`. Keep the agent framework in `features.harness`
@@ -526,6 +538,7 @@ benchmarks/<benchmark>/
     items.parquet
     responses.parquet
     traces.parquet       # when available
+    attempts.parquet     # when shared executions are recorded
     assets.parquet       # when available
 ```
 

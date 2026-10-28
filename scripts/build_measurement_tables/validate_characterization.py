@@ -22,7 +22,7 @@ import pandas as pd
 from .validate_benchmark_metadata import _load_yaml_mapping, BenchmarkMetadataError
 
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "characterization_schema.yaml"
-TABLE_NAMES = ("subjects", "items", "benchmarks", "responses", "traces", "assets")
+TABLE_NAMES = ("subjects", "items", "benchmarks", "responses", "traces", "assets", "attempts")
 
 
 class CharacterizationError(ValueError):
@@ -119,6 +119,15 @@ def check_tables(characterization, tables):
             f"table set differs: expected {sorted(expected)}, observed {sorted(tables)}")
     for name, observed in characterize_tables(tables).items():
         if observed != expected[name]:
+            # A v3 review still proves all original values after the additive
+            # v4 migration. Only entirely unrecorded structural links qualify;
+            # assigning membership or execution links requires a new review.
+            link = {"items": "testlet_id", "responses": "attempt_id"}.get(name)
+            frame = tables[name]
+            if (link in frame and frame[link].isna().all()
+                    and len(frame) == expected[name]["rows"]
+                    and logical_sha256(frame.drop(columns=link)) == expected[name]["logical_sha256"]):
+                continue
             raise CharacterizationError(
                 f"tables.{name}: expected {expected[name]}, observed {observed}")
 

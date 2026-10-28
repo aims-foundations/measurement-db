@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
-    rows: 4965
-    logical_sha256: 3cd543acc9d23951efe1f98919a175eb83d80d64171ebdc46199d44ba15fd40e
   subjects:
     rows: 28
     logical_sha256: 5be3e6e35c0fbd61e53f46b1dce4a6f8786ed45ed73bf9d8154de1c8831fb896
-  responses:
-    rows: 4965
-    logical_sha256: fbe4c41d34fb10aa9464bc1a9611dfe252c1b6ec429dc8c3517a4bf768d01a8e
   items:
-    rows: 1317
-    logical_sha256: 8a393263746e2f1f76708212faba0c5b4f03a5c2012b8a32fa74ce6b382c02b6
+    rows: 1483092
+    logical_sha256: 36a5dade7008b36e8980615d0b6529229b7daedc077d726b980adb59908f6cb4
   benchmarks:
     rows: 1
-    logical_sha256: df07691b4e5bdc61786299e1f9c41bbef0b2bc974c3f3ad435864905fb32d544
+    logical_sha256: 2e2015fe9ec490dda7345f0918de138faf23ba8605ef679440c5fa71faaf6b70
+  responses:
+    rows: 6119913
+    logical_sha256: 866a92137b34ac94fa085d4bb8a17a176a181ad3e28e60524bc0e0198f84b869
+  attempts:
+    rows: 4965
+    logical_sha256: c552ebbf7e95351535620a1bf2255956dd1a3cb73f0fddb561524f742e3c7346
 source_claims:
   source_responses:
     kind: count
@@ -22,8 +22,9 @@ source_claims:
     source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
     locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
       the pinned submission forks.
-    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
-    expected: 4965
+    scope: All published active per-test Boolean verdicts in the 25 pinned submission runs; no fabricated outcomes
+      for missing or empty evaluations.
+    expected: 6119913
   source_subjects:
     kind: count
     origin: derived_from_data
@@ -38,16 +39,17 @@ source_claims:
     source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
     locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
       the pinned submission forks.
-    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
-    expected: 1317
+    scope: Distinct original task stimuli, full test identifiers and grader versions represented by the released
+      active verdicts.
+    expected: 1483092
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
     locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
       the pinned submission forks.
-    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
-    expected: 4965
+    scope: Response-specific traces are omitted; complete executions are stored once in the attempts table.
+    expected: 0
   source_runs:
     kind: count
     origin: derived_from_data
@@ -96,3 +98,20 @@ source_claims:
       the pinned submission forks.
     scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
     expected: 1
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: Every published trajectory, including the one execution without a released evaluation; one complete shared
+      trace per attempt.
+    expected: 4965
+  source_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: Distinct original program task identifiers grouping the individual behavioral-test items.
+    expected: 200

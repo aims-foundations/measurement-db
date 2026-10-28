@@ -401,6 +401,7 @@ def register_item(
     verifier: "Judge | ExactMatcher | str",
     response_scale: dict | str,
     asset_manifest: str | None = None,
+    testlet_id: str | None = None,
     features: dict | None = None,
     verifier_features: dict | None = None,
 ) -> str:
@@ -436,6 +437,8 @@ def register_item(
     conditions or interactors share this ``item_id`` and are distinguished
     by ``test_condition`` / ``interactors`` on their responses.
     """
+    if testlet_id is not None and (not isinstance(testlet_id, str) or not testlet_id.strip()):
+        raise ValueError("register_item: testlet_id must be a nonempty string or None")
     if asset_manifest is not None:
         if not isinstance(asset_manifest, str):
             raise TypeError("register_item: asset_manifest must be a string or None")
@@ -506,6 +509,7 @@ def register_item(
             "item_id": iid,
             "benchmark_id": benchmark_id,
             "raw_item_id": str(raw_item_id),
+            "testlet_id": testlet_id,
             "content": content,
             "asset_manifest": asset_manifest,
             "grading_criterion": grading_criterion,

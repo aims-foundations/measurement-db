@@ -24,7 +24,7 @@ def prepare(job):
     blocked = sum(end-start for group in groups for start, end in group["ranges"])
     if not blocked:
         return slug, table, None
-    key = "item_id" if table == "items" else "response_id"
+    key = {"items": "item_id", "traces": "response_id", "attempts": "attempt_id"}[table]
     if not (output / "manifest.json").exists():
         export_previews(path, output, key, groups)
     saved = json.loads((output / "manifest.json").read_text())
@@ -96,7 +96,7 @@ def main():
         parser.error("--publish-branch must start with preview/")
     catalog = json.loads(args.catalog.read_text())
     jobs = [(slug, table, args.tables / slug / f"{table}.parquet", args.output / slug / table)
-            for slug, entry in catalog.items() for table in ("items", "traces")
+            for slug, entry in catalog.items() for table in ("items", "traces", "attempts")
             if entry["manifest"]["tables"].get(table, {}).get("parquet")]
     results = {}
     with ProcessPoolExecutor(max_workers=args.workers) as pool:

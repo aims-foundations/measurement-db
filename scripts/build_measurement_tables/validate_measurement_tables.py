@@ -259,7 +259,15 @@ def validate_table(
     if table in {"responses", "traces"}:
         problems.extend(_observation_integrity_problems(dataframe))
 
+    if table == "attempts" and "raw_attempt_id" in dataframe:
+        if dataframe.raw_attempt_id.dropna().map(lambda value: not isinstance(value, str) or not value.strip()).any():
+            problems.append("raw_attempt_id must be a nonempty string")
+
     if table == "items":
+        if "testlet_id" in dataframe:
+            invalid = dataframe.testlet_id.dropna().map(lambda value: not isinstance(value, str) or not value.strip())
+            if invalid.any():
+                problems.append("testlet_id must be a nonempty string or null")
         for field, canonicalize in (
             ("grading_criterion", canonical_grading_criterion),
             ("verifier", _serialize_verifier),
@@ -382,6 +390,23 @@ def validate_trace_relations(
         same = left.eq(right).fillna(False) | (left.isna() & right.isna())
         if not same.all():
             raise RuntimeError(f"{prefix}trace {name} disagrees with its linked response")
+
+
+def validate_attempt_relations(responses: pd.DataFrame, attempts: pd.DataFrame | None) -> None:
+    """An explicit attempt can supply many grades, all for its recorded subject."""
+    links = responses.loc[responses.attempt_id.notna(), ["attempt_id", "subject_id", "benchmark_id"]].drop_duplicates()
+    if attempts is None:
+        if not links.empty:
+            raise RuntimeError("responses.attempt_id references absent attempts.parquet")
+        return
+    joined = links.merge(attempts[["attempt_id", "subject_id", "benchmark_id"]],
+                         on="attempt_id", how="left", validate="many_to_one",
+                         indicator=True, suffixes=("_response", "_attempt"))
+    if joined._merge.ne("both").any():
+        raise RuntimeError("responses.attempt_id references an absent attempt")
+    for name in ("subject_id", "benchmark_id"):
+        if joined[f"{name}_response"].ne(joined[f"{name}_attempt"]).any():
+            raise RuntimeError(f"attempt {name} disagrees with its linked response")
 
 
 def validate_asset_relations(
@@ -608,13 +633,16 @@ def validate_dataset(
     benchmark_id = benchmark.benchmark_id
     if expected_benchmark_id is not None and benchmark_id != expected_benchmark_id:
         problems.append(f"benchmark_id {benchmark_id!r} does not match folder {expected_benchmark_id!r}")
-    for name in ("items", "responses", "traces", "assets"):
+    for name in ("items", "responses", "traces", "attempts", "assets"):
         if name in tables:
             wrong = tables[name].benchmark_id.ne(benchmark_id)
             if wrong.any():
                 problems.append(f"{name}.benchmark_id must match {benchmark_id!r} " + _row_locations(wrong))
     responses = tables.get("responses")
     traces = tables.get("traces")
+    attempts = tables.get("attempts")
+    if attempts is not None and not attempts.subject_id.isin(subjects.subject_id).all():
+        problems.append("attempts.subject_id references an absent subject")
     if benchmark.granularity == "item":
         if responses is None or responses.empty:
             problems.append("granularity='item' requires a nonempty responses.parquet")
@@ -637,6 +665,10 @@ def validate_dataset(
             validate_trace_relations(responses, traces)
         except RuntimeError as exc:
             problems.append(str(exc))
+    try:
+        validate_attempt_relations(observations, attempts)
+    except RuntimeError as exc:
+        problems.append(str(exc))
     try:
         # This also validates mixed-scale declarations for unobserved items.
         validate_response_grades(observations, benchmark.response_scale, items=items)

@@ -30,7 +30,7 @@ def test_batched_trace_write_preserves_values_types_and_nulls(tmp_path, monkeypa
     recovered = pq.read_table(output)
     writer.validate_parquet_schema("traces", recovered.schema)
     assert recovered.to_pylist() == data.to_dict("records")
-    assert recovered.schema.metadata[b"measurement_db.schema_version"] == b"3"
+    assert recovered.schema.metadata[b"measurement_db.schema_version"] == b"4"
     if rows:
         assert pq.ParquetFile(output).num_row_groups == 3
 

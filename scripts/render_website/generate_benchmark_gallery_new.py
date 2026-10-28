@@ -35,6 +35,7 @@ PRIMARY_KEYS = {
     "items": "item_id",
     "responses": "response_id",
     "traces": "response_id",
+    "attempts": "attempt_id",
     "assets": "asset_id",
 }
 
@@ -117,7 +118,7 @@ def export_benchmark(source: Path, output: Path, page_size: int, parquet_base: s
         if path.exists():
             if name == "responses" and parquet_base:
                 tables[name] = {"key": key, "rows": pq.ParquetFile(path).metadata.num_rows, "pages": 0}
-            elif name in {"items", "traces", "assets"} and parquet_base:
+            elif name in {"items", "traces", "attempts", "assets"} and parquet_base:
                 relative = f"{metadata['benchmark_id']}/"
                 if directory.name == "formatted_tables":
                     relative += "formatted_tables/"

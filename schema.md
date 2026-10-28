@@ -3,6 +3,10 @@
 
 - An **item** (i.e., a question or a task) comprises the complete stimulus presented to the subject and its **grading protocol**. The stimulus includes the underlying **prompt**, attachments, and **item features** that alter its presentation (such as few-shot examples or prompt phrasing). The grading protocol comprises the grading criterion (reference answer, rule, or both) and the verifier that applies it. The same stimulus evaluated under different grading protocols has distinct item IDs; its text-only `content_hash` remains available for finding shared prompt text.
 
+- A **testlet** groups items sharing an original task or stimulus. For example, individual behavioral tests of one reconstructed program form a testlet. Membership is recorded explicitly in `items.testlet_id`, scoped by benchmark. It is separate from item features and does not change item identity. A null ID means membership is unrecorded; matching prompt text alone does not establish a testlet.
+
+- An **attempt** is a recorded execution or generated artifact that can receive several item-level grades. Responses from the same execution can share `attempt_id`, which links to the optional `attempts.parquet` table. Its trajectory is stored once. Repeated executions have different attempt IDs even when they answer the same testlet. A released attempt without an evaluation remains an attempt without invented grades.
+
 - An **interactor** is any party other than the subject that participates in producing a response, such as the **attacker** probing the subject in an adversarial evaluation, the **simulated user** or **human user** the agent converses with, or the **opponent subject** in a pairwise comparison.
 
 - A **test condition** records a setting of the measurement occasion that varied while the model and the prompt content were held fixed, including the **sampling temperature**. The test condition is null when all information about the experiment is captured in other fields. We expect most information of the experiment to be documented in specific fields, and test conditions should be null most of the time.
@@ -23,8 +27,12 @@ A `build.py` file should generate at least 4 tables, saved as parquet files. For
 
 - The file `responses.parquet` is a long-form table with one row per (subject, item, trial, test condition, interactors) tuple.
 
+- The optional file `attempts.parquet` records shared executions with their subject, upstream attempt identifier, and complete available trajectory. `responses.attempt_id` links each grade to its execution. Legacy records leave this link null; trial numbers alone do not establish shared execution.
+
 - The optional file `traces.parquet` holds available interaction traces, with zero or one trace per response. Join it to `responses.parquet` on `response_id`; repeated attempts have distinct response IDs. The response table does not contain a trace placeholder. The trace file is omitted when no traces are available.
 
 - The file `assets.parquet` contains any additional assets needed for the benchmark, such as images or other files.
 
 The `scripts/build_measurement_tables/` folder holds shared Python helpers for registering subjects and items, deriving IDs, and validating and writing tables.
+
+Schema version 4 adds nullable `items.testlet_id` and `responses.attempt_id` columns and the optional `attempts` table. These relationship fields do not enter item or response hashes. Existing records can be migrated with `python -m scripts.build_measurement_tables.migrate_testlet_schema SOURCE OUTPUT`: the migration adds null links, verifies every original value after writing, and leaves the source untouched. Unchanged tables keep their original physical schema and version metadata. Explicit membership must come from source evidence; the migration does not infer it. Old characterization digests remain valid only when the new relationship columns are entirely null and all original values still match.

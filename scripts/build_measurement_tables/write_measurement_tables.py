@@ -18,7 +18,7 @@ from .validate_measurement_tables import (
 )
 
 
-PARQUET_SCHEMA_VERSION = "3"
+PARQUET_SCHEMA_VERSION = "4"
 _ARROW_BATCH_ROWS = 10_000
 _ARROW_TYPES = {
     "string": pa.string(),
@@ -103,15 +103,15 @@ def save(out_dir: Path | str, *, additional_tables: dict[str, pd.DataFrame] | No
     Non-empty ``subjects``, ``items``, and ``benchmarks`` tables are written
     beside the benchmark's ``responses.parquet``. Validation completes before
     the output directory is created, preventing partial output on failure.
-    Completed builders supply their responses/traces/assets as additional_tables
+    Completed builders supply their responses/traces/attempts/assets as additional_tables
     to validate the complete dataset before these registry tables are written.
     """
     output_directory = Path(out_dir)
     with _locked_registration_rows() as rows:
         tables = _validated_registration_tables(rows, output_directory.name, require_complete=True)
         if additional_tables is not None:
-            if set(additional_tables) - {"responses", "traces", "assets"}:
-                raise ValueError("additional_tables may only contain responses, traces, and assets")
+            if set(additional_tables) - {"responses", "traces", "attempts", "assets"}:
+                raise ValueError("additional_tables may only contain responses, traces, attempts, and assets")
             validate_dataset({**tables, **additional_tables},
                              expected_benchmark_id=expected_benchmark_id, context=str(output_directory))
         output_directory.mkdir(parents=True, exist_ok=True)
