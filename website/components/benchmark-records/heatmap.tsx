@@ -4,6 +4,8 @@ import type { ResponseScale, Subject } from "@/lib/benchmark-records/types";
 import { HeatmapCanvas } from "./heatmap-canvas";
 import { InlineMath } from "../inline-math";
 import { ROW_HEIGHT } from "./paint-heatmap";
+import { TESTLET_HEADER_HEIGHT } from "./testlet-header";
+import { columnGroups } from "@/lib/benchmark-records/testlets";
 
 export function Heatmap({
   view,
@@ -20,6 +22,8 @@ export function Heatmap({
   theta?: Record<string, number>;
   onSelect: (selection: CellSelection) => void;
 }) {
+  const grouped = columnGroups(view).some((group) => group.testletId !== null);
+  const top = grouped ? TESTLET_HEADER_HEIGHT : 0;
   if (!subjects.length || !view.itemIds.length)
     return (
       <p className="py-8 text-sm text-[var(--muted)]">
@@ -52,7 +56,7 @@ export function Heatmap({
         >
           Mean
         </div>
-        <div>
+        <div style={{ paddingTop: top }}>
           {subjects.map((s) => (
             <div
               key={s.subject_id}
@@ -72,7 +76,7 @@ export function Heatmap({
           onSelect={onSelect}
         />
         {theta && (
-          <div>
+          <div style={{ paddingTop: top }}>
             {subjects.map((s) => (
               <div
                 key={s.subject_id}
@@ -84,7 +88,7 @@ export function Heatmap({
             ))}
           </div>
         )}
-        <div>
+        <div style={{ paddingTop: top }}>
           {subjects.map((s) => (
             <div
               key={s.subject_id}

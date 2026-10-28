@@ -24,7 +24,14 @@ def signature(rows):
 
 def check_windows(source: Path, output: Path, descriptor: dict, items: set) -> dict:
     positions, grades = {}, Counter()
+    table = pq.ParquetFile(source / "items.parquet")
+    membership = dict(zip(*[table.read(columns=[name]).column(0).to_pylist()
+                           for name in ("item_id", "testlet_id")], strict=True)) if "testlet_id" in table.schema_arrow.names else {}
+    totals = Counter(group for group in membership.values() if group is not None)
+    group_pages, continuations, closed = {}, [], set()
+    previous_group = None
     def actual():
+        nonlocal previous_group
         for page in range(descriptor["pages"]):
             raw = gzip.decompress((output / "windows" / f"{page}.json.gz").read_bytes())
             window = json.loads(raw)
@@ -32,6 +39,26 @@ def check_windows(source: Path, output: Path, descriptor: dict, items: set) -> d
                 raise ValueError("Observation window exceeds its budget")
             if len(window["itemIds"]) > descriptor["maxItems"]:
                 raise ValueError("Too many items in a window")
+            expected_groups = {}
+            for identity in window["itemIds"]:
+                group = membership.get(identity)
+                if group is not None:
+                    expected_groups.setdefault(group, []).append(identity)
+                if group != previous_group:
+                    if previous_group is not None:
+                        closed.add(previous_group)
+                    if group in closed:
+                        raise ValueError("Testlet items are not contiguous")
+                    previous_group = group
+            actual_groups = window.get("testlets", [])
+            if len(actual_groups) != len(expected_groups) or {g["testletId"]: g["itemIds"] for g in actual_groups} != expected_groups:
+                raise ValueError("Window testlet membership differs from source items")
+            for group in actual_groups:
+                identity = group["testletId"]
+                if group["totalItems"] != totals[identity]:
+                    raise ValueError("Wrong total item count for testlet")
+                group_pages.setdefault(identity, [page, page])[1] = page
+                continuations.append((identity, page, group["continuedBefore"], group["continuedAfter"]))
             for identity in window["itemIds"]:
                 if identity not in items:
                     raise ValueError("Unknown window item")
@@ -53,8 +80,19 @@ def check_windows(source: Path, output: Path, descriptor: dict, items: set) -> d
             (output / "windows" / f"index-{number:02x}.json.gz").read_bytes())))
     if set(positions) != items or positions != indexed:
         raise ValueError("Item window index does not cover every source item")
+    for identity, page, before, after in continuations:
+        first, last = group_pages[identity]
+        if before != (page > first) or after != (page < last):
+            raise ValueError("Incorrect testlet continuation label")
+    if totals:
+        if not descriptor.get("testlets"):
+            raise ValueError("Missing testlet page index")
+        index = json.loads(gzip.decompress((output / "windows" / (descriptor["testlets"] + ".gz")).read_bytes()))
+        if index != {identity: {"pages": pages, "items": totals[identity]} for identity, pages in group_pages.items()}:
+            raise ValueError("Testlet index differs from window coverage")
     return {"rows": observed[0], "exact_record_checksum": observed[1],
             "pages": descriptor["pages"], "all_items_indexed": True,
+            **({"testlets": len(totals), "exact_testlet_membership": True} if totals else {}),
             "grades": {"null" if k is None else str(k): v for k, v in grades.items()}}
 
 

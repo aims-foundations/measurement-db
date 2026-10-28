@@ -19086,12 +19086,37 @@
   }
  },
  "programbench": {
-  "revision": "15dc9f5365087e720a6af6f3e45af834d283b0f8",
+  "revision": "a7a2d0b153057662838c26b88f3597413ddbd9c5",
   "directory": "programbench/formatted_tables",
   "dynamicItems": false,
   "tables": {
+   "subjects": {
+    "size": 11787,
+    "columns": [
+     "subject_id",
+     "display_name",
+     "normalized_name",
+     "provider",
+     "release_date",
+     "access_date",
+     "harness",
+     "reasoning_effort",
+     "harness_version",
+     "subject_features_extra"
+    ]
+   },
+   "attempts": {
+    "size": 2885072991,
+    "columns": [
+     "attempt_id",
+     "benchmark_id",
+     "subject_id",
+     "raw_attempt_id",
+     "trace"
+    ]
+   },
    "benchmarks": {
-    "size": 18102,
+    "size": 18519,
     "columns": [
      "benchmark_id",
      "name",
@@ -19120,41 +19145,13 @@
      "has_reference_answer"
     ]
    },
-   "subjects": {
-    "size": 11787,
-    "columns": [
-     "subject_id",
-     "display_name",
-     "normalized_name",
-     "provider",
-     "release_date",
-     "access_date",
-     "harness",
-     "reasoning_effort",
-     "harness_version",
-     "subject_features_extra"
-    ]
-   },
-   "items": {
-    "size": 19290566,
-    "columns": [
-     "item_id",
-     "benchmark_id",
-     "raw_item_id",
-     "content",
-     "asset_manifest",
-     "grading_criterion",
-     "verifier",
-     "content_hash",
-     "item_features"
-    ]
-   },
    "responses": {
-    "size": 170488,
+    "size": 229475713,
     "columns": [
      "subject_id",
      "item_id",
      "response_id",
+     "attempt_id",
      "benchmark_id",
      "trial",
      "test_condition",
@@ -19162,17 +19159,19 @@
      "response"
     ]
    },
-   "traces": {
-    "size": 2885070467,
+   "items": {
+    "size": 126088660,
     "columns": [
-     "response_id",
-     "subject_id",
      "item_id",
      "benchmark_id",
-     "trial",
-     "test_condition",
-     "interactors",
-     "trace"
+     "raw_item_id",
+     "testlet_id",
+     "content",
+     "asset_manifest",
+     "grading_criterion",
+     "verifier",
+     "content_hash",
+     "item_features"
     ]
    }
   }

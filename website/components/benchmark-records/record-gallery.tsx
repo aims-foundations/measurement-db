@@ -103,10 +103,10 @@ export function RecordGallery({
       </p>
       {Boolean(model.partialItemIds?.length) && (
         <p className="mb-3 text-xs text-[var(--muted)]">
-          This item has more attempts than fit on one page. Continue to adjacent
-          pages for the remaining attempts. Counts and empty cells refer to this
-          page; comparison partners are shown only when the complete item is
-          loaded.
+          This item has more observations than fit on one page. Continue to
+          adjacent pages for the remaining observations. Counts and empty cells
+          refer to this page; comparison partners are shown only when the
+          complete item is loaded.
         </p>
       )}
       <ViewControls
@@ -120,9 +120,15 @@ export function RecordGallery({
         {paged && "On this page: "}
         {view.subjects.length.toLocaleString()} models ·{" "}
         {view.itemIds.length.toLocaleString()} items ·{" "}
-        {view.observations.length.toLocaleString()} recorded attempts ·{" "}
+        {view.observations.length.toLocaleString()} observations ·{" "}
         {view.graded.toLocaleString()} graded
       </p>
+      {Boolean(model.testlets?.length) && (
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          Each column is one item. Shared headers group items from the same
+          testlet; sorting keeps those groups together.
+        </p>
+      )}
       {view.subjects.length > ROWS_PER_PAGE && (
         <div className="mb-3">
           <Pagination

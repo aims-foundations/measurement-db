@@ -16,6 +16,8 @@ from tempfile import TemporaryDirectory
 
 import pyarrow.parquet as pq
 
+from scripts.render_website.record_testlets import item_order, page_testlets
+
 MAX_ROWS = 4096
 MAX_ITEMS = 256
 MAX_BYTES = 2 * 1024 * 1024
@@ -34,8 +36,9 @@ def write(path: Path, value) -> int:
 def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
                    max_items=MAX_ITEMS, max_bytes=MAX_BYTES) -> dict:
     output.mkdir()
-    items = sorted(pq.read_table(directory / "items.parquet", columns=["item_id"])
-                   .column("item_id").to_pylist())
+    items, testlets = item_order(directory / "items.parquet")
+    membership = {item: group for group, members in testlets.items() for item in members}
+    testlet_index = {}
     known_items = set(items)
     if len(known_items) != len(items):
         raise ValueError("Duplicate item IDs")
@@ -44,18 +47,24 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
     buckets = [{} for _ in range(256)]
     page, count, largest = 0, 0, 0
     item_ids, observations, partial = [], [], []
+    continued_before, continued_after = set(), set()
     size = 128  # Reserve the JSON envelope and separators.
 
     def flush():
         nonlocal page, item_ids, observations, partial, size, largest
         if not item_ids:
             return
+        groups = page_testlets(item_ids, membership, testlets, before=continued_before, after=continued_after)
         raw = write(output / f"{page}.json.gz", {
             "itemIds": item_ids, "observations": observations, "partialItemIds": partial,
+            **({"testlets": groups} if groups else {}),
         })
         if raw > max_bytes or len(observations) > max_rows:
             raise ValueError("Observation page exceeds its declared budget")
         largest = max(largest, raw)
+        for group in groups:
+            entry = testlet_index.setdefault(group["testletId"], {"pages": [page, page], "items": group["totalItems"]})
+            entry["pages"][1] = page
         for identity in item_ids:
             bucket = buckets[hashlib.sha256(identity.encode()).digest()[0]]
             if identity in bucket:
@@ -64,10 +73,16 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
                 bucket[identity] = [page, page]
         page += 1
         item_ids, observations, partial, size = [], [], [], 128
+        continued_before.clear()
+        continued_after.clear()
+
+    def grouping_bytes(identity):
+        group = membership.get(identity)
+        return 128 + len(encoded(group).encode()) + len(encoded(identity).encode()) if group is not None else 0
 
     def parts(rows, identity):
         values, length = [], 0
-        allowance = max_bytes - 256 - 4 * len(encoded(identity).encode())
+        allowance = max_bytes - 256 - 4 * len(encoded(identity).encode()) - grouping_bytes(identity)
         for _, payload in rows:
             n = len(payload.encode()) + 1
             if n > allowance:
@@ -85,7 +100,9 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
                 PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF;
                 PRAGMA cache_size=-65536; PRAGMA temp_store=FILE;
                 CREATE TABLE observations (response_id TEXT PRIMARY KEY NOT NULL, item_id TEXT, payload TEXT);
+                CREATE TABLE items (item_id TEXT PRIMARY KEY, position INTEGER);
             """)
+            db.executemany("INSERT INTO items VALUES (?, ?)", ((identity, i) for i, identity in enumerate(items)))
             path = directory / "responses.parquet"
             if path.exists():
                 for batch in pq.ParquetFile(path).iter_batches(batch_size=2048):
@@ -100,7 +117,7 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
                     count += len(rows)
                 db.commit()
             groups = iter(itertools.groupby(db.execute(
-                "SELECT item_id, payload FROM observations ORDER BY item_id, response_id"),
+                "SELECT o.item_id, o.payload FROM observations o JOIN items i ON i.item_id=o.item_id ORDER BY i.position, o.response_id"),
                 key=lambda row: row[0]))
             current = next(groups, None)
             for identity in items:
@@ -112,7 +129,7 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
                     following = next(chunks, None)
                     values, length = chunk
                     split = bool(part or following is not None)
-                    added = length + len(encoded(identity).encode()) * (2 if split else 1) + 2
+                    added = length + len(encoded(identity).encode()) * (2 if split else 1) + 2 + grouping_bytes(identity)
                     if item_ids and (split or len(item_ids) == max_items or
                                      len(observations) + len(values) > max_rows or size + added > max_bytes):
                         flush()
@@ -121,6 +138,10 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
                     size += added
                     if split:
                         partial.append(identity)
+                        if part:
+                            continued_before.add(identity)
+                        if following is not None:
+                            continued_after.add(identity)
                         flush()
                     chunk, part = following, part + 1
                 if current and current[0] == identity:
@@ -128,5 +149,8 @@ def export_windows(directory: Path, output: Path, *, max_rows=MAX_ROWS,
             flush()
     for number, bucket in enumerate(buckets):
         write(output / f"index-{number:02x}.json.gz", bucket)
+    if testlet_index:
+        write(output / "testlets.json.gz", testlet_index)
     return {"pages": page, "rows": count, "maxRows": max_rows, "maxItems": max_items,
-            "maxBytes": max_bytes, "largestPageBytes": largest}
+            "maxBytes": max_bytes, "largestPageBytes": largest,
+            **({"testlets": "testlets.json"} if testlet_index else {})}

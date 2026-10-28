@@ -16673,7 +16673,7 @@
     "version": "c19e570f64719c8326ccdcc7af803447cb89d1a6",
     "license": "The official registry declares MIT. The pinned result repositories do not declare redistribution terms; their captured inputs and derived tables remain local pending clarification. Referenced task programs and container contents retain their own upstream licenses.",
     "source_url": "https://github.com/facebookresearch/ProgramBench",
-    "description": "Published ProgramBench attempts to reconstruct executable behavior from a compiled program and its documentation, with native fractional behavioral-test scores and complete recorded agent trajectories.",
+    "description": "Individual behavioral-test outcomes from published ProgramBench attempts to reconstruct executable programs. Tests belonging to the same original program task form a testlet; each execution retains its complete trajectory.",
     "one_line_description": null,
     "modality": [
      "text"
@@ -16683,20 +16683,20 @@
      "agents_and_tool_use"
     ],
     "multi_single_turn": "multi_turn",
-    "response_type": "continuous_bounded",
-    "response_scale": "{\"direction\":\"higher_is_better\",\"kind\":\"interval\",\"max\":1.0,\"min\":0.0}",
-    "categorical": false,
+    "response_type": "binary",
+    "response_scale": "{\"direction\":\"higher_is_better\",\"kind\":\"discrete\",\"meanings\":{\"0\":\"did not pass under the published evaluator\",\"1\":\"passed\"},\"values\":[0.0,1.0]}",
+    "categorical": true,
     "paper_url": "https://arxiv.org/abs/2605.03546",
     "release_date": "2026-05",
     "granularity": "item",
     "release": "public",
-    "n_response_values": 4427,
+    "n_response_values": 2,
     "benchmark_features": null,
     "n_subjects": 28,
-    "n_items": 1317,
-    "n_responses": 4965,
+    "n_items": 1483092,
+    "n_responses": 6119913,
     "max_trial": 1,
-    "coverage": 0.13461329862241023,
+    "coverage": 0.14737340733317383,
     "has_reference_answer": false
    },
    "tables": {
@@ -16707,37 +16707,38 @@
     },
     "items": {
      "key": "item_id",
-     "rows": 1317,
+     "rows": 1483092,
      "pages": 0,
      "parquet": {
       "url": "/api/gallery-source/programbench/items",
-      "bytes": 19290566,
-      "download": "https://huggingface.co/datasets/aims-foundations/measurement-db/resolve/15dc9f5365087e720a6af6f3e45af834d283b0f8/programbench/formatted_tables/items.parquet"
+      "bytes": 126088660,
+      "download": "https://huggingface.co/datasets/aims-foundations/measurement-db/resolve/a7a2d0b153057662838c26b88f3597413ddbd9c5/programbench/formatted_tables/items.parquet"
      }
     },
     "responses": {
      "key": "response_id",
-     "rows": 4965,
+     "rows": 6119913,
      "pages": 0
     },
-    "traces": {
-     "key": "response_id",
+    "attempts": {
+     "key": "attempt_id",
      "rows": 4965,
      "pages": 0,
      "parquet": {
-      "url": "/api/gallery-source/programbench/traces",
-      "bytes": 2885070467,
-      "download": "https://huggingface.co/datasets/aims-foundations/measurement-db/resolve/15dc9f5365087e720a6af6f3e45af834d283b0f8/programbench/formatted_tables/traces.parquet"
+      "url": "/api/gallery-source/programbench/attempts",
+      "bytes": 2885072991,
+      "download": "https://huggingface.co/datasets/aims-foundations/measurement-db/resolve/a7a2d0b153057662838c26b88f3597413ddbd9c5/programbench/formatted_tables/attempts.parquet"
      }
     }
    },
    "windows": {
-    "pages": 6,
-    "rows": 4965,
+    "pages": 5794,
+    "rows": 6119913,
     "maxRows": 4096,
     "maxItems": 256,
     "maxBytes": 2097152,
-    "largestPageBytes": 266203
+    "largestPageBytes": 698053,
+    "testlets": "testlets.json"
    },
    "pack": {
     "index": "pack-index.json"

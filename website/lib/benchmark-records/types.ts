@@ -75,10 +75,12 @@ export type BenchmarkMetadata = SourceRecord & {
 };
 
 export type Manifest = {
+  testlets?: string;
   previews?: Partial<Record<TableName, RecordPreview>>;
   compressed?: boolean;
   pack?: { index: string };
   windows?: {
+    testlets?: string;
     pages: number;
     rows: number;
     maxRows: number;
@@ -95,7 +97,20 @@ export type GalleryRecords = {
   itemIds: string[];
   observations: Observation[];
   partialItemIds?: string[];
+  testlets?: TestletWindow[];
 };
+
+export type TestletWindow = {
+  testletId: string;
+  itemIds: string[];
+  totalItems: number;
+  continuedBefore: boolean;
+  continuedAfter: boolean;
+};
+export type TestletIndex = Record<
+  string,
+  { pages: [number, number]; items: number }
+>;
 
 export type Direction = "higher_is_better" | "lower_is_better" | "unordered";
 export type ConcreteScale =

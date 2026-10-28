@@ -1,6 +1,7 @@
 import { findSubjects, prepareMatrix, type MatrixModel } from "./model";
 import { matchesFilters, type Filters, type prepareContexts } from "./context";
 import type { ResponseScale } from "./types";
+import { groupItemOrder } from "./testlets";
 
 export type Order = "grade" | "name" | "recorded";
 export const comparable = (scale: ResponseScale) =>
@@ -36,6 +37,7 @@ export function prepareView(
     itemIds,
     observations,
     partialItemIds: model.partialItemIds,
+    testlets: model.testlets,
   });
   const rowTotals = new Map<string, [number, number]>(),
     columnTotals = new Map<string, [number, number]>();
@@ -73,6 +75,12 @@ export function prepareView(
     subjects.sort((a, b) => a.display_name.localeCompare(b.display_name));
     itemIds.sort((a, b) => a.localeCompare(b));
   }
-  return { ...selected, subjects, itemIds, rowMeans, columnMeans };
+  return {
+    ...selected,
+    subjects,
+    itemIds: groupItemOrder(model.itemIds, itemIds, model.testlets),
+    rowMeans,
+    columnMeans,
+  };
 }
 export type MatrixView = ReturnType<typeof prepareView>;

@@ -87,11 +87,10 @@ and its checks then passed.
 
 Generated tables are staged locally under
 `artifacts/testlet-migration/catalog/<benchmark>/formatted_tables` and
-`benchmarks/programbench/formatted_tables`. This branch does not publish HF
-tables or update the deployed website. A release must retain unchanged catalog
-tables, replace ProgramBench's old task-level tables (including retiring its old
-`traces.parquet`), and prepare gallery records, answer previews and analysis from
-the new coherent snapshot. The additive migration receipts do not claim that
+`benchmarks/programbench/formatted_tables`. The scoped preview described below
+publishes ProgramBench's converted tables; the other 269 schema overlays remain
+local. A full schema release must retain unchanged catalog values and prepare
+analysis from the new coherent snapshot. The additive migration receipts do not claim that
 all 269 upstream builders were re-executed or that the byte-for-byte reproduction
 gate has run against a new HF reference.
 
@@ -102,3 +101,35 @@ python -m scripts.build_measurement_tables.migrate_testlet_schema SOURCE OUTPUT
 python benchmarks/programbench/build.py
 python tests/test_benchmark_datasets.py programbench
 ```
+
+## Testlet matrix preview
+
+The matrix keeps one item per column and each released binary observation intact.
+Shared headers, neutral borders, and small gaps group adjacent columns by the
+explicit `testlet_id`. Sorting works within each group. Both heatmap and table
+views show continuation labels across bounded pages; a testlet selector jumps to
+its first page. No group-level scores or collapsed aggregate columns are created.
+
+ProgramBench's five canonical tables are pinned to HF preview revision
+`a7a2d0b153057662838c26b88f3597413ddbd9c5` on `preview/testlet-schema`, based on
+`15dc9f5365087e720a6af6f3e45af834d283b0f8`. The old ProgramBench `traces.parquet`
+is removed on that branch; shared traces live in `attempts.parquet`. Upload
+SHA256 values match all five local files. HF main was unchanged by this upload.
+Two oversized attempt records use bounded previews pinned to
+`944a7ce66d74d327eefa486e7b367e51381201e1`; other records remain readable through
+the existing Parquet path. Other benchmarks reuse their existing prepared assets.
+
+The complete browser export contains 5,794 pages. Every page obeys the existing
+256-item, 4,096-observation, 2 MiB limits; the largest expanded page is 698,053
+bytes. Full-record checksums verify all 6,119,913 observations against Parquet
+(2,579,560 passing and 3,540,353 failing), all 1,483,092 item indexes, and all 200
+testlet memberships and continuation boundaries. Page 3,200 contains 128 items
+from each of two adjacent testlets and is the preview's initial comparison view.
+
+Focused tests cover source preservation, null/legacy membership compatibility,
+partial items, corrupted membership, sorting/filtering, table subpages, and
+pointer/keyboard geometry. Prepared evidence is in `artifacts/testlet-demo/`.
+The isolated `testlet-preview.yml` workflow verifies the prepared hashes and
+deploys only a Vercel preview. UI-only updates reuse these prepared data packs.
+The existing Rasch fit is intentionally unavailable for the converted ProgramBench
+matrix because its item/observation counts no longer match the source.

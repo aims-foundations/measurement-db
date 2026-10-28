@@ -29,6 +29,7 @@ from scripts.build_measurement_tables.response_scales import (
 )
 from scripts.render_website.record_parquet import export_parquet
 from scripts.render_website.record_windows import export_windows
+from scripts.render_website.record_testlets import item_order, page_testlets
 
 PRIMARY_KEYS = {
     "subjects": "subject_id",
@@ -129,8 +130,16 @@ def export_benchmark(source: Path, output: Path, page_size: int, parquet_base: s
         elif name in required:
             raise FileNotFoundError(path)
     windows = export_windows(directory, output / "windows") if parquet_base else None
+    testlets = None
+    if not parquet_base:
+        items, groups = item_order(directory / "items.parquet")
+        if groups:
+            membership = {item: group for group, members in groups.items() for item in members}
+            write_json(output / "testlets.json", page_testlets(items, membership, groups))
+            testlets = "testlets.json"
     write_json(output / "manifest.json", {"benchmark": metadata, "tables": tables,
-                                          **({"windows": windows} if windows else {})})
+                                          **({"windows": windows} if windows else {}),
+                                          **({"testlets": testlets} if testlets else {})})
     return {
         "id": metadata["benchmark_id"],
         "name": metadata["name"],

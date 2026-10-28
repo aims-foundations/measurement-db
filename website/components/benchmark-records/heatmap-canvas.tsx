@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import type { MatrixView } from "@/lib/benchmark-records/view";
 import type { CellSelection } from "@/lib/benchmark-records/model";
 import type { ResponseScale, Subject } from "@/lib/benchmark-records/types";
 import { gradeLabel } from "@/lib/benchmark-records/scale";
 import { paintHeatmap, ROW_HEIGHT } from "./paint-heatmap";
+import { columnGroups } from "@/lib/benchmark-records/testlets";
+import { columnAt, matrixLayout } from "@/lib/benchmark-records/matrix-layout";
+import { TestletHeader, TESTLET_HEADER_HEIGHT } from "./testlet-header";
 type Position = { row: number; col: number };
 
 /** Draw the visible window. Selection reads records by ID, never canvas colors. */
@@ -29,7 +38,11 @@ export function HeatmapCanvas({
   const [active, setActive] = useState<Position>({ row: 0, col: 0 });
   const columns = view.itemIds.length,
     height = subjects.length * ROW_HEIGHT;
-  const cellWidth = actual ? 8 : width / Math.max(1, columns);
+  const layout = useMemo(
+    () => matrixLayout(columns, columnGroups(view), width, actual),
+    [columns, view, width, actual],
+  );
+  const headerHeight = layout.grouped ? TESTLET_HEADER_HEIGHT : 0;
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) =>
       setWidth(entry.contentRect.width),
@@ -46,20 +59,10 @@ export function HeatmapCanvas({
       subjects,
       scale,
       width,
-      cellWidth,
+      layout,
       actual ? scroll : 0,
     );
-  }, [
-    view,
-    subjects,
-    scale,
-    actual,
-    width,
-    height,
-    scroll,
-    cellWidth,
-    columns,
-  ]);
+  }, [view, subjects, scale, actual, width, height, scroll, layout, columns]);
   const row = Math.min(active.row, subjects.length - 1),
     col = Math.min(active.col, columns - 1);
   const subject = subjects[row],
@@ -70,7 +73,7 @@ export function HeatmapCanvas({
       ? "No observation on this page"
       : "No recorded observation"
     : attempts.length > 1
-      ? `${attempts.length} attempts`
+      ? `${attempts.length} observations`
       : scale.kind === "mixed"
         ? String(attempts[0].response ?? "Grade unavailable")
         : gradeLabel(attempts[0].response, scale);
@@ -79,22 +82,21 @@ export function HeatmapCanvas({
       subject: subjects[position.row],
       itemId: view.itemIds[position.col],
     });
-  const locate = (event: React.MouseEvent<HTMLCanvasElement>): Position => {
+  const locate = (
+    event: React.MouseEvent<HTMLCanvasElement>,
+  ): Position | null => {
     const rect = event.currentTarget.getBoundingClientRect();
+    const column = columnAt(
+      layout,
+      event.clientX - rect.left + (actual ? scroll : 0),
+    );
+    if (column === null) return null;
     return {
       row: Math.min(
         subjects.length - 1,
         Math.max(0, Math.floor((event.clientY - rect.top) / ROW_HEIGHT)),
       ),
-      col: Math.min(
-        columns - 1,
-        Math.max(
-          0,
-          Math.floor(
-            (event.clientX - rect.left + (actual ? scroll : 0)) / cellWidth,
-          ),
-        ),
-      ),
+      col: column,
     };
   };
   const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -120,7 +122,10 @@ export function HeatmapCanvas({
     };
     setActive(next);
     if (actual && box.current)
-      box.current.scrollLeft = Math.max(0, next.col * cellWidth - width / 2);
+      box.current.scrollLeft = Math.max(
+        0,
+        layout.positions[next.col] - width / 2,
+      );
   };
   return (
     <div className="min-w-0">
@@ -138,22 +143,53 @@ export function HeatmapCanvas({
       >
         <div
           style={{
-            width: actual ? Math.max(width, columns * 8) : "100%",
-            height,
+            width: layout.width || "100%",
+            height: height + headerHeight,
           }}
         >
           <div
             className="sticky left-0 overflow-hidden"
-            style={{ width, height }}
+            style={{ width, height: height + headerHeight }}
           >
+            {layout.grouped && (
+              <div
+                className="relative overflow-hidden"
+                style={{ height: headerHeight }}
+                aria-label="Testlet groups"
+              >
+                {layout.groups.map((group) => {
+                  const left = group.left - (actual ? scroll : 0);
+                  const visibleLeft = Math.max(0, left);
+                  const visibleWidth =
+                    Math.min(width, left + group.width) - visibleLeft;
+                  if (visibleWidth <= 0) return null;
+                  return (
+                    <div
+                      key={group.start}
+                      className="absolute top-0"
+                      style={{
+                        left: visibleLeft,
+                        width: visibleWidth,
+                      }}
+                    >
+                      <TestletHeader group={group} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <canvas
               ref={canvas}
               aria-hidden="true"
               className="block cursor-crosshair"
               style={{ width, height }}
-              onMouseMove={(event) => setActive(locate(event))}
+              onMouseMove={(event) => {
+                const position = locate(event);
+                if (position) setActive(position);
+              }}
               onClick={(event) => {
                 const position = locate(event);
+                if (!position) return;
                 setActive(position);
                 select(position);
               }}
@@ -162,9 +198,9 @@ export function HeatmapCanvas({
               aria-hidden="true"
               className="pointer-events-none absolute border border-black"
               style={{
-                top: row * ROW_HEIGHT,
-                left: col * cellWidth - (actual ? scroll : 0),
-                width: Math.max(2, cellWidth),
+                top: headerHeight + row * ROW_HEIGHT,
+                left: layout.positions[col] - (actual ? scroll : 0),
+                width: Math.max(2, layout.cellWidth),
                 height: ROW_HEIGHT,
               }}
             />

@@ -92,6 +92,11 @@ export function CellDetails({
           <p className="mt-1 break-all font-mono text-[0.625rem] text-[var(--muted)]">
             Item ID: {selection.itemId}
           </p>
+          {value?.testlet_id && (
+            <p className="mt-2 break-all text-xs text-[var(--muted)]">
+              Testlet: {value.testlet_id}
+            </p>
+          )}
         </div>
         <button className={CONTROL} onClick={onClose}>
           Close
@@ -170,7 +175,7 @@ export function CellDetails({
                 </span>
               </p>
               <p className="mt-2 text-xs text-[var(--muted)]">
-                Trial {observation.trial} · Attempt {attempt + 1} of{" "}
+                Trial {observation.trial} · Observation {attempt + 1} of{" "}
                 {observations.length}
                 {model.partialItemIds?.includes(selection.itemId)
                   ? " on this page"
@@ -210,7 +215,7 @@ export function CellDetails({
       {observations.length > 1 && (
         <div className="mt-5">
           <Pagination
-            label="attempts"
+            label="observations"
             page={attempt}
             total={observations.length}
             size={1}

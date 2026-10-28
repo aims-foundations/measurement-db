@@ -157,6 +157,28 @@ revision `54074453da7b9911be0f48e4c560be547bc84d21`. This is structural coverage
 not a claim to have manually reviewed every item or reconstructed every prompt.
 Future registrations without a module retain the raw-text fallback.
 
+## Testlet columns
+
+Each matrix column remains an item. An explicit non-null `items.testlet_id`
+groups adjacent columns under a shared header, with neutral separators between
+groups. Outcome colors and every original observation are unchanged. Items
+without membership render normally; IDs and item features are never parsed to
+guess a testlet.
+
+`record_testlets.py` reads membership from Parquet. `record_windows.py` keeps
+testlets contiguous in the existing bounded pages (256 items, 4,096 observations,
+2 MiB expanded JSON). A large testlet spans pages with explicit continuation
+flags and a small testlet-to-page index. `check_gallery_records.py` checks that
+membership, continuation, item coverage, and every observation match the source.
+
+`testlets.ts` prepares contiguous column groups and keeps them intact while
+sorting items within each group. `matrix-layout.ts` provides shared positions
+for canvas painting, headers, pointer selection, and keyboard scrolling.
+`testlet-header.tsx` supplies labels to both the heatmap and the table.
+`testlet-navigation.tsx` jumps to a bounded page without loading an entire testlet.
+A benchmark URL can start at a specific page with `?itemPage=123` (one-based).
+Older bundles without testlet fields remain supported and need no regeneration.
+
 ## Oversized source pages
 
 The original Parquet reader budgets **16 MiB of downloaded plus decompressed

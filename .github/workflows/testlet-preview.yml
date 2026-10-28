@@ -1,0 +1,102 @@
+name: Deploy testlet matrix preview
+on:
+  push:
+    branches: [feat/testlet-schema]
+    paths: [website/**, .github/workflows/testlet-preview.yml]
+permissions:
+  contents: read
+concurrency:
+  group: testlet-matrix-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: /lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/testlet-schema/measurement_db
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      NEXT_TELEMETRY_DISABLED: '1'
+      RAYON_NUM_THREADS: '4'
+    steps:
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify prepared data and reviewed code
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==os.environ['GITHUB_SHA']
+          assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip()
+          assert not Path('website/node_modules').is_symlink()
+          root=Path('artifacts/testlet-demo')
+          release=json.loads((root/'hf-preview.json').read_text())
+          prepared=json.loads((root/'prepared.json').read_text())
+          checked=json.loads((root/'records-validation.json').read_text())['windows']
+          assert prepared['hf_revision']==release['revision']
+          assert release['branch']=='preview/testlet-schema'
+          assert prepared['benchmarks']==270
+          assert checked['rows']==6119913 and checked['testlets']==200 and checked['exact_testlet_membership']
+          for relative,expected in prepared['website_sha256'].items():
+              with (Path('website')/relative).open('rb') as stream:
+                  assert hashlib.file_digest(stream,'sha256').hexdigest()==expected,relative
+          print('Verified full ProgramBench data, testlet boundaries, and prepared browser assets.')
+          PY
+      - name: Test and build the preview
+        run: |
+          pnpm --dir website gallery:test
+          pnpm dlx vercel@62.2.0 pull --yes --environment=preview --git-branch=feat/testlet-schema --token="$VERCEL_TOKEN"
+          pnpm dlx vercel@62.2.0 build --token="$VERCEL_TOKEN"
+          python3 - <<'PY'
+          from pathlib import Path
+          count=sum(p.is_file() for p in Path('.vercel/output').rglob('*'))
+          assert 0<count<10000,count
+          print(f'Upload contains {count} files.')
+          PY
+      - name: Deploy an isolated preview and create its review link
+        env:
+          NODE_OPTIONS: --require=/lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/testlet-schema/measurement_db/website/scripts/vercel-fetch.cjs
+        run: |
+          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --target=preview --env HF_TOKEN="$HF_TOKEN" --meta githubCommitRef=feat/testlet-schema --meta githubCommitSha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+          export TESTLET_PREVIEW_URL="$url"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.parse import urlsplit, urlencode
+          from scripts.ci.vercel_preview_link import api, active_link
+          deployment=api('/v13/deployments/'+urlsplit(os.environ['TESTLET_PREVIEW_URL']).netloc)
+          assert deployment.get('target')!='production' and deployment['readyState']=='READY'
+          assert deployment['projectId']==os.environ['VERCEL_PROJECT_ID']
+          host='measurement-db-testlets.vercel.app'
+          try:
+              old=api('/v4/aliases/'+host)
+          except HTTPError as error:
+              if error.code!=404:raise
+          else:
+              assert old['projectId']==os.environ['VERCEL_PROJECT_ID']
+              assert api('/v13/deployments/'+old['deploymentId']).get('target')!='production'
+          api('/v2/deployments/'+deployment['id']+'/aliases','POST',{'alias':host})
+          alias=api('/v4/aliases/'+host)
+          if not active_link(alias):
+              api('/aliases/'+alias['uid']+'/protection-bypass','PATCH',{'ttl':604800})
+              alias=api('/v4/aliases/'+host)
+          token=active_link(alias);assert token
+          root=Path('artifacts/testlet-demo')
+          page=json.loads((root/'demo-page.json').read_text())['page']
+          result={'deployment':os.environ['TESTLET_PREVIEW_URL'],'alias':host,
+                  'review_url':'https://'+host+'/measurement-db/programbench?'+urlencode({'_vercel_share':token,'itemPage':page}),
+                  'code_revision':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID']}
+          path=root/'vercel-preview.json'
+          path.write_text(json.dumps(result,indent=2)+'\n');path.chmod(0o600)
+          print('Preview deployed: '+host)
+          PY
+          pnpm dlx vercel@62.2.0 curl /measurement-db/programbench --deployment "$url" -- --fail --silent --show-error --max-time 120 --output /dev/null

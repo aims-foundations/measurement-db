@@ -5,6 +5,8 @@ import type {
   TableName,
   TableRows,
   Subject,
+  TestletWindow,
+  TestletIndex,
 } from "./types";
 import { readParquetRecord } from "./parquet";
 import { readJson } from "./json";
@@ -81,6 +83,12 @@ export class RecordSource {
     return this.all("subjects", signal);
   }
 
+  testlets(signal: AbortSignal): Promise<TestletIndex> {
+    return this.manifest.windows?.testlets
+      ? this.json(`windows/${this.manifest.windows.testlets}`, signal)
+      : Promise.resolve({});
+  }
+
   async window(page: number, signal: AbortSignal): Promise<GalleryRecords> {
     const [subjects, window] = await Promise.all([
       this.subjects(signal),
@@ -124,7 +132,7 @@ export class RecordSource {
         (a, b) => a - b,
       );
     const selected = subjectIds && new Set(subjectIds);
-    const [subjects, items, observations] = await Promise.all([
+    const [subjects, items, observations, testlets] = await Promise.all([
       this.all("subjects", signal),
       this.index("items", signal),
       this.all(
@@ -133,6 +141,9 @@ export class RecordSource {
         pages,
         (record) => !selected || selected.has(record.subject_id),
       ),
+      this.manifest.testlets
+        ? this.json<TestletWindow[]>(this.manifest.testlets, signal)
+        : Promise.resolve(undefined),
     ]);
     return {
       ...(selected ? { allSubjects: subjects } : {}),
@@ -141,6 +152,7 @@ export class RecordSource {
         : subjects,
       itemIds: Object.keys(items),
       observations,
+      ...(testlets ? { testlets } : {}),
     };
   }
 

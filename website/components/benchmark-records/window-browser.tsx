@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
 import type { GalleryEntry } from "@/lib/benchmark-records/types";
 import { useItemWindow } from "./use-records";
 import { LoadedGallery } from "./loaded-gallery";
 import { Pagination } from "./pagination";
 import { CONTROL } from "./view-controls";
+import { TestletNavigation } from "./testlet-navigation";
 
 /** One bounded item window at a time, with every model and source item reachable. */
 export function WindowBrowser({
@@ -16,11 +18,17 @@ export function WindowBrowser({
   entry: GalleryEntry;
   irt?: Omit<BenchmarkIrt, "zByItem">;
 }) {
-  const [page, setPage] = useState(0);
+  const params = useSearchParams();
+  const total = entry.manifest.windows!.pages;
+  const [page, setPage] = useState(() => {
+    const requested = Number(params.get("itemPage"));
+    return Number.isInteger(requested)
+      ? Math.max(0, Math.min(total - 1, requested - 1))
+      : 0;
+  });
   const [item, setItem] = useState("");
   const [message, setMessage] = useState("");
   const { findItem, cancelFind } = useItemWindow(entry);
-  const total = entry.manifest.windows!.pages;
   const navigate = (next: number) => {
     cancelFind();
     setPage(Math.max(0, Math.min(total - 1, next)));
@@ -35,7 +43,7 @@ export function WindowBrowser({
       <div className="mb-5 space-y-3">
         <p className="text-xs text-[var(--muted)]">
           {(entry.manifest.tables.items?.rows ?? 0).toLocaleString()} items ·{" "}
-          {entry.manifest.windows!.rows.toLocaleString()} recorded attempts.
+          {entry.manifest.windows!.rows.toLocaleString()} observations.
           {total > 1 &&
             " Browse item pages to see all observations. Filters and means apply to the current page."}
           {!entry.manifest.windows!.rows &&
@@ -51,6 +59,9 @@ export function WindowBrowser({
               onChange={navigate}
             />
             <div className="flex flex-wrap items-center gap-3">
+              {entry.manifest.windows?.testlets && (
+                <TestletNavigation entry={entry} onChange={navigate} />
+              )}
               <label className="flex items-center gap-2 text-xs">
                 Go to page
                 <input
@@ -78,7 +89,7 @@ export function WindowBrowser({
                       setMessage(
                         range[0] === range[1]
                           ? ""
-                          : `This item's attempts span pages ${range[0] + 1}–${range[1] + 1}.`,
+                          : `This item's observations span pages ${range[0] + 1}–${range[1] + 1}.`,
                       );
                     } else setMessage("Item ID not found.");
                   } catch (error) {

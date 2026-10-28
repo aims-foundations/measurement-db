@@ -1,6 +1,8 @@
 import type { CellSelection, MatrixModel } from "@/lib/benchmark-records/model";
 import { gradeColor } from "@/lib/benchmark-records/colors";
 import type { ResponseScale, Subject } from "@/lib/benchmark-records/types";
+import { columnGroups } from "@/lib/benchmark-records/testlets";
+import { TestletHeader, TESTLET_HEADER_HEIGHT } from "./testlet-header";
 
 /** Render the selected axes; observations have already been indexed by ID. */
 export function MatrixTable({
@@ -18,6 +20,22 @@ export function MatrixTable({
   itemOffset: number;
   onSelect: (selection: CellSelection) => void;
 }) {
+  const groups = columnGroups(model, items);
+  const grouped = groups.some((group) => group.testletId !== null);
+  const starts = new Set(groups.slice(1).map((group) => group.start));
+  const ends = new Set(groups.map((group) => group.start + group.length - 1));
+  const edges = (i: number) =>
+    grouped && starts.has(i) ? "border-l-8 border-l-[var(--paper)]" : "";
+  const outline = (i: number) => ({
+    boxShadow: grouped
+      ? [
+          (i === 0 || starts.has(i)) && "inset 1px 0 #9c9a94",
+          ends.has(i) && "inset -1px 0 #9c9a94",
+        ]
+          .filter(Boolean)
+          .join(", ")
+      : undefined,
+  });
   return (
     <div
       className="max-h-[38rem] overflow-auto rounded-lg border border-[var(--line)]"
@@ -26,18 +44,45 @@ export function MatrixTable({
     >
       <table className="w-full border-separate border-spacing-0 text-xs">
         <thead>
+          {grouped && (
+            <tr>
+              <th
+                rowSpan={2}
+                scope="col"
+                className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--paper)] p-3 text-left"
+              >
+                Model / item
+              </th>
+              {groups.map((group) => (
+                <th
+                  key={group.start}
+                  colSpan={group.length}
+                  scope="colgroup"
+                  className={`sticky top-0 z-20 bg-[var(--paper)] p-0 text-left font-normal ${edges(group.start)}`}
+                >
+                  <TestletHeader group={group} />
+                </th>
+              ))}
+            </tr>
+          )}
           <tr>
-            <th
-              scope="col"
-              className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--paper)] p-3 text-left"
-            >
-              Model / item
-            </th>
+            {!grouped && (
+              <th
+                scope="col"
+                className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--paper)] p-3 text-left"
+              >
+                Model / item
+              </th>
+            )}
             {items.map((id, i) => (
               <th
                 key={id}
                 scope="col"
-                className="sticky top-0 z-10 min-w-24 border-b border-[var(--line)] bg-[var(--paper)] p-2"
+                className={`sticky z-10 min-w-24 border-b border-[var(--line)] bg-[var(--paper)] p-2 ${edges(i)}`}
+                style={{
+                  top: grouped ? TESTLET_HEADER_HEIGHT : 0,
+                  ...outline(i),
+                }}
               >
                 <button
                   className="underline decoration-[var(--line)] underline-offset-4"
@@ -67,7 +112,7 @@ export function MatrixTable({
                   model.cells.get(subject.subject_id)?.get(id) ?? [];
                 const label =
                   attempts.length > 1
-                    ? `${attempts.length} attempts`
+                    ? `${attempts.length} observations`
                     : String(attempts[0]?.response ?? "?");
                 const ungraded = attempts.every(
                   (attempt) => attempt.response === null,
@@ -75,7 +120,8 @@ export function MatrixTable({
                 return (
                   <td
                     key={id}
-                    className="border-b border-[var(--line)] p-1 text-center"
+                    className={`border-b border-[var(--line)] p-1 text-center ${edges(i)}`}
+                    style={outline(i)}
                   >
                     {attempts.length ? (
                       <button
