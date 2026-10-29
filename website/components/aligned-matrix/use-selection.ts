@@ -18,7 +18,7 @@ export function useSelection(
     async (signal: AbortSignal) => {
       const subject = matrix.manifest.subjects[row];
       const group = groupAt(matrix.manifest.groups, column);
-      const test = await tests.test(column, signal);
+      const test = await tests.test(matrix.sourceColumn(column), signal);
       const itemId = test.items[group.rowSetups[row]];
       if (!itemId || !matrix.value(row, column))
         return { test, model: null, itemId: null };

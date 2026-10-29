@@ -11,6 +11,7 @@ export class ScoreMatrix {
   constructor(
     readonly manifest: AlignedManifest,
     readonly values: Uint8Array,
+    private readonly sourceColumns?: Uint32Array,
   ) {
     const { columns, subjects } = manifest;
     if (values.length !== columns * subjects.length)
@@ -43,6 +44,11 @@ export class ScoreMatrix {
       totalPassed + totalFailed !== manifest.observations
     )
       throw new Error("Displayed scores differ from the source totals.");
+  }
+
+  /** Resolve a displayed column to the immutable native-test page index. */
+  sourceColumn(column: number): number {
+    return this.sourceColumns?.[column] ?? column;
   }
 
   private rawCounts(row: number, start: number, end: number): Counts {

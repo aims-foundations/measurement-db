@@ -5,6 +5,7 @@ import { withBase } from "@/lib/base-path";
 import { RecordSource } from "@/lib/benchmark-records/client";
 import type { GalleryEntry } from "@/lib/benchmark-records/types";
 import { loadMatrix, TestSource } from "@/lib/aligned-matrix/client";
+import { orderByDifficulty } from "@/lib/aligned-matrix/order";
 import {
   fitRange,
   groupLabel,
@@ -105,6 +106,10 @@ function Explorer({
     [manifest, query, grader, rowGraders],
   );
   const span = range.end - range.start;
+  const ordered = useMemo(
+    () => orderByDifficulty(matrix, rows, grader),
+    [matrix, rows, grader],
+  );
   const visibleGroup = manifest.groups.find(
     (g) => range.start >= g.start && range.end <= g.start + g.count,
   );
@@ -251,6 +256,12 @@ function Explorer({
         Drag horizontally or use Pan to move. Arrow keys navigate; Enter zooms
         or opens a cell. Shared headers mark testlets.
       </p>
+      <p className="mb-4 text-xs text-[var(--muted)]" aria-label="Column order">
+        Within each testlet: hardest → easiest, by observed pass rate among the
+        selected model configurations. Tests with no observations in this
+        selection appear last. This is an empirical ordering, not a fitted
+        difficulty estimate.
+      </p>
       {rows.length ? (
         <div className="rounded-md border border-[var(--line)] bg-white p-2 sm:p-4">
           <div className="grid grid-cols-[82px_minmax(0,1fr)_36px] gap-x-2 sm:grid-cols-[190px_minmax(0,1fr)_52px] sm:gap-x-3">
@@ -288,7 +299,7 @@ function Explorer({
               })}
             </div>
             <MatrixCanvas
-              matrix={matrix}
+              matrix={ordered}
               rows={rows}
               range={range}
               grader={grader}
@@ -298,7 +309,7 @@ function Explorer({
             />
             <div className="pt-10">
               {rows.map((row) => {
-                const counts = matrix.counts(row, range, grader),
+                const counts = ordered.counts(row, range, grader),
                   n = counts.passed + counts.failed;
                 return (
                   <div
@@ -349,7 +360,7 @@ function Explorer({
       <div ref={detail} className="scroll-mt-24">
         {selected && (
           <TestDetails
-            matrix={matrix}
+            matrix={ordered}
             tests={tests}
             source={source}
             selection={selected}

@@ -3,6 +3,7 @@ import test from "node:test";
 import "./load-typescript.mjs";
 const { ScoreMatrix, pixelBins, fitRange, zoomRange, groupAt } =
   await import("../lib/aligned-matrix/model.ts");
+const { orderByDifficulty } = await import("../lib/aligned-matrix/order.ts");
 
 function fixture(columns = 1027) {
   const values = Uint8Array.from(
@@ -102,4 +103,66 @@ test("score dimensions and source totals must agree before rendering", () => {
   const invalid = matrix.values.slice();
   invalid[0] = 3;
   assert.throws(() => new ScoreMatrix(matrix.manifest, invalid), /score code/);
+});
+
+test("difficulty order stays within testlets and preserves exact source identities", () => {
+  const values = Uint8Array.from([2, 1, 1, 2, 0, 2, 0, 2, 1, 1, 0, 2]);
+  const manifest = {
+    columns: 6,
+    subjects: [{ subject_id: "a" }, { subject_id: "b" }],
+    passed: 5,
+    failed: 4,
+    observations: 9,
+    groups: [
+      {
+        id: "a",
+        start: 0,
+        count: 3,
+        setups: [{ grader: "old" }, { grader: "new" }],
+        rowSetups: [0, 1],
+      },
+      {
+        id: "b",
+        start: 3,
+        count: 3,
+        setups: [{ grader: "new" }],
+        rowSetups: [0, 0],
+      },
+    ],
+  };
+  const source = new ScoreMatrix(manifest, values);
+  const ordered = orderByDifficulty(source, [0, 1]);
+  assert.deepEqual(
+    Array.from({ length: 6 }, (_, i) => ordered.sourceColumn(i)),
+    [2, 1, 0, 3, 5, 4],
+  );
+  for (const row of [0, 1])
+    for (let column = 0; column < 6; column++) {
+      const native = ordered.sourceColumn(column);
+      assert.equal(ordered.value(row, column), source.value(row, native));
+      assert.equal(
+        groupAt(manifest.groups, column).id,
+        groupAt(manifest.groups, native).id,
+      );
+    }
+  assert.deepEqual(
+    source.values,
+    values,
+    "source scores are never reordered in place",
+  );
+  const single = orderByDifficulty(source, [0]);
+  assert.deepEqual(
+    Array.from({ length: 6 }, (_, i) => single.sourceColumn(i)),
+    [1, 2, 0, 3, 5, 4],
+  );
+  const filtered = orderByDifficulty(source, [0, 1], "new");
+  assert.deepEqual(
+    Array.from({ length: 6 }, (_, i) => filtered.sourceColumn(i)),
+    [2, 1, 0, 3, 5, 4],
+  );
+  const empty = orderByDifficulty(source, [], "old");
+  assert.deepEqual(
+    Array.from({ length: 6 }, (_, i) => empty.sourceColumn(i)),
+    [0, 1, 2, 3, 4, 5],
+  );
 });

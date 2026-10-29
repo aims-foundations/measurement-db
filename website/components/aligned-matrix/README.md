@@ -11,6 +11,11 @@ pages and canonical Parquet tables are unchanged.
   range geometry, and lazy test-to-item lookup. Scores use one byte per cell:
   0 means no observation, 1 means fail, 2 means pass. The browser verifies the
   score checksum and full-source totals before rendering.
+  `order.ts` sorts columns within each testlet by increasing observed pass rate
+  among the selected models and grader, matching the gallery's difficulty
+  convention. Missing observations are excluded, ties keep native order, and
+  tests with no selected observations appear last. A display-to-source index
+  keeps cell details attached to the exact original test after sorting.
 - `explorer.tsx` composes controls and model rows. `canvas.tsx` handles pointer
   and keyboard navigation; `paint.ts` draws the current viewport. Overview bins
   cover every visible column exactly once. Bands show proportions, while a
