@@ -46,17 +46,21 @@ export function RecordGallery({
     () => JSON.parse(metadata.response_scale) as ResponseScale,
     [metadata],
   );
-  const [settings, setSettings] = useState<ViewSettings>({
-    filters: {},
-    query: "",
-    order: comparable(scale) ? "grade" : "recorded",
-    display: model.subjects.length ? "heatmap" : "table",
-    actual: false,
+  const contexts = useMemo(() => prepareContexts(model.observations), [model]);
+  const [settings, setSettings] = useState<ViewSettings>((): ViewSettings => {
+    const trials =
+      contexts.dimensions.find((d) => d.key === "trial")?.values ?? [];
+    return {
+      filters: trials.length > 1 ? { trial: JSON.stringify(trials[0]) } : {},
+      query: "",
+      order: comparable(scale) ? "grade" : "recorded",
+      display: model.subjects.length ? "heatmap" : "table",
+      actual: false,
+    };
   });
   const [rowPage, setRowPage] = useState(0),
     [itemPage, setItemPage] = useState(0);
   const [selection, setSelection] = useState<CellSelection | null>(null);
-  const contexts = useMemo(() => prepareContexts(model.observations), [model]);
   const presentation = presentationFor(metadata.benchmark_id);
   const pairs = useMemo(
     () => prepareComparisons(model, presentation),

@@ -23,7 +23,7 @@ function Filter({
 }) {
   const options = (
     <>
-      <option value="">All</option>
+      {dimension.key !== "trial" && <option value="">All</option>}
       {dimension.values.map((value) => (
         <option key={JSON.stringify(value)} value={JSON.stringify(value)}>
           {value ?? "Not recorded"}
@@ -63,8 +63,10 @@ export function ViewControls({
   const update = (patch: Partial<ViewSettings>) =>
     onChange({ ...settings, ...patch });
   const varied = dimensions.filter((d) => d.values.length > 1);
-  const common = varied.filter((d) => d.values.length <= 30);
-  const extra = varied.filter((d) => d.values.length > 30);
+  const common = varied.filter(
+    (d) => d.key === "trial" || d.values.length <= 30,
+  );
+  const extra = varied.filter((d) => d.key !== "trial" && d.values.length > 30);
   return (
     <div className="mb-4 space-y-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -132,10 +134,18 @@ export function ViewControls({
             More conditions
           </button>
         )}
-        {Object.values(settings.filters).some(Boolean) && (
+        {Object.entries(settings.filters).some(
+          ([key, value]) => key !== "trial" && value,
+        ) && (
           <button
             className={`${CONTROL} !border-transparent underline`}
-            onClick={() => update({ filters: {} })}
+            onClick={() =>
+              update({
+                filters: settings.filters.trial
+                  ? { trial: settings.filters.trial }
+                  : {},
+              })
+            }
           >
             Clear filters
           </button>
