@@ -22,6 +22,8 @@ jobs:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       NEXT_TELEMETRY_DISABLED: '1'
       RAYON_NUM_THREADS: '4'
+      # Reuse the validated CLI and locked dependencies with the prepared assets.
+      VERCEL_CLI: artifacts/testlet-demo/vercel-cli/node_modules/vercel/dist/vc.js
     steps:
       - uses: pnpm/action-setup@v4
         with:
@@ -37,6 +39,9 @@ jobs:
           assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==os.environ['GITHUB_SHA']
           assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip()
           assert not Path('website/node_modules').is_symlink()
+          cli=Path(os.environ['VERCEL_CLI'])
+          assert cli.is_file()
+          assert json.loads((cli.parent.parent/'package.json').read_text())['version']=='62.2.0'
           root=Path('artifacts/testlet-demo')
           release=json.loads((root/'hf-preview.json').read_text())
           prepared=json.loads((root/'prepared.json').read_text())
@@ -58,8 +63,8 @@ jobs:
       - name: Test and build the preview
         run: |
           pnpm --dir website gallery:test
-          pnpm dlx vercel@62.2.0 pull --yes --environment=preview --git-branch=feat/testlet-schema --token="$VERCEL_TOKEN"
-          pnpm dlx vercel@62.2.0 build --token="$VERCEL_TOKEN"
+          node "$VERCEL_CLI" pull --yes --environment=preview --git-branch=feat/testlet-schema --token="$VERCEL_TOKEN"
+          node "$VERCEL_CLI" build --token="$VERCEL_TOKEN"
           python3 - <<'PY'
           from pathlib import Path
           count=sum(p.is_file() for p in Path('.vercel/output').rglob('*'))
@@ -70,7 +75,7 @@ jobs:
         env:
           NODE_OPTIONS: --require=/lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/testlet-schema/measurement_db/website/scripts/vercel-fetch.cjs
         run: |
-          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --target=preview --env HF_TOKEN="$HF_TOKEN" --meta githubCommitRef=feat/testlet-schema --meta githubCommitSha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+          url=$(node "$VERCEL_CLI" deploy --prebuilt --target=preview --env HF_TOKEN="$HF_TOKEN" --meta githubCommitRef=feat/testlet-schema --meta githubCommitSha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
           export TESTLET_PREVIEW_URL="$url"
           python3 - <<'PY'
           import json, os
@@ -105,4 +110,4 @@ jobs:
           path.write_text(json.dumps(result,indent=2)+'\n');path.chmod(0o600)
           print('Preview deployed: '+host)
           PY
-          pnpm dlx vercel@62.2.0 curl /measurement-db/testlet-preview --deployment "$url" -- --fail --silent --show-error --max-time 120 --output /dev/null
+          node "$VERCEL_CLI" curl /measurement-db/testlet-preview --deployment "$url" -- --fail --silent --show-error --max-time 120 --output /dev/null
