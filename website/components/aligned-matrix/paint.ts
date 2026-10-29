@@ -42,17 +42,22 @@ export function paint(
       context.fillRect(x, r * height + blue, right - x, red);
     }
   }
-  context.strokeStyle = "rgba(40, 45, 50, .45)";
-  context.lineWidth = dpr;
-  for (const group of matrix.manifest.groups) {
-    if (group.start <= range.start || group.start >= range.end) continue;
-    const x = Math.round(
-      ((group.start - range.start) / (range.end - range.start)) * canvas.width,
-    );
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x, canvas.height);
-    context.stroke();
+  // At full overview, the header marks testlets without drawing through scores.
+  const overview = range.start === 0 && range.end === matrix.manifest.columns;
+  if (!overview) {
+    context.strokeStyle = "rgba(40, 45, 50, .45)";
+    context.lineWidth = dpr;
+    for (const group of matrix.manifest.groups) {
+      if (group.start <= range.start || group.start >= range.end) continue;
+      const x = Math.round(
+        ((group.start - range.start) / (range.end - range.start)) *
+          canvas.width,
+      );
+      context.beginPath();
+      context.moveTo(x, 0);
+      context.lineTo(x, canvas.height);
+      context.stroke();
+    }
   }
   if (
     selected &&
