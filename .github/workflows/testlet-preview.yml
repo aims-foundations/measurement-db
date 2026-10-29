@@ -45,6 +45,11 @@ jobs:
           assert release['branch']=='preview/testlet-schema'
           assert prepared['benchmarks']==270
           assert checked['rows']==6119913 and checked['testlets']==200 and checked['exact_testlet_membership']
+          aligned=json.loads(Path('website/public/benchmark-data/programbench/aligned-preview/manifest.json').read_text())
+          assert aligned['sourceRevision']==release['revision']
+          assert aligned['columns']==247930 and aligned['canonicalItems']==1483092
+          assert aligned['observations']==6119913 and len(aligned['groups'])==200
+          assert aligned['scores']['expandedBytes']==6942040
           for relative,expected in prepared['website_sha256'].items():
               with (Path('website')/relative).open('rb') as stream:
                   assert hashlib.file_digest(stream,'sha256').hexdigest()==expected,relative
@@ -93,10 +98,11 @@ jobs:
           root=Path('artifacts/testlet-demo')
           page=json.loads((root/'demo-page.json').read_text())['page']
           result={'deployment':os.environ['TESTLET_PREVIEW_URL'],'alias':host,
-                  'review_url':'https://'+host+'/measurement-db/programbench?'+urlencode({'_vercel_share':token,'itemPage':page}),
+                  'review_url':'https://'+host+'/measurement-db/testlet-preview?'+urlencode({'_vercel_share':token}),
+                  'comparison_url':'https://'+host+'/measurement-db/programbench?'+urlencode({'_vercel_share':token,'itemPage':page}),
                   'code_revision':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID']}
           path=root/'vercel-preview.json'
           path.write_text(json.dumps(result,indent=2)+'\n');path.chmod(0o600)
           print('Preview deployed: '+host)
           PY
-          pnpm dlx vercel@62.2.0 curl /measurement-db/programbench --deployment "$url" -- --fail --silent --show-error --max-time 120 --output /dev/null
+          pnpm dlx vercel@62.2.0 curl /measurement-db/testlet-preview --deployment "$url" -- --fail --silent --show-error --max-time 120 --output /dev/null

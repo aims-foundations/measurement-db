@@ -16,7 +16,7 @@
     "search:check": "node scripts/index-meilisearch.mjs --dry-run",
     "search:sync": "node scripts/index-meilisearch.mjs",
     "gallery:prepare": "node --experimental-strip-types scripts/prepare-gallery-records.mts",
-    "gallery:test": "node --test scripts/test-benchmark-records.mjs scripts/test-record-preview.mjs scripts/test-record-preview-route.mjs scripts/test-gallery-source-route.mjs scripts/test-testlets.mjs",
+    "gallery:test": "node --test scripts/test-benchmark-records.mjs scripts/test-record-preview.mjs scripts/test-record-preview-route.mjs scripts/test-gallery-source-route.mjs scripts/test-testlets.mjs scripts/test-aligned-matrix.mjs",
     "network:test": "node --test scripts/test-coverage-network.mjs",
     "catalog:test": "node --test scripts/test-catalog-order.mjs",
     "format": "prettier --write .",
