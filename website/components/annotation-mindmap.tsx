@@ -56,6 +56,13 @@ const SIDE_OF: Record<string, Side> = {
   verification: "left",
 };
 
+/** An option on the form that no annotator selected. Not a status — it is the
+ *  rest of the question's option set, shown so the reader can see what was
+ *  considered and passed over. Codes that are exclusive of the positive
+ *  options ("none documented" and the two negative tie codes) are omitted at
+ *  0/n, since they could not have been selected once anything else was. */
+const UNDOCUMENTED = "#7A4FBF";
+
 const MARK_FILL: Record<LeafStatus, string> = {
   ok: "#00917F",
   part: "#C27C00",
@@ -88,7 +95,7 @@ type Block = {
   status: LeafStatus;
   question: string[];
   detail: string[];
-  votes: { tally: string; lines: string[] }[];
+  votes: { tally: string; lines: string[]; undocumented: boolean }[];
   /** Per-question agreement line, or null when the question is uncoded. */
   agree: string | null;
   /** y of the status mark and the first question line. */
@@ -105,6 +112,7 @@ function buildBlock(band: Band, leaf: Leaf): Block {
   const votes = (leaf.votes ?? []).map((vote) => ({
     tally: `${vote.k}/${vote.n}`,
     lines: wrap(vote.code, CHARS.v - 5),
+    undocumented: vote.k === 0,
   }));
   const voteLines = votes.reduce((sum, v) => sum + v.lines.length, 0);
   const agree =
@@ -271,6 +279,21 @@ function Key() {
             <span className="opacity-60">{entry.gloss}</span>
           </span>
         ))}
+      </div>
+      <div className="flex flex-wrap gap-x-7 gap-y-2.5">
+        <span className="flex items-baseline gap-2 text-sm font-light">
+          <span
+            className="size-2.5 shrink-0"
+            style={{ background: UNDOCUMENTED }}
+            aria-hidden
+          />
+          <span className="rd-mono !text-[0.62rem] uppercase tracking-wider">
+            Undocumented
+          </span>
+          <span className="opacity-60">
+            an option on the form that no annotator selected
+          </span>
+        </span>
       </div>
       <div className="flex flex-col gap-1.5 border-t border-black/10 pt-3.5">
         {terms.map(([abbr, gloss]) => (
@@ -466,8 +489,11 @@ export function AnnotationMindmap({
                               key={vote.tally + vote.lines[0]}
                               x={tx}
                               textAnchor={anchor}
-                              className="fill-current text-[10.5px]"
-                              opacity={0.6}
+                              className="text-[10.5px]"
+                              fill={
+                                vote.undocumented ? UNDOCUMENTED : "currentColor"
+                              }
+                              opacity={vote.undocumented ? 0.85 : 0.6}
                             >
                               {vote.lines.map((line, i) => (
                                 <tspan

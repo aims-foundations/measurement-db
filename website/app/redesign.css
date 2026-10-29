@@ -1653,3 +1653,69 @@ dialog.rd-search-dialog::backdrop {
     animation: none;
   }
 }
+
+/* Verbatim Evidence Quality Rubric inside its pulldown. The source document is
+   mostly wide tables, so this styles markdown output rather than reflowing it;
+   the container scrolls horizontally on small screens. */
+.rubric-md {
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.6;
+}
+.rubric-md > :first-child {
+  margin-top: 0;
+}
+.rubric-md p {
+  margin: 0.75rem 0;
+  opacity: 0.8;
+}
+.rubric-md h3 {
+  font-family: var(--rd-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin: 1.75rem 0 0.6rem;
+}
+.rubric-md ol,
+.rubric-md ul {
+  margin: 0.6rem 0;
+  padding-left: 1.2rem;
+  opacity: 0.8;
+}
+.rubric-md li {
+  margin: 0.3rem 0;
+}
+.rubric-md table {
+  border-collapse: collapse;
+  margin: 0.9rem 0;
+  min-width: 46rem;
+  font-size: 0.8125rem;
+}
+.rubric-md th,
+.rubric-md td {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 0.6rem 0.9rem 0.6rem 0;
+  text-align: left;
+  vertical-align: top;
+  opacity: 0.85;
+}
+.rubric-md th {
+  font-family: var(--rd-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.rubric-md pre {
+  background: rgba(0, 0, 0, 0.045);
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  font-family: var(--rd-mono);
+  font-size: 0.75rem;
+}
+.rubric-md code {
+  font-family: var(--rd-mono);
+  font-size: 0.78rem;
+}

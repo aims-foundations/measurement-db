@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ActionLink } from "@/components/action-link";
 import { AnnotationMindmap } from "@/components/annotation-mindmap";
+import { EvidenceHeatmap } from "@/components/evidence-heatmap";
+import {
+  EvidenceQuality,
+  RubricPulldown,
+} from "@/components/evidence-quality";
 import {
   annotations,
+  frontierMathEvidenceQuality,
   claims,
   getAnnotation,
   type Annotation,
@@ -364,6 +370,57 @@ export default async function AnnotationReportPage({
           ) : null}
         </div>
       </section>
+
+      {/* --------------------------------------------------- evidence quality */}
+      {annotation.slug === "frontiermath" ? (
+        <section className="rd-white-band rd-band">
+          <div className="rd-container">
+            <p className="rd-mono opacity-60">Qualitative details</p>
+            <h2 className="rd-h2 mt-4">Evidence Quality and Rationale for Selected Codes</h2>
+            <p className="rd-prose-wide mt-4 text-base font-light leading-relaxed opacity-70">
+              The evidence behind our code selections are below.
+              Every box that was checked is corresponded with annotator rationale and rated four ways for evidence quality: how far the
+              claim can actually be checked (verifiability), who said it (source
+              independence), how closely the source matches this exact benchmark
+              version (precision and fit), and whether anything else backs it up
+              (corroboration). Each runs 0&ndash;3 and stay separate
+              &mdash; a low verifiability beside a high source independence
+              means a reliable source saying something nobody outside can check. They are not meant to be aggregated.
+            </p>
+            <div className="mt-8">
+              <RubricPulldown />
+            </div>
+            <EvidenceHeatmap bands={frontierMathEvidenceQuality} />
+            <EvidenceQuality bands={frontierMathEvidenceQuality} />
+
+            {/* WORKING NOTE — remove before publication, like the others. */}
+            <div className="mt-10 border border-dashed border-black/30 bg-black/[0.035] p-6 sm:p-7">
+              <p className="rd-mono !text-[0.62rem] uppercase tracking-wider opacity-60">
+                Working note
+              </p>
+              <h3 className="rd-h3 mt-3">Open question &mdash; 1</h3>
+              <ul className="mt-5 flex max-w-4xl flex-col gap-3">
+                <li className="flex gap-3 text-sm font-light leading-relaxed opacity-60">
+                  <span
+                    className="mt-[0.5rem] size-1.5 shrink-0 rotate-45 border border-current"
+                    aria-hidden
+                  />
+                  <span>
+                    Search completeness is coded but not shown. It rates how
+                    hard an annotator looked before concluding a code had no
+                    support, so it is what makes a negative finding credible
+                    &mdash; a reader currently cannot tell a thorough null from
+                    a cursory one. It sits on a different scale from the four
+                    evidence dimensions and attaches to the codes nobody
+                    selected rather than to a rated code, so it needs its own
+                    place on the page. Decide where.
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* ------------------------------------------------------------ record */}
       <section className="rd-warm-band rd-band">
