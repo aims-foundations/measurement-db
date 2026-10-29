@@ -1,0 +1,363 @@
+Timestamp,Annotator name or ID,Benchmark name,Benchmark version or snapshot,Frozen corpus cutoff date (YYYY-MM-DD),Benchmark homepage or primary documentation URL,External verification status — What evidence shows that a party outside the benchmark operator and evaluated provider actually performed a relevant check?,External verification status — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.","Verifier relationship — If external verification occurred, how is the verifier related to the evaluator/evaluated parties?",Verifier relationship — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.","Verification scope — If external verification occurred, what did the verifier actually inspect or test?",Verification scope — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.","Findings disclosure — If external verification occurred, what findings are available to benchmark users?",Findings disclosure — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Report any AI use in your annotation process.,Describe AI-use,Describe models used
+10/11/2026 15:55:23,Ameen Patel,FrontierMath,FrontierMath Tiers 1-3 (v2),2026-09-27,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,operator reports external verification only,"operator reports external verification only [Found]
+Source: https://arxiv.org/html/2411.04872v7#S2.SS3
+Quote: ""We commissioned blind reviews from second reviewers on 30 randomly chosen questions""
+Source: https://arxiv.org/html/2411.04872v7#S6
+Quote: ""We conducted interviews with four prominent mathematicians to gather expert perspectives on FrontierMath’s difficulty, significance, and prospects""
+Source: https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems
+Quote: ""We thank Will McLafferty, Timothy Smits, and Frederick Vu for identifying errors in the code and solution previously posted on the website, which has since been updated.""","operator reports external verification only: V1 S2 P1 C2
+Comment: Red flag: self-vouching (Epoch reports the second reviews but publishes no reviewer reports or names).
+
+Not selected: Search 0
+Comment: No sources-checked list for the codes not selected; Section 5 also needs a web search for a 2.",external with a material tie,"external with a material tie [Found]
+Source: https://arxiv.org/html/2411.04872v7#S2.SS3
+Quote: ""We commissioned blind reviews from second reviewers on 30 randomly chosen questions""","external with a material tie: V2 S2 P1 C1
+
+Not selected: Search 0
+Comment: No sources-checked list for the codes not selected; Section 5 also needs a web search for a 2.",Protected content/coverage,"Protected content/coverage [Found]
+Source: https://arxiv.org/html/2411.04872v7#S7
+Quote: ""sharing a sample of ten problems to four expert mathematicians, including three Fields medal winners, who uniformly assessed the problems as exceptionally difficult""","Protected content/coverage: V1 S2 P1 C1
+
+Not selected: Search 0
+Comment: No sources-checked list for the codes not selected; Section 5 also needs a web search for a 2.",Detailed public findings,"Detailed public findings [Found]
+Source: https://arxiv.org/html/2411.04872v7#S2.SS3
+Quote: ""Two out of 35 questions had an incorrect answer provided by the author, undetected in the first review.""","Detailed public findings: V2 S2 P1 C1
+Comment: Red flag: numbers differ (the paper's second reviews implied an error rate of roughly 7-10%; the v2 audit found errors in 42% of problems).
+
+Not selected: Search 0
+Comment: No sources-checked list for the codes not selected; Section 5 also needs a web search for a 2.","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Assigned the code selection (I used the AI's output as the answer)","I used AI by giving it the question to look through Epoch-authored sites, Epoch staff articles, and third party sources (these were not used as the only basis for selecting a code). Then, it assigned these sources to a code, and I reviewed these sources and the passages AI was referring to. Once I read the passages, I would use the quoted passage and source if I thought it gave evidence for selecting that code. I made edits to some of the rationales the AI drafted. I made the final decision whether the code should be selected or not based on the given evidence.","Claude Opus 5.5, Gemini 3.6 Flash"
+10/11/2026 16:57:23,Max Zhang,Frontier Math,FrontierMath Tiers 1-3 (v2),2026-9-26,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,no external verification located,"no external verification located
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?utm_source=chatgpt.com ; https://arxiv.org/html/2411.04872v7?utm_source=chatgpt.com ; https://www.linkedin.com/posts/epochai_frontiermath-tiers-14-v2-is-live-we-activity-7471253846296711168-bRlG?utm_source=chatgpt.com ; https://epoch.ai/data/benchmark-reviews-documentation/included-benchmarks?utm_source=chatgpt.com",N/A,,,,,,,,,,"Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made","Mainly describe the extent of your AI-use. Also, please disclose how the AI was used: which steps, and what it did versus what you decided. Answer N/A for No AI-use. I used AI to help me find sources and help provide evidence when applicable. I then used summary of evidence to select the selection and had it draft a rationale of which I usually tweaked.",Claude Opus 5.5
+10/16/2026 11:44:16,Max Zhang,SWE-Bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026-09-27,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,no external verification located,"no external verification located [Missing]
+Sources checked: https://epoch.ai/benchmarks/swe-bench-pro/review ; https://epoch.ai/data/benchmark-reviews-documentation ; https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse ; https://deepswe.datacurve.ai/blog/deepswe#cleaner-verifier-judgments ; https://openai.com/index/separating-signal-from-noise-coding-evaluations/ ; https://cursor.com/blog/reward-hacking-coding-benchmarks ; https://poolside.ai/blog/through-the-looking-glass ; https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://labs.scale.com/leaderboard/swe_bench_pro_public_v2 ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro
+Note: SWE-Bench Pro has been externally checked many times, but only on the public split. ",N/A,,,,,,,,,,"Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)","Mainly describe the extent of your AI-use. Also, please disclose how the AI was used: which steps, and what it did versus what you decided. Answer N/A for No AI-use. I used AI to help me find sources and help provide evidence when applicable. I then used summary of evidence to select the selection and had it draft a rationale of which I usually tweaked briefly.","Claude Opus 5.5, GPT 6-Astra"
+10/18/2026 15:49:54,Ameen Patel,SWE-bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026/10/17,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,no external verification located,"no external verification located [Found]
+Source: https://openai.com/index/separating-signal-from-noise-coding-evaluations/ (OpenAI, July 8, 2026; audit scoped to the public split)
+Quote: ""On the 731-task public split, frontier models improved from a pass rate of 23.3% to 80.3% in eight months.""
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/issues/108 (June Kim; external determinacy audit)
+Quote: ""Right of reply: an external determinacy audit of the SWE-bench Pro public set""
+Source: https://discuss.huggingface.co/t/agentseal-a-corpus-availability-audit-of-swe-bench-pro/177267 (June 30, 2026)
+Quote: ""the complete SWE-bench Pro public set: 731 public instances""
+
+verifier-authored or other external evidence located [Borderline]
+Sources: https://openai.com/index/separating-signal-from-noise-coding-evaluations/ ; https://epoch.ai/benchmarks/swe-bench-pro/review ; https://github.com/scaleapi/SWE-bench_Pro-os/issues/108 ; https://cursor.com/blog/reward-hacking-coding-benchmarks ; https://deepswe.datacurve.ai/blog/deepswe ; https://poolside.ai/blog/through-the-looking-glass ; https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse ; https://discuss.huggingface.co/t/agentseal-a-corpus-availability-audit-of-swe-bench-pro/177267
+Note: External parties did check SWE-Bench Pro: OpenAI estimates ~30% of tasks are broken, Epoch published a partial review, June Kim found 109 of 728 under-determined tasks, and Cursor and Poolside documented reward hacking. All of these cover the public set, which shares the commercial set's construction pipeline. None examined commercial tasks or commercial results.
+
+operator reports external verification only [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://scale.com/blog/swe-bench-pro ; https://arxiv.org/html/2509.16941v2 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://labs.scale.com/leaderboard/swe_bench_pro_public_v2 ; https://scale.com/blog/leaderboard (plans to ""collaborate with trusted third party organizations""; a plan, not a report)","no external verification located: no rating (null code)
+Not selected: Search 3
+Comment: Excerpt: the OpenAI, Epoch, Cursor, Datacurve, Poolside, LessWrong, AgentSeal and issue #108 pages came back as summaries with short quotes.",,,,,,,,,,"Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)","I used AI to search through an initial set of sources and allowed it to search through sources outside of the given list. I told AI to assign the codes accordingly if it was applicable to the benchmark, and then I would review the assigned codes and change their classification or rationales if my opinion differed. I did the same for evidence quality annotation.",Claude Opus 5.5
+10/19/2026 13:56:09,Nhi Truong,SWE-bench Pro,commercial/private subset; assessment snapshot as of 2026-10-01.,2026-10-01,https://arxiv.org/html/2509.16941v2#S3.SS3,no external verification located,"No external verification located [Selected for the commercial subset]
+Sources checked:
+https://arxiv.org/html/2509.16941v2
+https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+https://labs.scale.com/blog/swe-bench-pro-v2
+https://epoch.ai/benchmarks/swe-bench-pro/review
+https://openai.com/index/separating-signal-from-noise-coding-evaluations/
+https://deepswe.datacurve.ai/blog/deepswe#cleaner-verifier-judgments
+https://poolside.ai/blog/through-the-looking-glass
+No supporting passage establishing a relevant external check of the commercial subset by a party outside both the operator and evaluated provider was located.
+
+Public-set audits [Scope does not match]
+Source: https://epoch.ai/benchmarks/swe-bench-pro/review (Methodology)
+Quote: ""Multiple audits have been performed on the public set:""
+Note: These audits support conclusions about public tasks. They do not establish inspection of commercial items, scoring, or evaluation runs. Epoch's overall verdict is not transferred to the private subset.
+
+Contracted engineering work [Borderline, not counted as external verification]
+Source: https://labs.scale.com/blog/swe-bench-pro-v2 (The human expert effort behind V2)
+Quote: ""23 contracted engineers""
+Quote: ""They spent 1,897 hours across the public and private sets""
+Note: This documents contracted engineering work involving private tasks. The detailed blind-reader verification is described for V2, the public split. The passage does not clearly identify a separate external check of the commercial subset, its scope, and its findings. This answer records insufficient evidence, not proof that no outside check ever occurred.","Not selected: Search 3
+Comment: Provisional for the original private subset. Documentation review and contractor candidates require a scope decision. Epoch’s public task defect findings do not transfer to private tasks. Contracted engineer identity, actual verification scope and mapping to the original 276 tasks remain unresolved; payment alone does not disqualify an outside check. Live pages were read on 12 October without a 1 October archive; their present state does not establish the cutoff state.",,,,,,,,,,"Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)","I used Codex to review sources, discuss annotation choices, and draft evidence notes. I questioned some suggestions as we went.","OpenAI Codex (GPT-6-based assistant), with built-in web search and browser tools."
+10/20/2026 13:01:01,Nhi Truong,FrontierMath,FrontierMath Tiers 1–3 v2 (2026-06-12 update),2026-10-18,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2,no external verification located,"No external verification located [Missing]
+No qualifying check by a party outside both Epoch and the evaluated providers was located for Tiers 1–3 v2 by 2026-10-18.
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://arxiv.org/html/2411.04872v3 ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb ; https://epoch.ai/benchmarks/about ; https://epochai.substack.com/p/the-epoch-brief-june-12-2026 ; https://epoch.ai/about/transparency . Targeted web searches for external review/audit were also checked.
+Note: OpenAI is an evaluated provider/funder, so its reported review does not meet the form definition. Epoch’s own audit and construction-stage expert review do not establish external verification. Public code and run records show checkability, not an outside check. No supporting passage for qualifying external verification was located.","No external verification located: no V/S/P/C rating.
+Not selected: Search 2
+Comment: No separate v2 dataset card located. This records a search outcome, not proof that no outside check ever occurred.",,,,,,,,,,"Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Assigned the code selection (I used the AI's output as the answer)","I reviewed the original sources, checked the evidence, and made the final decisions on the annotations and ratings. AI helped me find exact supporting passages and prepare drafts, which I checked and revised.",OpenAI Codex (GPT-6-based assistant)
+10/24/2026 21:10:49,Max Zhang,GDPval,"GDPval Hidden split (1,100 of 1,320; unversioned)",2026-10-24,https://openai.com/index/gdpval/,Verifier-authored or other external evidence located,"Verifier-authored or other external evidence located [Found]
+Source: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/
+Quote: ""We ran our implementation for GPT-5 with thinking set to low, submitted it to OpenAI, and obtained the following results.""
+Source: https://epoch.ai/publications/what-do-economic-value-benchmarks-tell-us
+Quote: ""the public samples from all three benchmarks generally look reasonable to us""
+
+operator reports external verification only [Missing]
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-5/","[V, S, P, C]
+
+Verifier-authored or other external evidence located
+[2, 3, 1, 3]
+
+Not selected: Search 2
+Comment: The numbers differ: Inspect Evals reports 47.3% for GPT-5 through OpenAI's grader, and notes that OpenAI's official leaderboard showed lower figures (31.9% wins, 34.6% wins+ties).",relationship unclear,"relationship unclear
+Sources: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-uk-and-openai-on-ai-opportunities/memorandum-of-understanding-between-uk-and-openai-on-ai-opportunities ; https://epoch.ai/latest/openai-and-frontiermath
+Note: The GDPval replication is credited to contributor @jeqcho, whose affiliation is not stated, but it is published in the UK AI Security Institute's Inspect Evals repository (UKGovernmentBEIS). If attributed to the individual, no tie is documented; if attributed to AISI, a governance tie exists: the UK–OpenAI MoU (21 July 2025) commits to ""expanding the existing partnership between OpenAI and the UK AI (artificial intelligence) Security Institute"". The second verifier, Epoch, also has a documented tie (OpenAI commissioned FrontierMath: ""OpenAI commissioned Epoch AI to produce 300 advanced math problems…"").
+
+Independent external [Missing]
+external with a material tie [Missing]
+Sources checked: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-uk-and-openai-on-ai-opportunities/memorandum-of-understanding-between-uk-and-openai-on-ai-opportunities ; https://epoch.ai/latest/openai-and-frontiermath ; web search ""jeqcho GitHub inspect_evals contributor affiliation"" ; web search ""UK government OpenAI memorandum of understanding July 2025 AI Security Institute partnership""","[V, S, P, C]
+
+relationship unclear
+[2, 3, 1, 1]
+
+Not selected: Search 3",public documentation only,"public documentation only
+Source: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/
+Quote: ""We ran our implementation for GPT-5 with thinking set to low, submitted it to OpenAI, and obtained the following results.""
+Source: https://epoch.ai/publications/what-do-economic-value-benchmarks-tell-us
+Quote: ""the public samples from all three benchmarks generally look reasonable to us""
+
+Protected content/coverage [Missing]
+scoring/rubric [Missing]
+run/execution records [Missing]
+access/participant records [Missing]
+governance/conflicts [Missing]
+Sources checked: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://epoch.ai/publications/what-do-economic-value-benchmarks-tell-us ; https://artificialanalysis.ai/evaluations/gdpval-aa ; https://amaarora.github.io/posts/2025-12-15-gdpval-review.html
+Note: Inspect Evals ran the 220 public gold tasks and scored them with OpenAI's public grader without examining the grader itself; Epoch reviewed public samples and checked their links (""the links from all public samples""). Neither inspected hidden tasks or sampling, the grading process or rubrics, OpenAI's run records, access records, or governance arrangements.","[V, S, P, C]
+
+public documentation only
+[2, 3, 3, 3]
+
+Not selected: Search 2",Detailed public findings,"Detailed public findings
+Source: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/
+Quote: ""Average Score: 47.3% ± 6.2%""
+Quote: ""Responses API did not complete within 3600.0 seconds""
+Source: https://epoch.ai/publications/what-do-economic-value-benchmarks-tell-us
+Quote: ""over half of GDPval tasks are research-based and rely more fundamentally on live web access.""
+Quote: ""about 5% of tasks assume a point of view that is now in the past.""
+
+public summary/conclusion [Missing]
+verification existence only [Missing]
+restricted/confidential findings [Missing]
+no findings located [Missing]
+Sources checked: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval ; https://epoch.ai/publications/what-do-economic-value-benchmarks-tell-us","[V, S, P, C]
+
+Detailed public findings
+[2, 3, 3, 3]
+
+Comment: The numbers differ: Inspect Evals reports 47.3% for GPT-5 through OpenAI's grader, and notes that OpenAI's official leaderboard showed lower figures (31.9% wins, 34.6% wins+ties).","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)",I used AI to help me find sources and help provide evidence when applicable. I then used summary of evidence to select the selection and had it draft a rationale of which I usually tweaked.,Claude Opus 5.5
+10/25/2026 9:58:20,Max Zhang,METR Time Horizon / HCAST task suite,HCast Time Horizon 1.1,2026-10-24,https://metr.org/blog/2026-01-29-time-horizon-1-1/,Verifier-authored or other external evidence located,"Verifier-authored or other external evidence located [Found]
+Source: https://arxiv.org/html/2610.12466
+Quote: ""Using METR's public data, we reproduce [copy full sentence]""
+Quote: ""METR designed 228 tasks in their Time Horizon 1.1 framework.""
+Source: https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80
+Quote: ""METR's headline horizon numbers overstate current capability by roughly an order of magnitude at 80% success.""
+
+operator reports external verification only [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://metr.org/blog/2026-08-31-security-update/ ; https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ ; https://arxiv.org/html/2610.12466 ; https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80 ; https://www.transformernews.ai/p/against-the-metr-graph-coding-capabilities-software-jobs-task-ai ; web search ""METR time horizon critique methodology replication independent analysis 2026""","[V, S, P, C]
+
+Verifier-authored or other external evidence located
+[2, 3, 2, 3]
+
+Not selected: Search 2",Independent external,"Independent external
+Source: https://arxiv.org/html/2610.12466
+Quote: (author affiliations) ""Department of Statistics, University of California, Berkeley"" [copy exact line]
+Source: https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80
+Note: Primary verifier: Nguyen and Fithian (UC Berkeley Statistics); no tie to METR or AI companies is documented. The paper describes METR as Berkeley-based but states no connection. Second verifier: Jonas Moss (no affiliation stated; no tie located by web search).
+
+external with a material tie [Missing]
+relationship unclear [Missing]
+Sources checked: https://arxiv.org/html/2610.12466 ; https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80 ; https://metr.org/about ; https://metr.org/blog/2026-08-14-funding-update/ ; web search ""METR time horizon critique methodology replication independent analysis 2026""","[V, S, P, C]
+
+Independent external
+[2, 3, 2, 1]
+
+Not selected: Search 2","scoring/rubric, public documentation only","scoring/rubric
+Source: https://arxiv.org/html/2610.12466
+Quote: ""Using METR's public data, we reproduce [copy full sentence]""
+Source: https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80
+Quote: ""METR's headline horizon numbers overstate current capability by roughly an order of magnitude at 80% success.""
+
+public documentation only
+Source: https://arxiv.org/html/2610.12466
+Note: Both verifiers used only METR's published run outcomes and analysis code; neither had access to private task content, transcripts or METR's internal records.
+
+Protected content/coverage [Missing]
+run/execution records [Missing]
+access/participant records [Missing]
+governance/conflicts [Missing]
+Sources checked: https://arxiv.org/html/2610.12466 ; https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80
+Note: Run outcomes were used as data, but neither verifier checked whether runs followed the stated procedure or whether individual pass/fail labels were correct.","[V, S, P, C]
+
+scoring/rubric
+[2, 3, 3, 3]
+
+public documentation only
+[2, 3, 3, 1]",Detailed public findings,"Detailed public findings
+Source: https://arxiv.org/html/2610.12466
+Quote: ""nearly flat in a region from 2–30 min but close to linear elsewhere""
+Source: https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80
+Quote: ""METR's headline horizon numbers overstate current capability by roughly an order of magnitude at 80% success.""
+Note: Literally the entire paper dismantling METR
+
+public summary/conclusion [Missing]
+verification existence only [Missing]
+restricted/confidential findings [Missing]
+no findings located [Missing]
+Sources checked: https://arxiv.org/html/2610.12466 ; https://www.lesswrong.com/posts/sBEzomgnYJmYHki9T/metr-s-data-can-t-distinguish-between-trajectories-and-80","[V, S, P, C]
+
+Detailed public findings
+[2, 3, 3, 3]
+
+Comment: The numbers differ. Moss's re-analysis concludes METR's 80% horizons overstate capability ""by roughly an order of magnitude"", which conflicts with METR's reported 80% estimates.","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)",I used AI to help me find sources and help provide evidence when applicable. I then used summary of evidence to select the selection and had it draft a rationale of which I usually tweaked.,"Claude Opus 5.5, GPT-6-Astra"
+10/25/2026 12:25:13,Ameen Patel,GDPval,GDPval v2,2026/10/23,https://openai.com/index/gdpval/,Verifier-authored or other external evidence located,"verifier-authored or other external evidence located [Found]
+Source: https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval (third party: inspect_evals contributor's run record, uploaded 16 Oct 2025)
+Quote: ""The goal was to test and validate the Inspect Eval implementation of GDPval.""
+Quote: ""OpenAI got back to us on December 2 with the results.""
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party: UK AI Security Institute's inspect_evals)
+Quote: ""We note that the official score reported in the official GDPval leaderboard by OpenAI reports a lower score of 31.9% (wins only) and 34.6% (wins and ties).""
+Source: https://www.testmuai.com/learning-hub/gdpval/ (third party, published 19 Oct 2026)
+Quote: ""A script run on 2026-10-19 counted them in OpenAI's open dataset""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (ICLR 2026 Reviewer JEiu, 19 Oct 2025)
+Quote: ""Confidence: 5: You are absolutely certain about your assessment. You are very familiar with the related work and checked the math/other details carefully.""
+Note: The inspect_evals check replicated one reported score (GPT-5, low thinking) on the 220 public tasks, TestMu recounted the public dataset, and ICLR reviewers assessed the paper. None checked the hidden set or the expert grading.
+operator reports external verification only [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://web.archive.org/web/20251003113651js_/https://evals.openai.com/assets/index-QELVwLUy.js ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)","verifier-authored or other external evidence located: V2 S1 P3 C3
+Not selected: Search 3
+Comment: S1: the first-quoted verifier is an individual contributor publishing through the UK AI Security Institute's inspect_evals project, and UK AISI has a documented partnership with OpenAI (UK–OpenAI MoU, 21 Jul 2025: https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-uk-and-openai-on-ai-opportunities/memorandum-of-understanding-between-uk-and-openai-on-ai-opportunities), so it cannot be rated Independent; the contributor's own affiliation is unknown. Red flag: numbers differ. The replication scored 47.3% ± 6.2% from OpenAI's grader against 31.9% / 34.6% on OpenAI's leaderboard. Excerpt: OpenAI's X launch post was read only as a search snippet.",relationship unclear,"relationship unclear [Found]
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party: UK AI Security Institute's inspect_evals)
+Quote: ""Contributed by @jeqcho""
+Source: https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval (contributor's personal run record)
+Quote: ""The repo was uploaded in 16 October 2025, 21:42:02 UT+0 and submitted to OpenAI's GDPval grading server shortly after.""
+Source: https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-uk-and-openai-on-ai-opportunities/memorandum-of-understanding-between-uk-and-openai-on-ai-opportunities (UK–OpenAI MoU, 21 Jul 2025)
+Quote: ""This may include expanding the existing partnership between OpenAI and the UK AI Security Institute to include the development of a new technical information sharing programme""
+Note: The replication was run by an individual contributor of undocumented affiliation and published through UK AISI's inspect_evals project, which has a documented partnership with OpenAI. Whether that tie extends to the contributor cannot be determined.
+external with a material tie [Borderline]
+Sources: https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-uk-and-openai-on-ai-opportunities/memorandum-of-understanding-between-uk-and-openai-on-ai-opportunities ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md
+Note: Applies if UK AISI's inspect_evals project, rather than the individual contributor, is treated as the verifier.
+independent external [Borderline]
+Sources: https://www.testmuai.com/learning-hub/gdpval/
+Note: TestMu's recount of the public dataset is an external check with no documented tie to OpenAI or the evaluated providers (web search, 24 Oct 2026), but it checks published data rather than a reported run.","relationship unclear: V2 S1 P3 C3
+Not selected: Search 3
+Comment: S1: the first-quoted source is an individual contributor's attribution in UK AISI's inspect_evals project; UK AISI has a documented partnership with OpenAI, so it cannot be rated Independent, and no other S level fits better.","run/execution records, public documentation only","run/execution records [Found]
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party: UK AI Security Institute's inspect_evals)
+Quote: ""Inspect doesn't support the code interpreter API. Instead, we provide it with the default bash and python tool, and the task is run within a docker sandbox.""
+Quote: ""We ran our implementation for GPT-5 with thinking set to low, submitted it to OpenAI, and obtained the following results.""
+Source: https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval (contributor's run record)
+Quote: ""The result is attached as scores.json in this repo.""
+Note: The verifier tested the execution procedure by reimplementing it and running GPT-5 on the 220 public tasks. It did not inspect OpenAI's own run records.
+public documentation only [Found]
+Source: https://www.testmuai.com/learning-hub/gdpval/ (third party, published 19 Oct 2026)
+Quote: ""A script run on 2026-10-19 counted them in OpenAI's open dataset""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (ICLR 2026 Reviewer JEiu, 19 Oct 2025)
+Quote: ""The prompts (both for GPDval tasks and the other classifiers run), model outputs, and human reviews do not appear to be available""
+Note: TestMu analysed only the public dataset, and the ICLR reviewers worked from the paper and supplementary material.
+scoring/rubric [Borderline]
+Sources: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://www.testmuai.com/learning-hub/gdpval/
+Note: inspect_evals obtained a score from OpenAI's grader and compared it with the leaderboard but did not inspect the grader. TestMu counted the rubric items released in v2 (after v0).
+protected content/coverage [Borderline]
+Sources: https://www.testmuai.com/learning-hub/gdpval/ ; https://openreview.net/forum?id=hcuEdq6eKD
+Note: TestMu checked the public subset's sector, occupation and file counts against the paper, and Reviewer uLMP questioned occupation coverage. No verifier saw hidden items.
+governance/conflicts [Borderline]
+Sources: https://openreview.net/forum?id=hcuEdq6eKD
+Note: Reviewer uLMP flagged the paper for ethics review over IRB status and annotator compensation. No verifier examined OpenAI's funding or ties.
+access/participant records [Missing]
+Sources checked: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval ; https://www.testmuai.com/learning-hub/gdpval/ ; https://openreview.net/forum?id=hcuEdq6eKD ; https://artificialanalysis.ai/evaluations/gdpval-aa","run/execution records: V2 S1 P3 C3
+public documentation only: V2 S3 P3 C3
+Not selected: Search 3
+Comment: S1 (run/execution records): the first-quoted source is UK AISI's inspect_evals project, which has a documented partnership with OpenAI. S3 (public documentation only): web search found no tie between TestMu and OpenAI or the evaluated providers. Red flag: numbers differ; the replication's 47.3% from OpenAI's grader against 31.9% / 34.6% on OpenAI's leaderboard is unreconciled.",Detailed public findings,"detailed public findings [Found]
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party: UK AI Security Institute's inspect_evals)
+Quote: ""Average Score: 47.3% ± 6.2%""
+Quote: ""We note that the official score reported in the official GDPval leaderboard by OpenAI reports a lower score of 31.9% (wins only) and 34.6% (wins and ties).""
+Source: https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval (contributor's run record)
+Quote: ""Note that their system ran into some issues, so there is some back-and-forth correspondence until the result is obtained.""
+Source: https://www.testmuai.com/learning-hub/gdpval/ (third party, published 19 Oct 2026)
+Quote: ""in the open 220 the share is 56.8%""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (ICLR 2026 Reviewer uLMP, 1 Nov 2025)
+Quote: ""Note: I am willing to update my score but currently, there is a lot of methodological information missing in the paper that prevents me from fully assessing the work.""
+Note: Methods and results are public: the replication's code, outputs and returned scores; TestMu's counting script and output; and the full ICLR reviews with author responses. I found no OpenAI response to the score gap or the reference-file discrepancy.
+public summary/conclusion [Missing]
+Sources checked: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval ; https://www.testmuai.com/learning-hub/gdpval/ ; https://openreview.net/forum?id=hcuEdq6eKD ; https://openai.com/index/gdpval/ ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard
+verification existence only [Missing]
+Sources checked: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval ; https://www.testmuai.com/learning-hub/gdpval/ ; https://openreview.net/forum?id=hcuEdq6eKD ; https://openai.com/index/gdpval/ ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard
+restricted/confidential findings [Missing]
+Sources checked: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval ; https://www.testmuai.com/learning-hub/gdpval/ ; https://openreview.net/forum?id=hcuEdq6eKD ; https://openai.com/index/gdpval/ ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard","detailed public findings: V2 S1 P3 C3
+Not selected: Search 3
+Comment: S1: the first-quoted source is UK AISI's inspect_evals project, which has a documented partnership with OpenAI. Red flag: numbers differ; the replication's 47.3% from OpenAI's grader against 31.9% / 34.6% on OpenAI's leaderboard is unreconciled.","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)","I used AI to search through an initial set of sources and allowed it to search through sources outside of the given list. I told AI to assign the codes accordingly if it was applicable to the benchmark, and then I would review the assigned codes and change their classification or rationales if my opinion differed. I did the same for evidence quality annotation.",Claude Opus 5.5
+10/25/2026 15:36:36,Ameen Patel,METR Time Horizon / HCAST task suite,METR-Horizon-v1.1,2026/10/25,https://metr.org/hcast.pdf,Verifier-authored or other external evidence located,"Verifier-authored or other external evidence located [Found]
+Source: https://arxiv.org/abs/2610.12466 (Nguyen and Fithian, UC Berkeley, v1 8 Oct 2026, also a NeurIPS 2026 workshop poster; reproduction package https://github.com/drewtnguyen/METR_validity_repro reads METR's TH1.1 results file; the acknowledgments thank one METR staff member and one METR collaborator for discussions)
+Quote: ""On 228 tasks and 26 AIs, we recompute the time horizons""
+Source: https://github.com/ofir-reich/metr-time-horizon-reanalysis (reanalysis/README.md, commit 930dd04, 22 Oct 2026; independent researcher, no affiliation stated; stages 1 to 3 marked done for both v1.0 and v1.1)
+Quote: ""Independent reanalysis of the human-baseline side of METR's time horizon methodology""
+operator reports external verification only [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (mentions an outside model fit to METR's data) ; https://github.com/METR/eval-analysis-public ; https://metr.org/blog/ (posts through 22 Oct 2026) ; web search for independent re-analyses of TH1.1","Verifier-authored or other external evidence located: V2 S3 P3 C3
+Not selected: Search 3
+Comment: Red flag, numbers differ across sources. The NeurIPS 2026 workshop abstract (https://neurips.cc/virtual/2026/178319) reports 21 AIs and a flat region of 2 to 15 min; the arXiv v1 abstract reports 26 AIs and 2 to 30 min.",Independent external,"Independent external [Found]
+Source: https://github.com/drewtnguyen/METR_validity_repro/blob/main/paper/main.tex (source of arXiv:2610.12466, commit 1c747d1; both authors listed at the UC Berkeley Department of Statistics; no funding statement; the acknowledgments name one METR staff member and one METR collaborator, for discussions only)
+Quote: ""We thank Alexander Barry, Miles Tidmarsh, Jonathan Gabor, and the AI safety community""
+external with a material tie [Borderline]
+Sources: https://me.sh/profile/ofir-reich (auto-generated aggregator profile) ; https://github.com/ofir-reich/metr-time-horizon-reanalysis
+Note: The profile headlines Ofir Reich, the second verifier, as a Google data scientist, and Google's Gemini models are in TH1.1. Its own text names no Google role and warns it can be wrong, and the repo states no affiliation. Not selected.
+relationship unclear [Borderline]
+Sources: https://github.com/ofir-reich/metr-time-horizon-reanalysis ; https://me.sh/profile/ofir-reich
+Note: Reich's independence cannot be confirmed from documented sources. The Berkeley verifiers' relationships can be, so the code rests on them. Not selected.","Independent external: V2 S3 P3 C1
+Not selected: Search 3","scoring/rubric, run/execution records, public documentation only","scoring/rubric [Found]
+Source: https://arxiv.org/abs/2610.12466 (Nguyen and Fithian, UC Berkeley, v1 8 Oct 2026)
+Quote: ""we recompute the time horizons using splines and item-response theory""
+Source: https://github.com/ofir-reich/metr-time-horizon-reanalysis/blob/main/reanalysis/stage-2-measurement-error/README.md (Ofir Reich, commit 930dd04; run on v1.0 and v1.1)
+Quote: ""This stage measures that missing uncertainty and pushes it through to the headline results""
+run/execution records [Found]
+Source: https://github.com/drewtnguyen/METR_validity_repro/blob/main/pipeline/download_data.py (reproduction package for arXiv:2610.12466, commit 1c747d1; the run records the paper fits)
+Quote: ""the TH 1.1 and TH 1.0 runs.jsonl""
+Source: https://github.com/ofir-reich/metr-time-horizon-reanalysis/blob/main/reanalysis/README.md (Ofir Reich, commit 930dd04; stage 1, done for v1.0 and v1.1)
+Quote: ""What exactly is in the public export, and can per-run human times be recovered?""
+public documentation only [Found]
+Source: https://github.com/drewtnguyen/METR_validity_repro (README, commit 1c747d1)
+Quote: ""One command goes from METR's published data to the PDF.""
+Source: https://github.com/ofir-reich/metr-time-horizon-reanalysis/blob/main/reanalysis/stage-4-cohort-selection/README.md (Ofir Reich, commit 930dd04; stage left as a proposal)
+Quote: ""this cannot be done with the public export""
+Protected content/coverage [Borderline]
+Sources: https://arxiv.org/abs/2610.12466 ; https://github.com/ofir-reich/metr-time-horizon-reanalysis
+Note: The Berkeley paper's diagnostics test whether human time tracks AI difficulty across all 228 tasks, and Reich questions the researcher-estimated lengths of tasks no human finished. Neither saw hidden task content or checked how tasks were sampled. Not selected.
+access/participant records [Missing], governance/conflicts [Missing]
+Sources checked: https://arxiv.org/abs/2610.12466 ; https://github.com/drewtnguyen/METR_validity_repro ; https://github.com/ofir-reich/metr-time-horizon-reanalysis (README and stage READMEs)","scoring/rubric: V2 S3 P3 C3
+run/execution records: V2 S3 P3 C3
+public documentation only: V2 S3 P3 C3
+Not selected: Search 3",Detailed public findings,"Detailed public findings [Found]
+Source: https://arxiv.org/abs/2610.12466 (Nguyen and Fithian, UC Berkeley, v1 8 Oct 2026; also a NeurIPS 2026 workshop poster)
+Quote: ""it is nearly flat in a region from 2--30 min but close to linear elsewhere""
+Source: https://github.com/drewtnguyen/METR_validity_repro (README, commit 1c747d1; code, data, fits and paper source)
+Quote: ""Every output of steps 1–4 is committed""
+Source: https://github.com/ofir-reich/metr-time-horizon-reanalysis/blob/main/reanalysis/README.md (Ofir Reich, commit 930dd04; per-stage methods, numbers, figures and code)
+Quote: ""the doubling time is robust, the absolute horizons are not""
+public summary/conclusion [Missing], verification existence only [Missing]
+Sources checked: https://arxiv.org/abs/2610.12466 ; https://github.com/drewtnguyen/METR_validity_repro ; https://github.com/ofir-reich/metr-time-horizon-reanalysis (README and stage READMEs) ; https://neurips.cc/virtual/2026/178319
+restricted/confidential findings [Missing]
+Sources checked: https://arxiv.org/abs/2610.12466 ; https://github.com/drewtnguyen/METR_validity_repro ; https://github.com/ofir-reich/metr-time-horizon-reanalysis (README and stage READMEs) ; https://metr.org/time-horizons/ ; https://metr.org/blog/ (posts through 22 Oct 2026)","Detailed public findings: V2 S3 P3 C3
+Not selected: Search 3
+Comment: Red flag, numbers differ across sources. The NeurIPS 2026 workshop abstract (https://neurips.cc/virtual/2026/178319) reports 21 AIs and a flat region of 2 to 15 min; the arXiv v1 abstract reports 26 AIs and 2 to 30 min.","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made, Assigned the code selection (I used the AI's output as the answer)","I used AI to search through an initial set of sources and allowed it to search through sources outside of the given list. I told AI to assign the codes accordingly if it was applicable to the benchmark, and then I would review the assigned codes and change their classification or rationales if my opinion differed. I did the same for evidence quality annotation.",Claude Opus 5.5
+10/26/2026 16:16:44,Nhi Truong,METR Time Horizon / HCAST task suite,"Time Horizon 1.1 (TH1.1), released 2026-01-29; METR mixed task suite including HCAST. Evidence cutoff: 2026-10-26.",2026-10-26,https://metr.org/blog/2026-01-29-time-horizon-1-1/,Verifier-authored or other external evidence located,"Source: https://arxiv.org/html/2610.12466v1 (Introduction; Sections 2.2–2.5)
+Quote: ""In this work, we critique the time-horizon plot by reanalyzing METR’s data and fitting new models.""
+Explanation: The paper checks public TH1.1 results for 228 tasks and 26 AI systems, not private tasks or original private execution logs.","Verifier-authored or other external evidence located: V2 S3 P3 C1
+Not selected: Search 3",Independent external,"Source: https://drewtnguyen.github.io/
+Quote: ""I am a PhD student in the Department of Statistics at UC Berkeley, advised by Will Fithian and Mike Jordan.""
+Source: https://arxiv.org/html/2610.12466v1 (Author affiliations and acknowledgments); https://www.stat.berkeley.edu/~wfithian/research.html
+Explanation: This classification concerns Nguyen and Fithian. Their paper and profiles list UC Berkeley Statistics affiliations. Targeted checks found no material organizational, financial or governance tie to METR or the evaluated providers. Acknowledged discussions with METR researchers alone do not establish such a tie.","Independent external: V2 S3 P3 C1
+Not selected: Search 3","scoring/rubric, run/execution records, public documentation only","Source: https://arxiv.org/html/2610.12466v1 (Sections 2.2–2.5 and 3)
+Explanation: The authors test the statistical calculation using published success/failure outcomes and human completion times. Run/execution records here means these published outcomes, not private conversations, tool actions or grading traces.","Scoring/rubric: V2 S3 P3 C1
+Run/execution records: V2 S3 P3 C1
+Public documentation only: V2 S3 P3 C1
+Not selected: Search 3",Detailed public findings,"Source: https://arxiv.org/html/2610.12466v1 (Sections 2.5 and 3; Figures 1–5 and Appendix A.1)
+Explanation: The public paper gives methods, model comparisons, cross-validation results, diagnostic figures and limitations for its public-data statistical check.","Detailed public findings: V2 S3 P3 C1
+Not selected: Search 3","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Used to fact-check selections I had already made","I will check the original sources, revise the drafts and make the final annotation decisions before submitting. AI helped locate exact supporting passages, explain the rubric, and draft proposed selections, evidence notes and ratings.",OpenAI Codex (GPT-6-based assistant)
+10/28/2026 0:19:06,Nhi Truong,GDPval,"OpenAI dataset v2, released 2026-02-10; commit 11e7900cdcac61bc4daf59e65feb238acda98fbf; evidence cutoff 2026-10-26",2026-10-26,https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf,Verifier-authored or other external evidence located,"Verifier-authored or other external evidence located [Found]
+Source: https://www.testmuai.com/learning-hub/gdpval/ 
+Quote: ""Counted words in each prompt.""","Verifier-authored or other external evidence located: V2 S1 P3 C1
+Not selected: Search 3",external with a material tie,"External with a material tie [Found]
+Source: https://www.testmuai.com/blog/what-is-lambdatest/ (May 26, 2026; opening description)
+Explanation: OpenAI is listed as a user of TestMu AI's service. I treated this as a material relationship, although financial terms are not disclosed.","External with a material tie: V2 S1 P1 C1
+Not selected: Search 3","scoring/rubric, public documentation only","Scoring/rubric [Found]
+Source: https://www.testmuai.com/learning-hub/gdpval/ (How Were the GDPval Gold Subset Figures Counted?; published script output)
+Quote: ""Rubric items (rubric_json)
+items in total            10453
+per task min/median/max   14 / 47 / 137""
+
+Public documentation only [Found]
+Source: https://www.testmuai.com/learning-hub/gdpval/ (How Were the GDPval Gold Subset Figures Counted?)
+Quote: ""Fetched all 220 rows through the Hugging Face datasets-server rows API, which needs no key, in pages of 100.""","Scoring/rubric: V2 S1 P3 C1
+Public documentation only: V2 S1 P3 C1
+Not selected: Search 3",Detailed public findings,"Detailed public findings [Found]
+Source: https://www.testmuai.com/learning-hub/gdpval/ 
+Quote: ""Tasks: 220""
+Quote: ""Expert (gold) deliverable files
+files in total 248""
+Quote: ""Rubric items (rubric_json) items in total 10453 per task min/median/max   14 / 47 / 137""","Detailed public findings: V2 S1 P3 C1
+Not selected: Search 3","Found sources of evidence (paper, repo, leaderboard, or specific evidence examples), Summarized or read documentation, Assigned the code selection (I used the AI's output as the answer)","I will check the original sources, revise the drafts and make the final annotation decisions before submitting. AI helped locate exact supporting passages, explain the rubric, and draft proposed selections, evidence notes and ratings.",OpenAI Codex (GPT-6-based assistant)

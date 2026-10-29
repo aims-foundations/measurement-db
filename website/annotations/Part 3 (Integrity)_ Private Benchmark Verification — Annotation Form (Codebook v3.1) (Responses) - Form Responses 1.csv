@@ -1,0 +1,1029 @@
+Timestamp,Annotator name or ID,Benchmark name,Benchmark version or snapshot,Frozen corpus cutoff date (YYYY-MM-DD),Benchmark homepage or primary documentation URL,Protocol rules — Which consequential evaluation rules are documented?,Protocol rules — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Ex-ante fixation — What evidence indicates consequential rules or content were fixed before the relevant results?,Ex-ante fixation — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Run provenance — Which details identify the evaluation run that produced a reported score?,Run provenance — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Run audit evidence — What retained evidence could be used to check whether the reported run followed the stated procedure?,Run audit evidence — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies."
+10/11/2026 15:21:43,Ameen Patel,FrontierMath,FrontierMath Tiers 1-3 (v2),2026-09-27,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,"Model/system eligibility or configuration, task selection/randomization, result reporting/publication rules","Model/system eligibility or configuration [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""We only consider the chat/instruct version of each model, rather than the base model""
+
+task selection/randomization [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""all the numbers on this hub correspond to evaluations on the private sets""
+
+submission/retry/rerun rules [Found]
+Source: https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb
+Quote: ""Your answer has been recorded. No feedback is provided.""
+
+result reporting/publication rules [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""retains the right to conduct and publish evaluations using the full FrontierMath dataset""
+
+failure/exclusion handling [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2","Model/system eligibility or configuration: V2 S2 P1 C1
+
+task selection/randomization: V1 S2 P3 C1
+
+submission/retry/rerun rules: V2 S2 P1 C1
+
+result reporting/publication rules: V2 S2 P1 C1
+Comment: Red flag: post-hoc (the conflict-of-interest statement was added after the January 2025 controversy).
+
+Not selected: Search 0
+Comment: Only the v2 page checked; dataset card not named as absent.",Dated/versioned protocol,"Dated/versioned protocol [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""On 2026-06-12, we released a major update, addressing errors in 42% of problems.""
+Also on the same page: a dated changelog and a link to the archived v1 page.
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""FrontierMath_02-28-25: Full 300 core dataset.""
+Also on the same page: each named dataset version has its own problem count.
+
+preregistration or immutable commitment [Missing], third-party/escrow confirmation [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb ; https://epoch.ai/latest/openai-and-frontiermath ; https://epoch.ai/benchmarks/about ; https://arxiv.org/html/2411.04872v7 ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3","Dated/versioned protocol: V2 S2 P3 C2
+
+Not selected: Search 2
+Comment: Excerpt: the pre-v2 hub page was read only as a search snippet. Dataset card not named as absent.","Benchmark version/snapshot, model version/checkpoint, inference/system configuration, task subset/seed/session","Benchmark version/snapshot [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""Unless stated otherwise, all the numbers on this hub correspond to evaluations on the private sets.""
+
+model version/checkpoint [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""We only consider the chat/instruct version of each model, rather than the base model (see the model identifier).""
+
+inference/system configuration [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""There is a hard limit of 1,000,000 tokens.""
+Source: https://epoch.ai/benchmarks/about
+Quote: ""We use each model’s API-default temperature""
+
+task subset/seed/session [Found]
+Source: https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath
+Quote: ""On Tiers 1–3 GPT-5.4 Pro solved 52% of the non-held-out set and 42% of the held-out set.""
+
+evaluator/scorer version [Borderline]
+Sources: https://epoch.ai/benchmarks/about ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb
+Note: No scorer version is tied to any score.
+
+run date [Borderline]
+Sources: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath ; https://epoch.ai/benchmarks/use-this-data
+Note: Scores are dated only by when posts were published. The hub graph is plotted by model release date, not run date.","Benchmark version/snapshot: V2 S2 P3 C1
+
+model version/checkpoint: V2 S2 P1 C1
+
+inference/system configuration: V2 S2 P1 C2
+
+task subset/seed/session: V1 S2 P1 C1
+
+Not selected: Search 1
+Comment: Paper not checked; data download not opened (blocked). Dataset card not named as absent.","Public outputs/logs/run record, controlled-access run records, evaluator or third-party replay possible","Public outputs/logs/run record [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""lets you see the full details of every LLM interaction, as well as how each answer was scored""
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""For FrontierMath, we recommend using the log viewer on the public questions as the best way to understand the evaluation settings""
+
+controlled-access run records [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v1
+Quote: ""The record ID is gda5UeWrA8HcbDCRuLJ56H.""
+
+evaluator or third-party replay possible [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v1
+Quote: ""In one case the issue was with our grader, so we could re-grade solutions given by models on prior runs.""","Public outputs/logs/run record: V2 S2 P1 C2
+
+controlled-access run records: V1 S2 P1 C1
+
+evaluator or third-party replay possible: V1 S2 P1 C1
+
+Not selected: none (all substantive codes selected)"
+10/11/2026 16:52:23,Max Zhang,Frontier Math,FrontierMath Tiers 1-3 (v2),2026-09-26,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,"Model/system eligibility or configuration, task selection/randomization, submission/retry/rerun rules, failure/exclusion handling, result reporting/publication rules","Model/system eligibility or configuration [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""We only consider the chat/instruct version of each model, rather than the base model (see the model identifier).""
+
+task selection/randomization [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""Unless stated otherwise, all the numbers on this hub correspond to evaluations on the private sets.""
+
+failure/exclusion handling [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""If it is incorrect, or if you don't submit an answer, you will get 0 points.""
+
+result reporting/publication rules [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""For Epoch AI-administered benchmarks, we only report results for models where we can run evaluations ourselves.""
+
+submission/retry/rerun rules [Unclear]
+Sources: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v1 ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb?utm_source=chatgpt.com
+Quote: ""In cases where a sample failed to complete due to an API error, we retried at least 10 times. If all retries failed, we marked the sample as incorrect.""
+Quote:""if store().get(""submitted_answer"") is not None:
+    break""
+Explanatory note: Unclear whether API error is the same retry rule in mind, likely not. The attempt stops after an answer is submitted","[V, S, P, C]
+
+Model/system eligibility or configuration
+[1, 2, 1, 1]
+
+task selection/randomization
+[1, 2, 1, 1]
+
+failure/exclusion handling
+[2, 2, 3, 1]
+
+result reporting/publication rules
+[1, 2, 1, 1]",Dated/versioned protocol,"Dated/versioned protocol [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""2026-06-12. We released v2, which corrected 123 problems in Tiers 1-3 and 12 problems in Tier 4. We also removed 5 problems from Tiers 1-3 and 7 problems from Tier 4.""
+
+preregistration or immutable commitment [Unclear]
+Sources: https://arxiv.org/abs/2411.04872 ; https://arxiv.org/html/2411.04872v7
+Quote: ""In the future, we plan to pin each benchmark run to the exact git revision for full auditability” ; ""This implementation is different from the code we used to run preliminary evaluations in the paper.""
+Explanatory Note: The only immutable, externally timestamped artifact is the arXiv paper. Version v7 was posted 23 Dec 2025, before v2's release, and it specifies the answer-checking mechanics (""it checks for an exact match… uses SymPy evaluation""). But it documents the paper's preliminary harness, which Epoch says differs from the current one (""This implementation is different from the code we used to run preliminary evaluations in the paper""). It also commits to nothing about v2's content or rules. No hash, preregistration, or signed commitment for v2 exists. Recommend not selecting.
+
+third-party/escrow confirmation [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://epoch.ai/latest/openai-and-frontiermath ; https://epoch.ai/benchmarks/about ; https://arxiv.org/html/2411.04872v7 ; https://www.lesswrong.com/posts/cu2E8wgmbdZbqeWqb/meemi-s-shortform","[V, S, P, C]
+
+Dated/versioned protocol
+[1, 2, 3, 2]","Benchmark version/snapshot, model version/checkpoint, inference/system configuration, evaluator/scorer version, run date, task subset/seed/session","Benchmark version/snapshot [Found]
+Source: https://ourworldindata.org/grapher/ai-frontiermath-over-time
+Quote: ""In June 2026, Epoch AI reissued FrontierMath after addressing errors in 42% of its problems. This indicator uses the corrected problem set.""
+Quote: ""FrontierMath Tiers 1-3 (v1, old) Update (2026-06-12): We've released v2. This page is no longer updated.""
+
+inference/system configuration [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""There is a hard limit of 1,000,000 tokens. If you exceed this, the conversation will end immediately (even if you haven't submitted an answer).""
+
+model version/checkpoint [Found]
+Sources: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v1 ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/benchmarks/about
+Quote: ""gpt-5.2-2025-12-11_medium"" 
+Explanatory Note: Provides identifiers for each with specific checkpoint
+
+run date [Found]
+Sources: https://epoch.ai/benchmarks/use-this-data?utm_source=chatgpt.com (Download CSV)
+Quote (in csv): ""2026-09-18T16:34:54.000Z""
+
+task subset/seed/session [Found]
+Sources: https://epoch.ai/benchmarks/use-this-data?utm_source=chatgpt.com (Download CSV)
+Quote (in csv): ""naZno5TPpgMJfv2b5mhvUW""
+
+evaluator/scorer version [Found]
+Sources: https://epoch.ai/benchmarks/use-this-data?utm_source=chatgpt.com (Download CSV)
+Quote (in csv): Harness proximus","[V, S, P, C]
+
+Benchmark version/snapshot
+[2, 2, 2, 2]
+
+inference/system configuration
+[2, 2, 2, 1]
+
+model version/checkpoint
+[2, 2, 2, 1]
+
+run date
+[2, 2, 1, 1]
+
+task subset/seed/session
+[2, 2, 1, 1]
+
+evaluator/scorer version
+[2, 2, 1, 1]","controlled-access run records, evaluator or third-party replay possible","controlled-access run records [Found]
+Source: https://epoch.ai/latest/benchmarking-hub-update
+Quote: ""Internally, our system provides full auditability by linking each evaluation with the exact git revision it was run with.""
+
+evaluator or third-party replay possible [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v1
+Quote: ""In one case the issue was with our grader, so we could re-grade solutions given by models on prior runs.""
+
+Public outputs/logs/run record [Unclear]
+Sources: https://epoch.ai/benchmarks/about ; https://epoch.ai/latest/benchmarking-hub-update ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Note: Public logs exist, but not for the reported runs. The hub states: ""For FrontierMath, the log viewer is only available to see model traces on the 10 public questions in frontiermath-2025-02-28-public."" Reported scores are on the private set, so outsiders can inspect the harness's behavior on public items but cannot inspect the run that produced any reported score. Recommend not selecting, since the code requires logs for the reported run.","[V, S, P, C]
+
+controlled-access run records
+[1, 2, 1, 1]
+
+evaluator or third-party replay possible
+[1, 2, 1, 1]"
+10/16/2026 11:35:25,Max Zhang,SWE-Bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026-09-27,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,"Model/system eligibility or configuration, task selection/randomization, failure/exclusion handling, result reporting/publication rules","Model/system eligibility or configuration [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+Quote: “All other Models on this page were run with an uncapped cost and with a turn limit of 250.”
+
+task selection/randomization [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""Table 2: Model performance on the commercial set of SWE-Bench Pro (N=276).""
+
+submission/retry/rerun rules [Unclear]
+Source: https://arxiv.org/abs/2509.16941 ; https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/swe_bench_pro_eval.py?utm_source=chatgpt.com
+Quote: ""We report Pass@1 as the resolve rate.""
+Quote (from github arg; does not specify how conducted): “Redo evaluations even if output exists”.
+
+result reporting/publication rules [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""In either case, we drop tests that fall into either category: a) it is irrelevant to the task description, and b) it is too broad. In the case that all tests are too broad or not relevant, we drop the problem.""
+
+failure/exclusion handling [Found]
+Quote: "" In either case, we drop tests that fall into either category: a) it is irrelevant to the task description, and b) it is too broad. In the case that all tests are too broad or not relevant, we drop the problem.""
+Sources: https://arxiv.org/abs/2509.16941","[V, S, P, C]
+
+Model/system eligibility or configuration
+[1, 2, 3, 1]
+
+task selection/randomization
+[1, 2, 1, 1]
+
+result reporting/publication rules
+[1, 2, 0, 1]
+
+failure/exclusion handling
+[1, 2, 1, 1]",none documented,"Dated/versioned protocol [Unclear]
+Source: https://scale.com/blog/leaderboard dated May 29, 2024.
+Quote: “models are only eligible for inclusion the first time their developers have one of their models prompted on the evaluation prompts.” Scale AI
+Source: https://scale.com/blog/swe-bench-pro  dated September 19, 2025
+Quote: “Claude Opus 4.1 decreases from 22.7% to 17.8% resolution”. Scale AI
+Note: The dated platform policy precedes these reported private-set results. This supports a narrow selection for publication eligibility; it does not establish that SWE-bench Pro’s private items, tests, or full evaluation settings were fixed beforehand. The current Scale leaderboard page also retains the first-exposure requirement.
+
+preregistration or immutable commitment [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://labs.scale.com/leaderboard/swe_bench_pro_public_v2 ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://scaleapi.github.io/SWE-bench_Pro-os/ ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://scale.com/blog/leaderboard ; https://scale.com/blog/scale-labs
+
+third-party/escrow confirmation [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://labs.scale.com/leaderboard/swe_bench_pro_public_v2 ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://scaleapi.github.io/SWE-bench_Pro-os/ ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://scale.com/blog/leaderboard ; https://scale.com/blog/scale-labs",N/A,model version/checkpoint,"model version/checkpoint [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""All models use the latest versions as of September 18th, 2025.""
+
+inference/system configuration [Unclear]
+Sources: https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro
+Note: The two versions of the paper record contradictory settings for the same numbers. arXiv v2 says ""Models have a maximum of 50 turns""; the Scale-hosted PDF says ""Models have a maximum of 200 turns.""
+
+Benchmark version/snapshot [Missing]
+Note: The commercial set has no version, tag, or hash. Scores identify it only as ""the commercial set of SWE-Bench Pro (N=276),"" which doesn't distinguish snapshots if tasks or tests change.
+
+evaluator/scorer version [Missing]
+Note: The scaffold is named (""We use the SWE-Agent [yang2024sweagent] scaffold"") with no version or commit. The pinned SWE-agent submodule in the repo supports public-set reproduction and isn't tied to commercial scores.
+
+run date [Missing]
+Note: ""As of September 18th, 2025"" dates the model versions, not the runs. The paper's submission date bounds them from above but records no run date.
+
+task subset/seed/session [Unclear]
+Quote: “commercial set of SWE-Bench Pro (N=276).”
+Note: No seed/session. Given that we are studying the commercial set, the task subset being the commercial set seems set already.
+
+For each missing:
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://scaleapi.github.io/SWE-bench_Pro-os/ ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro","[V, S, P, C]
+
+model version/checkpoint
+[1,2,1,1]",none documented,"Public outputs/logs/run record [Unclear]
+Sources checked: https://docent.transluce.org/dashboard/032fb63d-4992-4bfc-911d-3b7dafcb931f
+Note: Scale publishes run records, but every one I could inspect is public-set.
+
+controlled-access run records [Missing]
+Note: No source states that Scale retains commercial run records available under restricted access (e.g., to providers, auditors, or on request).
+
+evaluator or third-party replay possible [Missing]
+Note: No replay or re-grading process is documented for commercial results. The paper's reproducibility promise (""All environments will be released as pre-built docker images to ensure that they are fully reproducible"") is benchmark-wide, but the commercial images were never released.
+
+For Missing
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://scaleapi.github.io/SWE-bench_Pro-os/ ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://docent.transluce.org/dashboard/032fb63d-4992-4bfc-911d-3b7dafcb931f",N/A
+10/18/2026 15:39:41,Ameen Patel,SWE-bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026/10/17,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,"Model/system eligibility or configuration, submission/retry/rerun rules, failure/exclusion handling, result reporting/publication rules","model/system eligibility or configuration [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Legend)
+Quote: ""that are grayed out were run with a capped cost limit and turn limit of 50. All other Models on this page* were run with an uncapped cost and with a turn limit of 250.""
+Quote: ""*Run with mini-swe-agent harness""
+Source: https://arxiv.org/html/2509.16941v2 (§5, Evaluation settings; Issue Ambiguity)
+Quote: ""We enable tool-use when possible, for open-weight models, we use syntax parsing to enable tool-use. Models have a maximum of 50 turns. We use the same prompt for all models, which is the default prompt from [16].""
+Quote: ""Models are evaluated in the setting without any ambiguity – that is, we include the problem statement, requirements and interface specification in the agent prompt.""
+Source: https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf (§5, Evaluation settings)
+Quote: ""Models have a maximum of 200 turns.""
+
+submission/retry/rerun rules [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§5, Results; single-attempt scoring. No rule for rerunning infrastructure failures is given for the commercial set.)
+Quote: ""We report Pass@1 as the resolve rate.""
+
+failure/exclusion handling [Found]
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/swe_bench_pro_eval.py (lines 547 and 565: a returned None or an exception scores as unresolved; v1 public pipeline)
+Quote: ""eval_results[patch_sample[""instance_id""]] = False""
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 (The locked protocol, step 3; public split)
+Quote: ""50-minute budget per task (in-sandbox timeout, so a partial patch is still captured and graded)""
+Source: https://arxiv.org/html/2509.16941v2 (§4.3, Environment verification; construction-time exclusion, all subsets)
+Quote: ""We drop any problems that do not pass this criteria.""
+
+result reporting/publication rules [Found]
+Source: https://arxiv.org/abs/2509.16941 (Abstract)
+Quote: ""Problems in the held-out and the commercial set are not publicly accessible, but we release results on the commercial set.""
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Dataset Summary, Private Set)
+Quote: ""Results from this challenging dataset are reported on a separate Leaderboard.""
+Source: https://scale.com/blog/swe-bench-pro (Learn More)
+Quote: ""A commercial leaderboard reporting results exclusively on the tasks from our private, commercial codebases, serving as a measure of true generalization.""
+Source: https://scale.com/blog/leaderboard (footnote 1; operator-wide)
+Quote: ""In such instances, the new model will be included but grayed out on the leaderboard, with its overfitting risks clearly noted.""
+
+task selection/randomization [Borderline]
+Sources: https://arxiv.org/html/2509.16941v2 (§1, §4.1, Table 2) ; https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Methodology, Dataset Design) ; https://github.com/scaleapi/SWE-bench_Pro-os
+Note: Construction-time filters are documented (""we exclude trivial edits (1–10 lines of code)"", 50-100 tasks per repository), and Table 2 reports N=276, so the full set appears to be scored. No rule covers choosing, ordering or sampling tasks at evaluation time.","model/system eligibility or configuration: V1 S2 P3 C2
+submission/retry/rerun rules: V1 S2 P2 C1
+failure/exclusion handling: V2 S2 P1 C2
+result reporting/publication rules: V2 S2 P2 C2
+Not selected: Search 3
+Comment: Red flag (eligibility/configuration): the turn limit for the September 2025 runs differs between Scale's PDF (200) and arXiv v2 (50); the leaderboard uses 250, with 50-turn entries grayed out. Red flag (failure/exclusion): instances never evaluated drop out of the public scorer's denominator, so Claude Sonnet 4's reported 42.70% rests on 562 of the 730 public tasks (see Q10).",Dated/versioned protocol,"dated/versioned protocol [Found]
+Source: https://arxiv.org/abs/2509.16941 (submission history; arXiv v1 fixes the commercial set's size, task form and metric before later leaderboard entries)
+Quote: ""[Submitted on 21 Sep 2025 (v1), last revised 14 Nov 2025 (this version, v2)]""
+Source: https://arxiv.org/pdf/2509.16941v1 (header and Table 2 caption; read as an excerpt)
+Quote: ""arXiv:2509.16941v1 [cs.SE] 21 Sep 2025""
+Quote: ""Model performance on the commercial set of SWE-BENCH PRO (N=276).""
+Source: https://github.com/scaleapi/SWE-bench_Pro-os (News; dated changes to the run configuration, stated for the public leaderboard. The commercial page dates neither its 250-turn limit nor its harness.)
+Quote: ""(10/3) We have updated results without cap limit here: https://scaleapi.github.io/SWE-bench_Pro-os/""
+Quote: ""(10/28) We added mini-swe-agent! Results are comparable to SWE-Agent for Sonnet 4.5.""
+
+preregistration or immutable commitment [Borderline]
+Sources: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 (Layout; SHA256SUMS) ; https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/v2/GATE.md ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro (Changelog; tags v1.0, v2.0.0)
+Note: V2 publishes SHA-256 checksums for all 6,436 files under v2/ and tags each dataset release, but these cover the public split only and were published with the V2 results. Nothing commits to the commercial set's content.
+
+third-party/escrow confirmation [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://scale.com/blog/swe-bench-pro ; https://arxiv.org/html/2509.16941v2 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://labs.scale.com/leaderboard/swe_bench_pro_public_v2 ; https://scale.com/blog/leaderboard ; https://epoch.ai/benchmarks/swe-bench-pro/review","dated/versioned protocol: V2 S2 P1 C2
+Not selected: Search 3
+Comment: Red flag: the dated protocol changed after the results it describes. arXiv v1 (September 21, 2025) gives the September runs ""a maximum of 200 turns""; v2 (November 14, 2025) gives the same runs ""a maximum of 50 turns"" and revises the tables (GPT-5 on the commercial set: 14.9% in v1, 15.7% high and 14.9% medium in v2). Excerpt: arXiv v1 was read through a summarizing fetch with short quotes.","model version/checkpoint, inference/system configuration","model version/checkpoint [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Performance Comparison, Private Dataset tab; names only, no API snapshot dates)
+Quote: ""claude-opus-4-6 (thinking)*""
+Quote: ""gpt-5.4(xHigh)*""
+Quote: ""Muse Spark 1.1*""
+Source: https://arxiv.org/html/2509.16941v2 (§5, Evaluation settings; Table 2)
+Quote: ""All models use the latest versions as of September 18th, 2025.""
+Quote: ""OpenAI GPT-5 (high) | 15.7""
+
+inference/system configuration [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Legend; the asterisk and gray status tie each setting to an entry)
+Quote: ""that are grayed out were run with a capped cost limit and turn limit of 50. All other Models on this page* were run with an uncapped cost and with a turn limit of 250.""
+Quote: ""*Run with mini-swe-agent harness""
+Source: https://arxiv.org/html/2509.16941v2 (§5, Scaffold; Evaluation settings)
+Quote: ""We use the SWE-Agent [16] scaffold.""
+Quote: ""For open-source LLMs, we use vllm to host each model. Models are hosted on a single node, with 8 H100 Nvidia GPUs.""
+
+benchmark version/snapshot [Borderline]
+Sources: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://arxiv.org/html/2509.16941v2 (Table 2) ; https://github.com/scaleapi/SWE-bench_Pro-os (News) ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro (Changelog)
+Note: Scores sit under a ""SWE-Bench Pro (Private Dataset)"" tab, and Table 2 gives N=276, but the commercial set has no version label. The README's February 9 test removals and May 18 ""issues with the leaderboard"" notes don't say whether the commercial set changed; dataset versioning covers the public split only. I think it should be classified as ""Missing.""
+
+evaluator/scorer version [Borderline]
+Sources: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Legend) ; https://github.com/scaleapi/SWE-bench_Pro-os (pinned submodules SWE-agent @ 402a7b8, mini-swe-agent @ d74716a)
+Note: The leaderboard names the agent harness for each entry but not its version. The repository pins harness commits for public reproduction, and no scorer version is tied to any commercial score. I think it should be classified as ""Missing.""
+
+run date [Borderline]
+Sources: https://arxiv.org/html/2509.16941v2 (§5) ; https://arxiv.org/abs/2509.16941 (submission history) ; https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+Note: Table 2 is tied only to model versions ""as of September 18th, 2025"" and a v1 posting date of September 21, 2025. Leaderboard entries carry a ""NEW"" tag but no dates. I think it should be classified as ""Missing.""
+
+task subset/seed/session [Borderline]
+Sources: https://arxiv.org/html/2509.16941v2 (Table 2) ; https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/traj
+Note: Table 2 says the September 2025 runs used all 276 tasks. The leaderboard gives no per-entry task count, seed or run ID, and Scale's public results files show evaluated counts can fall short of the full set (562 of 730 for Claude Sonnet 4). I think it should be classified as ""Missing.""","model version/checkpoint: V1 S2 P2 C2
+inference/system configuration: V1 S2 P2 C2
+Not selected: Search 3
+Comment: Red flag (model version): GPT-5's commercial entry is labeled differently across Scale sources (arXiv v1: ""OpenAI GPT-5"" 14.9; v2: ""(high)"" 15.7 and ""(medium)"" 14.9; leaderboard: ""OpenAI GPT-5"" 14.86 with no effort level). Red flag (configuration): the turn limit for the September 2025 entries is 200 in arXiv v1 and 50 in v2, and the leaderboard grays them out as 50-turn runs.",none documented,"none documented [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§5, Evaluation sets)
+Quote: ""Evaluations are done on the public set and commercial set. For all analysis, we use the public set to avoid potential leakage with the commercial set.""
+Source: https://arxiv.org/abs/2509.16941 (Abstract; only results are released for the commercial set)
+Quote: ""Problems in the held-out and the commercial set are not publicly accessible, but we release results on the commercial set.""
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md (run records described are public-set runs; all 9 result files in traj/ contain only public-repository instances)
+Quote: ""Results marked with ""paper"" are included in the paper, with a cost limit of $2. Results marked with a date (e.g. 10132025) are all run with the same config (250 turns limit, no cost limit), these are the runs in the leaderboard.""
+
+public outputs/logs/run record [Borderline]
+Sources: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Resources: ""View trajectories"") ; https://docent.transluce.org/dashboard/032fb63d-4992-4bfc-911d-3b7dafcb931f ; https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md ; https://github.com/scaleapi/SWE-bench_Pro-os/issues/110
+Note: The leaderboard page, which serves both tabs, links a Docent dashboard, and the traj README points to a public S3 bucket. The Docent dashboard did not load without a login and the bucket was unreachable from here, so whether any commercial trajectories are posted is unverified. Issue #110 reports that even a public-leaderboard run (GPT-5.2-Codex) has no trajectories, configuration or cost records in either location.
+
+evaluator or third-party replay possible [Borderline]
+Sources: https://github.com/scaleapi/SWE-bench_Pro-os (Reproducing Leaderboard Results) ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 (The locked protocol, step 2)
+Note: The README's reproduction steps and V2's patch_replay re-grader let anyone replay public-split runs. Only Scale holds the commercial environments, and no source describes a replay process for commercial results.
+
+controlled-access run records [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://scale.com/blog/swe-bench-pro ; https://arxiv.org/html/2509.16941v2 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md ; https://scale.com/blog/leaderboard ; https://epoch.ai/benchmarks/swe-bench-pro/review","none documented: no rating (null code)
+Not selected: Search 2
+Comment: Search is held at 2 because the two places commercial run records could sit, the Docent dashboard and the S3 bucket, could not be opened from here. Excerpt: issue #110 and the Epoch review came back as summaries."
+10/19/2026 13:52:36,Nhi Truong,SWE-bench Pro,commercial/private subset; assessment snapshot as of 2026-10-01.,2026-10-01,https://arxiv.org/html/2509.16941v2#S3.SS3,"Model/system eligibility or configuration, task selection/randomization, failure/exclusion handling, result reporting/publication rules","Model/system eligibility or configuration [Found]
+Source: https://arxiv.org/html/2509.16941v2#S5 (paper v2, Evaluation settings for the reported evaluations)
+Quote: ""Models have a maximum of 50 turns.""
+
+Task selection/randomization [Borderline, selected]
+Source: https://arxiv.org/html/2509.16941v2#S1 (task selection during benchmark construction)
+Quote: ""retain only problems requiring substantial, multi-file modifications""
+Note: Selected because this rule determines which problems enter the benchmark. The paper describes it as a general construction rule, not as public-only. It does not establish how commercial tasks are ordered, randomly sampled, or selected for each later run.
+
+Failure/exclusion handling [Borderline, selected]
+Source: https://arxiv.org/html/2509.16941v2#S4.SS3 (Environment verification)
+Quote: ""We drop any problems that do not pass this criteria.""
+Note: The preceding sentences describe checking that the reference solution passes consistently and that the environment and tests work reliably. Selected for the rule excluding problems that fail these checks during benchmark preparation. This does not establish how crashes, timeouts, or other failures during a model evaluation are counted.
+
+Result reporting/publication rules [Found]
+Source: https://scale.com/blog/swe-bench-pro (Learn More, separate public and commercial leaderboards)
+Quote: ""A commercial leaderboard reporting results exclusively on the tasks from our private, commercial codebases""
+
+Submission/retry/rerun rules [Missing]
+Sources checked:
+https://arxiv.org/html/2509.16941v2
+https://labs.scale.com/leaderboard/swe_bench_pro
+https://github.com/scaleapi/SWE-bench_Pro-os
+https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md
+https://labs.scale.com/blog/swe-bench-pro-v2
+No supporting passage specifying submission, retry, or rerun rules for the commercial evaluation was located.","Model/system eligibility or configuration: V2 S2 P3 C1
+Task selection/randomization: V2 S2 P1 C2
+Failure/exclusion handling: V2 S2 P1 C1
+Result reporting/publication rules: V2 S2 P3 C2
+Not selected: Search 3
+Comment: Paper v2 publishes a 50-turn rule. This rates the rule’s disclosure; conflicting descriptions of actual commercial run settings are assessed separately under Run provenance. Construction-stage task selection and preparation-stage exclusions are retained with P1; private run randomization and runtime crash/timeout treatment are not established.",none documented,"None documented [Selected]
+
+Dated/versioned protocol [Borderline, not selected]
+Source: https://arxiv.org/abs/2509.16941 (submission history)
+Source: https://arxiv.org/html/2509.16941v2#S5
+Note: The paper has dated versions, but it reports results alongside the rules. I did not locate evidence tying a commercial protocol or content commitment to a date before the relevant results. A publication date alone does not establish that order.
+
+Preregistration or immutable commitment; Third-party/escrow confirmation [Missing]
+Sources checked:
+https://arxiv.org/abs/2509.16941
+https://arxiv.org/html/2509.16941v2
+https://labs.scale.com/leaderboard/swe_bench_pro
+https://github.com/scaleapi/SWE-bench_Pro-os
+https://labs.scale.com/blog/swe-bench-pro-v2
+No supporting passage establishing a preregistration, immutable commitment, or outside confirmation of the commercial material before results was located. Public V2 release tools were not treated as evidence of a prior commercial commitment.","Selected: None documented
+Search completeness: 3
+V/S/P/C: Not applicable","model version/checkpoint, inference/system configuration, task subset/seed/session","Model version/checkpoint [Borderline, selected]
+Source: https://arxiv.org/html/2509.16941v2#S5 (Table 2)
+Quote: ""Claude Opus 4.1""
+Note: The table identifies a model product version beside its commercial score. Selected at that level; an exact dated API snapshot or checkpoint is not established for every model.
+
+Inference/system configuration [Found]
+Source: https://arxiv.org/html/2509.16941v2#S5 (settings for the reported evaluations)
+Quote: ""Models have a maximum of 50 turns.""
+
+Task subset/seed/session [Found]
+Source: https://arxiv.org/html/2509.16941v2#S5 (Table 2 caption)
+Quote: ""commercial set of SWE-Bench Pro (N=276)""
+
+Benchmark version/snapshot [Unclear, not selected]
+Source: https://arxiv.org/html/2509.16941v2#S5
+Source: https://labs.scale.com/blog/swe-bench-pro-v2
+Note: The original commercial cohort and a later 272-task cohort are distinguishable, but I did not locate an exact commercial dataset version or item manifest tied to each score. Naming a subset is weaker than identifying its exact content snapshot.
+
+Evaluator/scorer version; Run date [Missing]
+Sources checked:
+https://arxiv.org/html/2509.16941v2#S5
+https://labs.scale.com/leaderboard/swe_bench_pro
+https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md
+https://labs.scale.com/blog/swe-bench-pro-v2
+No supporting passage tying an exact scorer version or evaluation date to the commercial scores was located. Paper publication dates and model availability dates were not counted as run dates.","Model version/checkpoint: V1 S2 P2 C2
+Inference/system configuration: V1 S2 P3 C0
+Task subset/seed/session: V1 S2 P3 C2
+Not selected: Search 3
+Comment: Unclear: paper v1 states 200 turns and v2 states 50 while several commercial scores are unchanged. No sourced explanation reconciles these descriptions. The turn-limit discrepancy does not establish whether a rerun, correction or carryover occurred. 
+Sources: https://arxiv.org/html/2509.16941v2#S5 ; https://arxiv.org/html/2509.16941v1#S5. ",none documented,"None documented [Selected for commercial run audit evidence]
+
+Public outputs/logs/run record [Unclear, not selected]
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md
+Quote: ""Logs and trajectories are saved to a public S3 Bucket.""
+Source: https://docent.transluce.org/dashboard/032fb63d-4992-4bfc-911d-3b7dafcb931f
+Note: Public trajectory resources are advertised, but I could not establish that they include the commercial runs. The Docent page did not expose usable run records in this check. Public-set records do not establish access to private-set records.
+
+Controlled-access run records; Evaluator or third-party replay possible [Missing]
+Sources checked:
+https://arxiv.org/html/2509.16941v2
+https://labs.scale.com/leaderboard/swe_bench_pro
+https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/traj/README.md
+https://labs.scale.com/blog/swe-bench-pro-v2
+No supporting passage documenting restricted access to commercial run records or a process for replaying a reported commercial run was located. The public V2 replay and re-grading tools were not assumed to apply to the commercial set.","Not selected: Search 3
+None documented — no V/S/P/C rating applies to this negative classification.
+Comment: Private trajectory coverage remains unclear; Docent records did not load. No commercial controlled record access or replay process located. Uncertainty about inaccessible material is recorded as a search limitation."
+10/20/2026 12:57:53,Nhi Truong,FrontierMath,FrontierMath Tiers 1–3 v2 (2026-06-12 update),2026-10-18,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2,"Model/system eligibility or configuration, task selection/randomization, submission/retry/rerun rules, failure/exclusion handling, result reporting/publication rules","Configuration; task selection; submission rules; failure handling [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 (Methodology)
+Configuration quote: ""There is a hard limit of 1,000,000 tokens. If you exceed this, the conversation will end immediately (even if you haven’t submitted an answer).""
+
+Task-selection quote: ""Unless stated otherwise, all the numbers on this hub correspond to evaluations on the private sets.""
+
+Submission quote: ""If you reach 660,000 tokens (but less than the hard limit of 1,000,000), you will be forced to use the submit_answer tool in your next message.""
+
+Failure-handling quote: ""If your answer is correct you will get 1 point. If it is incorrect, or if you don’t submit an answer, you will get 0 points.""
+
+Reporting rule [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""For Epoch AI-administered benchmarks, we only report results for models where we can run evaluations ourselves.""","Model/system eligibility or configuration: V1 S2 P3 C1
+task selection/randomization: V1 S2 P3 C1
+submission/retry/rerun rules: V1 S2 P3 C1
+failure/exclusion handling: V1 S2 P3 C1
+result reporting/publication rules: V1 S2 P1 C1
+Not selected: Search 2",Dated/versioned protocol,"Dated/versioned protocol [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 (About)
+Quote: ""On 2026-06-12, we released a major update, addressing errors in 42% of problems.""
+Explanation: Epoch says it released the updated benchmark on June 12, 2026. The example evaluation run in its data is dated July 9, 2026. The stated release date therefore comes before that run. Source for the run date: https://epoch.ai/data/benchmark_data.zip
+
+Note: There is a limitation: this establishes a timeline, but does not prove that all evaluation rules were set before the results were known. I did not find a preserved copy showing exactly which rules were in place before the run, or another record showing those rules had been locked in.
+
+Sources checked: the above; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb/revisions ; https://epoch.ai/benchmarks/about ; https://arxiv.org/html/2411.04872v3 .","Dated/versioned protocol: V1 S2 P2 C1
+Not selected: Search 2","Benchmark version/snapshot, model version/checkpoint, inference/system configuration, run date, task subset/seed/session","Benchmark version, model, reasoning effort, date and run ID [Found]
+Source: https://epoch.ai/data/benchmark_data.zip
+The file frontiermath_tiers_1_3_v2.csv contains this example evaluation record:
+- Model: gpt-5.6-sol_max
+- Reasoning effort: maximum, as indicated by _max in the model label.
+- Start time: July 9, 2026, at 02:45:09 UTC.
+- Run ID: VBpT2WWYKBZtUxG9Z3svGh
+- Reported accuracy: approximately 89.12%.
+These details identify a particular run on FrontierMath Tiers 1-3 v2.
+
+Limitation:
+We did not verify all settings used for this run, the exact model and question-set snapshots, or a random seed. We also did not find the exact grading-software version linked to this run. The configuration evidence is therefore limited to the recorded reasoning effort.
+
+Additional source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2","Benchmark version/snapshot: V2 S2 P3 C2
+model version/checkpoint: V2 S2 P3 C1
+inference/system configuration: V2 S2 P3 C1
+run date: V2 S2 P3 C1
+task subset/seed/session: V2 S2 P3 C1
+Not selected: Search 1",Public outputs/logs/run record,"Public outputs/logs/run record [Found]
+Source: https://epoch.ai/data/benchmark_data.zip
+Epoch’s public data includes the example run described above. It records the model, reasoning effort, score, start time, run ID and links to logs.
+
+Source: https://epoch.ai/benchmarks/about
+Quote: ""For FrontierMath, the log viewer is only available to see model traces on the 10 public questions in frontiermath-2025-02-28-public.""
+Note: I could inspect the basic run record, but the full model responses and grading logs for this private run are not available.
+
+Controlled-access run records; evaluator or third-party replay possible [Not found]
+I did not find documentation confirming restricted access to the private run records, or a process for repeating that exact run or result.
+
+Sources checked: the data archive and FAQ above; https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb ; https://arxiv.org/html/2411.04872v3 .","Public outputs/logs/run record: V2 S2 P3 C1
+Not selected: Search 1"
+10/24/2026 20:50:10,Max Zhang,GDPval,"GDPval Hidden split (1,100 of 1,320; unversioned)",2026-10-24,https://openai.com/index/gdpval/,"Model/system eligibility or configuration, submission/retry/rerun rules","Model/system eligibility or configuration [Found]
+Source: https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf
+Quote: ""We sampled Claude, Gemini and Grok via the UI to enable the maximum GDPval-relevant performance.""
+Quote: ""For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling.""
+
+submission/retry/rerun rules [Found]
+Source: https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf
+Quote: ""For plots shown, we sampled each model 3 times for each prompt, and then had 3 different human graders grade each sample (yielding 9 comparisons per prompt, per model, across 220 tasks).""
+
+failure/exclusion handling [Unclear]
+Sources: https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://arxiv.org/abs/2510.04374
+Note: The exclusion rules stated concern the gold set and the automated grader: ""Tasks failing quality thresholds were excluded from the gold set""; ""Metrics were calculated over all samples where the automated grader did not encounter systems errors and returned a valid score""; 12 of the 220 gold tasks were excluded from automated grading. No rule covers failed, missing or unreadable model deliverables in the human-graded results, or anything about the hidden split.
+
+task selection/randomization [Missing]
+result reporting/publication rules [Missing]
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/
+Note: The paper states which tasks were graded (""To grade the 220 open-sourced gold subset, we conducted blinded expert pairwise comparisons"") but gives no rule for selecting or ordering tasks. No rule governs which models or results are published.","[V, S, P, C]
+
+Model/system eligibility or configuration
+[1, 2, 1, 1]
+
+submission/retry/rerun rules
+[1, 2, 1, 1]
+
+Not selected: Search 1
+Comment: Eligibility/config: the sources differ. arXiv v1 says only Claude was sampled via the UI; the ICLR version says Claude, Gemini and Grok.",none documented,"none documented
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://cdn.openai.com/pdf/d5eb7428-c4e9-4a33-bd86-86dd4bcf12ce/GDPval.pdf ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/ ; https://www.testmuai.com/learning-hub/gdpval/
+
+Dated/versioned protocol [Unclear]
+Sources: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openai.com/index/introducing-gpt-5-2/ ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf
+Note: The launch results were published with the blog (2025-09-25), so no dated protocol precedes them; arXiv v1 (2025-10-05) came later. arXiv v1 does predate the GPT-5.2/5.4/5.5 results (Dec 2025–Apr 2026) and dates the full-set description (""The GDPval full set currently consists of only 44 occupations and 30 total tasks per occupation.""), but those release posts do not say which split or protocol they used, so the dated document cannot be tied to them. The paper also notes the gold content changed without a public version label (""this experiment was run on an earlier version of the GDPval gold subset"").
+
+preregistration or immutable commitment [Missing]
+Sources checked: (same list)
+Note: The only commit-style record is the Hugging Face history of the public gold set (first upload 2025-09-25; ""Release GDPval v2 (rubrics + deliverables)"" 2026-02-10, per third-party report). It covers public content only; no hash or commitment for the hidden tasks is published.
+
+third-party/escrow confirmation [Missing]
+Sources checked: (same list)",N/A,none documented,"none documented
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/ ; https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/
+
+model version/checkpoint [Unclear]
+Sources: https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://arxiv.org/abs/2510.04374
+Note: Release posts name the scored models (GPT‑5.2 Thinking, GPT‑5.4, GPT‑5.5, plus Claude Opus 4.7 and Gemini 3.1 Pro in the GPT‑5.5 table) but do not say which split the scores come from. Launch scores name models without checkpoints (e.g., ""GPT-4o, o4-mini, o3, GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4"") and are on the gold subset.
+
+inference/system configuration [Unclear]
+Sources: https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf
+Note: Settings are recorded for release-post scores (""Reasoning effort was set to xhigh for GPT‑5.4 and heavy for GPT‑5.2 (a slightly lower level in ChatGPT).""; GPT‑5.5: ""Evals of GPT were run with reasoning effort set to xhigh and were conducted in a research environment…""), but the split is unstated. Launch settings (tools enabled for OpenAI models; UI sampling for others) apply to gold-subset scores.
+
+Benchmark version/snapshot [Missing]
+evaluator/scorer version [Missing]
+run date [Missing]
+task subset/seed/session [Missing]
+Sources checked: (same list)
+Note: No release post states the task set, version, grader pool or run date behind its GDPval score. The launch scores are tied to ""220 tasks"" (gold), and the paper notes an ""earlier version of the GDPval gold subset"" without labeling versions. Human expert grading has no versioned identifier.",N/A,none documented,"none documented
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/ ; https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://artificialanalysis.ai/evaluations/gdpval-aa ; https://amaarora.github.io/posts/2025-12-15-gdpval-review.html
+
+controlled-access run records [Unclear]
+Sources: https://arxiv.org/abs/2510.04374
+Note: Grading records presumably exist internally (""Experts provided detailed justifications for their choices and rankings.""), but this describes the launch (gold) grading; no source states that records are retained, for the hidden split or any reported score, or that anyone can access them.
+
+evaluator or third-party replay possible [Unclear]
+Sources: https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://openai.com/index/gdpval ; https://github.com/tkarcheski/robotframework-chat/issues/706
+Note: Third-party replay is documented only for the 220 gold tasks, using OpenAI's experimental automated grader (""We ran our implementation for GPT-5 with thinking set to low, submitted it to OpenAI, and obtained the following results.""), and that service is reported inactive (third-party reports, Sep–Oct 2026). OpenAI's harness was never released (""The agent harness used to complete the tasks has not been publicly shared""), and no replay route exists for the hidden split or for the human-graded scores.
+
+Public outputs/logs/run record [Missing]
+Sources checked: (same list)
+Note: OpenAI publishes no model outputs, grader judgments or logs for any reported run. The only public outputs are Inspect Evals' own gold-set run, which is a third-party run, not a record of OpenAI's reported runs.",N/A
+10/25/2026 9:43:56,Max Zhang,METR Time Horizon / HCAST task suite,HCast Time Horizon 1.1,2026-10-24,https://metr.org/blog/2026-01-29-time-horizon-1-1/,"Model/system eligibility or configuration, submission/retry/rerun rules, failure/exclusion handling, result reporting/publication rules","Model/system eligibility or configuration [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""We then elicit the model's capabilities on a small ""dev set"" of tasks.""
+Quote: ""This is where we choose an appropriate scaffold (ReAct, Triframe, Claude Code, Codex, etc.) [copy full sentence]""
+Quote: ""identify a provider with stable, correct inference that supports zero data retention (required for our private tasks).""
+Source: https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/
+Quote: ""Claude Opus 4.5 had 8 million tokens, and GPT-5 had 16 million.""
+
+submission/retry/rerun rules [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""We launch 6 independent runs for each task, where in each run the agent is put in the task environment [copy full sentence]""
+Quote: ""we often need restarts: the task-running infrastructure breaks or the tasks themselves may need fixing. [copy full sentence]""
+
+failure/exclusion handling [Found]
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/
+Quote: ""if we follow our standard methodology of marking cheating attempts as failures [copy full sentence]""
+Source: https://metr.org/time-horizons/
+Quote: ""Once runs are in, we check for reward hacks and also check whether the model had sufficient token budget.""
+
+result reporting/publication rules [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""once a model was public and we had a time horizon estimate we could stand behind, we published it. [copy full sentence]""
+Quote: ""Due to our limited capacity, some models were measured long after release and others were skipped entirely.""
+Source: https://metr.org/evaluations/gpt-5-report/
+Quote: ""OpenAI's comms and legal team required review and approval of this post.""
+
+task selection/randomization [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://arxiv.org/abs/2503.14499 ; https://arxiv.org/abs/2503.17354 ; https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/ ; https://github.com/METR/eval-analysis-public
+Note: Every model is run on the full suite; no rule for selecting, ordering or randomizing tasks is stated.","[V, S, P, C]
+
+Model/system eligibility or configuration
+[2, 2, 2, 2]
+
+submission/retry/rerun rules
+[2, 2, 1, 1]
+
+failure/exclusion handling
+[1, 2, 3, 2]
+
+result reporting/publication rules
+[1, 2, 2, 2]
+
+Not selected: Search 1
+Comment: Retry/rerun: the numbers differ. The dashboard says ""We launch 6 independent runs for each task"", but the public TH1.1 run file shows mostly 4 runs per task for most models (6 on about 66 tasks), with only Opus 4.6 and GPT-5.1-Codex-Max near 6 throughout.",Dated/versioned protocol,"Dated/versioned protocol [Found]
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Quote: ""We increased our suite from 170 to 228 tasks.""
+Quote: ""We added 73 tasks"" ; ""removed 15 tasks, and updated 53 tasks [copy full sentence]""
+Source: https://metr.org/time-horizons/
+Quote: ""February 20th, 2026: Added Claude Opus 4.6 and GPT-5.3-Codex.""
+Source: https://github.com/METR/eval-analysis-public
+Quote: commit 52d6b56 ""Time Horizon 1.1 Release (#32)"", 2026-01-20; per-run field ""task_version"" in reports/time-horizon-1-1/data/raw/runs.jsonl
+
+preregistration or immutable commitment [Unclear]
+Sources: https://github.com/METR/eval-analysis-public ; https://metr.org/time-horizons/
+Note: Public git commits fix the analysis code and run data at dated hashes (e.g., 52d6b56, 2026-01-20; 52cb829, 2026-03-05), but no hash or commitment covers the private task content, and the analysis itself was revised after results were published (""March 3rd, 2026: Corrected a regularization mistake that affected our measurements.""). A commit records a snapshot; it does not show the protocol was fixed before results.
+
+third-party/escrow confirmation [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://github.com/METR/eval-analysis-public ; https://github.com/METR/hcast-public ; https://metr.org/evaluations/gpt-5-report/ ; https://metr.org/blog/2026-06-26-gpt-5-6-sol/","[V, S, P, C]
+
+Dated/versioned protocol
+[2, 2, 3, 2]","Benchmark version/snapshot, model version/checkpoint, inference/system configuration, run date, task subset/seed/session","Benchmark version/snapshot [Found]
+Source: https://github.com/METR/eval-analysis-public (reports/time-horizon-1-1/params.yaml)
+Quote (in params.yaml): ""name: METR-Horizon-v1.1"" ; ""long_tasks_version: 799cc9c4b4483a93fc3445623a49ea1bd74fdeb2"" ; ""swaa_version: f6cc84052e2a79dd540766c8a1b15ff399696371""
+Source: https://github.com/METR/eval-analysis-public (reports/time-horizon-1-1/data/raw/runs.jsonl)
+Quote (field): ""task_version"" (e.g., ""0.1.10"")
+
+model version/checkpoint [Found]
+Source: https://github.com/METR/eval-analysis-public (runs.jsonl)
+Quote (field ""model""): ""gpt_5_2025_08_07_inspect"" ; ""claude_3_5_sonnet_20241022_inspect""
+
+inference/system configuration [Found]
+Source: https://github.com/METR/eval-analysis-public (runs.jsonl)
+Quote (field ""scaffold""): ""mtb/start_metr_task,metr_agents/react"" ; fields ""time_limit"", ""tokens_count""
+
+run date [Found]
+Source: https://github.com/METR/eval-analysis-public (runs.jsonl)
+Quote (fields): ""started_at"", ""completed_at""
+
+task subset/seed/session [Found]
+Source: https://github.com/METR/eval-analysis-public (runs.jsonl)
+Quote (field ""run_id""): ""warehouse_K3dWGU5JCfv6Vh2By3E5yW""
+
+evaluator/scorer version [Unclear]
+Sources: https://github.com/METR/eval-analysis-public ; https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Note: Runs record the agent and bridge used (e.g., ""mtb/start_metr_task,triframe_inspect/triframe_agent"") and a per-task ""task_version"", which presumably versions each task's scoring function, but no Inspect or scorer version is recorded, and it is not stated that task_version covers the scorer.","[V, S, P, C]
+
+Benchmark version/snapshot
+[2, 2, 3, 2]
+
+model version/checkpoint
+[2, 2, 2, 1]
+
+inference/system configuration
+[2, 2, 3, 1]
+
+run date
+[2, 2, 3, 1]
+
+task subset/seed/session
+[2, 2, 3, 1]
+
+Not selected: Search 1","Public outputs/logs/run record, controlled-access run records, evaluator or third-party replay possible","Public outputs/logs/run record [Found]
+Source: https://github.com/METR/eval-analysis-public (reports/time-horizon-1-1/data/raw/runs.jsonl)
+Quote (fields): ""run_id"", ""model"", ""scaffold"", ""task_id"", ""task_version"", ""score_binarized"", ""score_cont"", ""started_at"", ""completed_at"", ""tokens_count"", ""fatal_error_from""
+Source: https://arxiv.org/abs/2503.17354
+Quote: ""an interface for viewing all agent transcripts on public tasks [copy full footnote 9]""
+
+controlled-access run records [Found]
+Source: https://metr.org/blog/2026-02-17-how-we-protect-confidential-information/
+Quote: ""researchers can only view transcripts from models they are authorized to access""
+Source: https://metr.org/blog/2026-08-31-security-update/
+Quote: ""a bug could be exploited to access unpublished evaluation data [copy full sentence]""
+
+evaluator or third-party replay possible [Found]
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Quote: ""We re-estimated horizons for only 14 of 33 models which had TH1 estimates.""
+Source: https://metr.org/evaluations/gpt-5-report/
+Quote: ""ended up rescoring 18 tasks (approximately 2% of the HCAST and RE-Bench runs) [copy full sentence]""
+Source: https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/
+Quote: ""and I re-scored those runs appropriately.""","[V, S, P, C]
+
+Public outputs/logs/run record
+[2, 2, 3, 2]
+
+controlled-access run records
+[1, 2, 1, 2]
+
+evaluator or third-party replay possible
+[1, 2, 3, 2]"
+10/25/2026 12:15:17,Ameen Patel,GDPval,GDPval v2,2026/10/23,https://openai.com/index/gdpval/,"Model/system eligibility or configuration, task selection/randomization, submission/retry/rerun rules, failure/exclusion handling","model/system eligibility or configuration [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling. We also preinstalled several libraries not available in the base image, see appendix A.7.5.""
+Quote: ""We sampled Claude, Gemini and Grok via the UI to enable the maximum GDPval-relevant performance.""
+Quote: ""To understand the impact of reasoning effort on model performance, we ran GDPval on the o3 and GPT-5 models at low, medium, and high reasoning effort.""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer uLMP, 22 Nov 2025)
+Quote: ""At the time of our submission, sampling files from Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 for GDPval was not possible due to API file-handling issues (e.g., too-large file sizes, unsupported file types), so we sampled completions via their first party platforms (e.g., Claude Files UI) in order to solicit the best possible performance.""
+task selection/randomization [Found]
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer uLMP, 23 Nov 2025)
+Quote: ""The gold set is a subset of 5 tasks per occupation (220 tasks total) that we chose to be representative set by selecting, for each occupation, tasks that covered a broad range of O*NET tasks, were rated as high quality by reviewers, and were possible to scrub of any information that could potentially be used to re-identify the original task writer.""
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""Tasks failing quality thresholds were excluded from the gold set.""
+submission/retry/rerun rules [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""For plots shown, we sampled each model 3 times for each prompt, and then had 3 different human graders grade each sample (yielding 9 comparisons per prompt, per model, across 220 tasks).""
+Quote: ""We also improved agent scaffolding by enabling GET requests in the container and performing best-of-N sampling with N=4 and a GPT-5 judge.""
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party; the passage appears to reproduce OpenAI's grading report)
+Quote: ""We grade each submission three times to account for variance in the grader, and report a 95% CI calculated by bootstrapping over the grades.""
+failure/exclusion handling [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""Metrics were calculated over all samples where the automated grader did not encounter systems errors and returned a valid score. We also excluded 12 tasks (out of the 220 in our open-sourced eval set) that the automated grader frequently could not grade or was less likely to grade reliably due to its limitations, described later.""
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party)
+Quote: ""Tasks graded: 219 / 220 (see report for errors)""
+Note: The paper does not say how a failed or missing model deliverable is scored in the human-graded results.
+result reporting/publication rules [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openai.com/index/gdpval/ ; https://evals.openai.com/gdpval/leaderboard
+Note: Only ad hoc reporting choices are documented: speed and cost results use ""GPT-family models as a stand-in for frontier models generally"", and results are reported ""with confidence intervals"". No rule says which models or runs are published, or how the now-inactive leaderboard admitted results.","model/system eligibility or configuration: V1 S2 P3 C2
+task selection/randomization: V2 S2 P3 C2
+submission/retry/rerun rules: V1 S2 P3 C2
+failure/exclusion handling: V1 S2 P3 C2
+Not selected: Search 3
+Comment: Excerpt: OpenAI's X launch post was read only as a search snippet.",Dated/versioned protocol,"dated/versioned protocol [Found]
+Source: https://huggingface.co/datasets/openai/gdpval/commits/main
+Quote: ""Upload dataset 4bf6426 verified ... commited on Sep 25, 2025""
+Source: https://arxiv.org/html/2510.04374v1
+Quote: ""arXiv:2510.04374v1 [cs.LG] 05 Oct 2025""
+Source: https://openai.com/index/gdpval/
+Quote: ""September 25, 2025""
+Source: https://www.testmuai.com/learning-hub/gdpval/ (third party, published 19 Oct 2026)
+Quote: ""shows the first upload on 25 September 2025""
+Note: The v0 gold content (prompts and reference files) was published in commit-addressed revisions on the same day as the launch results, so it precedes later results (third-party runs, leaderboard entries, ICLR reruns), not the launch numbers. The hidden set, rubrics and grader have no dated public version. The paper also says one experiment ""was run on an earlier version of the GDPval gold subset"".
+preregistration or immutable commitment [Borderline]
+Sources: https://huggingface.co/datasets/openai/gdpval/commits/main ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md
+Note: Hugging Face revisions are content-addressed, so the 25 Sep 2025 gold content can still be retrieved unchanged at revision a3848a2. OpenAI made no deliberate commitment, such as a published hash of the hidden set, rubrics or grader.
+third-party/escrow confirmation [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://huggingface.co/datasets/openai/gdpval/commits/main ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)","dated/versioned protocol: V2 S2 P3 C3
+Not selected: Search 3
+Comment: Red flag: the live dataset differs from its September 2025 snapshot without documentation. Comparing Hugging Face revisions a3848a2 (25 Sep 2025) and 11e7900 (10 Feb 2026), 39 of the 220 public tasks (22 occupations) have different reference inputs: 62 referenced files changed in place (same path, different hash and size) and 39 referenced files are new. The v2 commit message mentions only rubrics and deliverables. Excerpt: OpenAI's X launch post was read only as a search snippet.","model version/checkpoint, inference/system configuration, task subset/seed/session","model version/checkpoint [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""We evaluated GPT-4o, o4-mini, o3, GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 using blind pairwise comparisons by professional industry experts.""
+Quote: ""We built a clustering pipeline to analyze why experts preferred or rejected GPT-5 high, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 deliverables as shown in fig. 8.""
+Source: https://openai.com/index/gdpval/
+Quote: ""GPT‑4o, o4-mini, OpenAI o3, GPT‑5, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4""
+Note: Model names only. No API snapshot IDs are given (for example, which GPT-4o snapshot), and the serving versions of the UI-sampled Claude, Gemini and Grok models are not recorded.
+inference/system configuration [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling. We also preinstalled several libraries not available in the base image, see appendix A.7.5.""
+Quote: ""We sampled Claude, Gemini and Grok via the UI to enable the maximum GDPval-relevant performance. For example, for Claude, we wanted to evaluate its upgraded file creation and analysis feature (Anthropic, 2025).""
+Quote: ""To ensure the model can process a wide variety of file types in GDPval, the following packages are pre-installed in the base production Docker image. These were also made available to the agent during sampling of OpenAI models.""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer uLMP, 22 Nov 2025)
+Quote: ""At the time of our submission, sampling files from Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 for GDPval was not possible due to API file-handling issues (e.g., too-large file sizes, unsupported file types), so we sampled completions via their first party platforms (e.g., Claude Files UI) in order to solicit the best possible performance.""
+task subset/seed/session [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""In fig. 5, on the GDPval gold subset, 47.6% of deliverables by Claude Opus 4.1 were graded as better than (wins) or as good as (ties) the human deliverable.""
+Quote: ""We also excluded 12 tasks (out of the 220 in our open-sourced eval set) that the automated grader frequently could not grade or was less likely to grade reliably due to its limitations, described later.""
+Source: https://openai.com/index/gdpval/
+Quote: ""Across 220 tasks in the GDPval gold set""
+Note: The subset is recorded; no seeds or run or session IDs are given.
+benchmark version/snapshot [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://arxiv.org/html/2510.04374v1 ; https://huggingface.co/datasets/openai/gdpval/commits/main
+Note: Scores are tied to ""the GDPval gold subset"" with no revision ID. The paper says one experiment ""was run on an earlier version of the GDPval gold subset"", and v2 changed inputs on 39 tasks, so the snapshot behind each score cannot be pinned exactly.
+evaluator/scorer version [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://huggingface.co/datasets/openai/gdpval/commits/main ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)
+run date [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://huggingface.co/datasets/openai/gdpval/commits/main ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)","model version/checkpoint: V1 S2 P2 C2
+inference/system configuration: V1 S2 P3 C2
+task subset/seed/session: V2 S2 P3 C2
+Not selected: Search 3
+Comment: Excerpt: OpenAI's X launch post was read only as a search snippet.",evaluator or third-party replay possible,"evaluator or third-party replay possible [Found]
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer JEiu, 22 Nov 2025)
+Quote: ""Though we did not open source model outputs, these can be obtained since the prompts and reference files are opensourced and we only sampled publicly available models.""
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""We open-source the prompts and reference files in our 220-task gold subset on Hugging Face (dataset: GDPval).""
+Source: https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval (third party: inspect_evals contributor's public run record)
+Quote: ""The repo is the result from running GPT-5 with thinking low on the public subset of GDPval implemented in Inspect Eval, which has 220 tasks.""
+Quote: ""OpenAI got back to us on December 2 with the results.""
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party)
+Quote: ""We ran our implementation for GPT-5 with thinking set to low, submitted it to OpenAI, and obtained the following results.""
+Note: Replay covers only the 220 public tasks. Outsiders cannot replay the hidden set, the expert grading, or the UI-sampled model versions, and after 10 Feb 2026 the inputs differ on 39 tasks unless pinned to revision a3848a2.
+public outputs/logs/run record [Borderline]
+Sources: https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/jeqcho/2025-10-16T21-42-02plus00-00_gdpval ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md
+Note: OpenAI released no model outputs, grades or logs for its own reported runs. The only public run record is a third party's: GPT-5 (low) outputs plus the scores.json OpenAI's grading service returned.
+controlled-access run records [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD
+Note: The paper says run records exist internally (""Experts provided detailed justifications for their choices and rankings""; task-monitoring data; model samples), but no access path for anyone outside OpenAI is documented.","evaluator or third-party replay possible: V2 S2 P2 C3
+Not selected: Search 3
+Comment: Red flag: numbers differ. A third-party replay of GPT-5 (low) scored 47.3% ± 6.2% from OpenAI's grading service, while OpenAI's leaderboard listed 31.9% (wins only) and 34.6% (wins and ties) for the same model; no source reconciles the gap. Red flag: sources disagree. The rebuttal says only publicly available models were sampled and that no weights were updated, but the blog reports results from ""an internal, experimental version of GPT‑5"" that OpenAI ""incrementally trained"", which no outsider can replay."
+10/25/2026 15:30:59,Ameen Patel,METR Time Horizon / HCAST task suite,METR-Horizon-v1.1,2026/10/25,https://metr.org/hcast.pdf,"Model/system eligibility or configuration, task selection/randomization, submission/retry/rerun rules, failure/exclusion handling, result reporting/publication rules","Model/system eligibility or configuration [Found]
+Source: https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/ (METR staff research note on the TH1.1 suite, 13 Feb 2026; states it does not necessarily reflect METR's views)
+Quote: ""Claude Opus 4.5 had 8 million tokens, and GPT-5 had 16 million""
+Source: https://metr.org/hcast.pdf (earlier version: HCAST paper, Mar 2025, 189 tasks; predates TH1.1; Section 4.1)
+Quote: ""We limit runs to 10 hours, and 2 million tokens and 8 million tokens""
+task selection/randomization [Found]
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, on the 73 added HCAST tasks)
+Quote: ""subsequently passed our quality check processes""
+Source: https://metr.org/evaluations/gpt-5-1-codex-max-report/ (sibling: TH1.0-era evaluation, Nov 2025)
+Quote: ""we used a subset of 90 tasks from HCAST""
+submission/retry/rerun rules [Found]
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (METR research note on the TH1.1 suite, 20 Mar 2026, by Alexander Barry, whom METR lists as an Epoch AI research collaborator; states it does not necessarily reflect METR's views)
+Quote: ""Each LLM attempts each task multiple times (typically 8, although there is some variation)""
+failure/exclusion handling [Found]
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026)
+Quote: ""our standard methodology of marking cheating attempts as failures""
+Source: https://github.com/METR/inspect-metr-task-bridge/blob/main/mtb/scorer.py (operator-wide tool, commit 20a430c, Apr 2026; named as the HCAST runner in the TH1.1 run data; a run with no valid score is scored 0)
+Quote: explanation=""No valid score(s) generated."",
+result reporting/publication rules [Found]
+Source: https://metr.org/time-horizons/ (TH1.1 page; policy for models once public; last updated 8 Sep 2026)
+Quote: ""we had a time horizon estimate we could stand behind, we published it""","Model/system eligibility or configuration: V1 S1 P3 C2
+task selection/randomization: V1 S2 P3 C2
+submission/retry/rerun rules: V2 S1 P3 C1
+failure/exclusion handling: V1 S2 P3 C2
+result reporting/publication rules: V1 S2 P2 C1
+Not selected: no rating (only none documented is unselected)
+Comment: Red flag, numbers differ across sources (submission/retry/rerun rules). The research note says typically 8 attempts per task, the time-horizons page says 6, and the TH1.1 run data shows 4 for 2,305 of 4,523 model-task pairs.",Dated/versioned protocol,"Dated/versioned protocol [Found]
+Source: https://github.com/METR/eval-analysis-public/commit/52d6b56 (""Time Horizon 1.1 Release"", dated 20 Jan 2026; its params.yaml fixes the suite name and task-repo commit and its run data the 228-task list, all unchanged in the later commits of 12 Feb and 5 Mar 2026 that add GPT-5.2, Gemini 3 Pro, Claude Opus 4.6 and GPT-5.3-Codex results)
+Quote: name: METR-Horizon-v1.1
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, 29 Jan 2026)
+Quote: ""We increased our suite from 170 to 228 tasks.""
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026, run on the version fixed in January)
+Quote: ""We initiated an evaluation of GPT-5.6 Sol on our Time Horizon 1.1 suite""
+preregistration or immutable commitment [Borderline]
+Sources: https://github.com/METR/eval-analysis-public/commit/52d6b56 (params.yaml) ; https://github.com/METR/eval-analysis-public (TH1.1 run data)
+Note: The release commit publishes a git hash of METR's private task repo, unchanged through 5 Mar 2026. It is not presented as a commitment, cannot be checked against the private content, and runs used several task versions per task. Not selected.
+third-party/escrow confirmation [Missing]
+Sources checked: https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://metr.org/time-horizons/ (including its Updates list) ; https://github.com/METR/eval-analysis-public (commit history) ; https://metr.org/blog/2026-06-26-gpt-5-6-sol/ ; https://metr.org/evaluations/gpt-5-1-codex-max-report/ ; https://metr.org/blog/2026-02-17-how-we-protect-confidential-information/ ; https://metr.org/hcast.pdf","Dated/versioned protocol: V2 S2 P3 C2
+Not selected: Search 3
+Comment: Red flag, numbers differ across sources. One suite version and task-repo hash covers several task versions: in the release data 101 of 157 HCAST tasks were run on 2 or 3 versions, and 737 of 3,427 HCAST runs by later models used versions absent from the release data. The fitting method was also changed after results, on 3 Mar 2026.","Benchmark version/snapshot, model version/checkpoint, inference/system configuration, run date, task subset/seed/session","Benchmark version/snapshot [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/params.yaml (TH1.1 report settings, commit 52cb829)
+Quote: long_tasks_version: 799cc9c4b4483a93fc3445623a49ea1bd74fdeb2
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (TH1.1 run data, commit 52cb829; example run warehouse_4tkKeTTCromwikDaqbbxvr; task version recorded on 95% of AI runs)
+Quote: ""task_version"":""1.0.13""
+model version/checkpoint [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (same example run; model label on 100% of runs, with a snapshot date in only some labels, e.g. gpt_5_2025_08_07)
+Quote: ""alias"":""Claude Opus 4.6 (Inspect)"",""model"":""claude_opus_4_6_inspect""
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026)
+Quote: ""both the final checkpoint and a ‘railfree’ version""
+inference/system configuration [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (same example run; scaffold and token count on 95% of AI runs, time limit on 10%)
+Quote: ""tokens_count"":1203336.0,""cloned"":0.0,""scaffold"":""mtb\/start_metr_task,metr_agents\/react""
+Source: https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/ (METR staff research note on the TH1.1 suite, 13 Feb 2026; states it does not necessarily reflect METR's views)
+Quote: ""Claude Opus 4.5 had 8 million tokens, and GPT-5 had 16 million""
+run date [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (same example run; start and end times on 95% of AI runs; this one started 12 Feb 2026 22:44 UTC)
+Quote: ""started_at"":1770936299871.0,""completed_at"":1770937682317.0
+task subset/seed/session [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (same example run; run ID on 100% of runs)
+Quote: ""run_id"":""warehouse_4tkKeTTCromwikDaqbbxvr""
+evaluator/scorer version [Borderline]
+Sources: https://github.com/METR/eval-analysis-public (TH1.1 run data) ; https://github.com/METR/inspect-metr-task-bridge (commit history, now at version 0.5.24) ; https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Note: Runs name the harness (the scaffold field, and ""(Inspect)"" in model labels), and scorer code travels with each task version. No harness, scorer or reward-hack monitor version is recorded per run. Not selected.","Benchmark version/snapshot: V2 S2 P3 C2
+model version/checkpoint: V2 S2 P2 C2
+inference/system configuration: V2 S2 P3 C2
+run date: V2 S2 P3 C1
+task subset/seed/session: V2 S2 P3 C1
+Not selected: Search 3","Public outputs/logs/run record, controlled-access run records, evaluator or third-party replay possible","Public outputs/logs/run record [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (TH1.1 run data, commit 52cb829; 24,008 per-run records with scores, tokens and timestamps, no transcripts; example run warehouse_4tkKeTTCromwikDaqbbxvr)
+Quote: ""score_cont"":1.0,""score_binarized"":1
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, 29 Jan 2026)
+Quote: ""We have updated our public repo with data on both TH1 and TH1.1""
+controlled-access run records [Found]
+Source: https://metr.org/blog/2026-08-31-security-update/ (operator-wide security post, 31 Aug 2026; its examples of unpublished restricted data include TH1.1 estimates)
+Quote: ""outputs (e.g. agent transcripts) from public models""
+Source: https://metr.org/blog/2026-02-17-how-we-protect-confidential-information/ (operator-wide: METR confidentiality policy)
+Quote: ""access controls ensure researchers can only view transcripts from models they are authorized to access""
+evaluator or third-party replay possible [Found]
+Source: https://github.com/METR/eval-analysis-public (README, commit 52cb829; the TH1.1 report can be recomputed from the public run data)
+Quote: ""Each report has its own DVC pipeline.""
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (METR research note re-analysing TH1.1 results, 20 Mar 2026, by Alexander Barry, whom METR lists as an Epoch AI research collaborator; states it does not necessarily reflect METR's views)
+Quote: ""fit alternative models to show their impacts""","Public outputs/logs/run record: V2 S2 P3 C2
+controlled-access run records: V1 S2 P2 C2
+evaluator or third-party replay possible: V2 S2 P3 C2
+Not selected: no rating (only none documented is unselected)"
+10/26/2026 16:15:04,Nhi Truong,METR Time Horizon / HCAST task suite,"Time Horizon 1.1 (TH1.1), released 2026-01-29; METR mixed task suite including HCAST. Evidence cutoff: 2026-10-26.",2026-10-26,https://metr.org/blog/2026-01-29-time-horizon-1-1/,"Model/system eligibility or configuration, task selection/randomization, submission/retry/rerun rules, failure/exclusion handling, result reporting/publication rules","Source: https://arxiv.org/html/2503.14499v4 (Appendix C.3)
+Quote: ""We used the same agent scaffolds across the evaluation suite, with no task-specific prompting or scaffolding, except for the SWAA tasks, which used a simple prompting scaffold. All agents were provided with the same affordances provided to human baseliners.""
+Quote: ""These agents are developed on a held-out dev set of tasks, not included in HCAST, to reduce the likelihood of overfitting to these tasks.""
+Explanation: These rules describe the original 170-task study; they do not fix every TH1.1 setting.
+
+Source: https://metr.org/time-horizons/ (evaluation and model-coverage FAQs); https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/
+Explanation: The current FAQ describes development/test separation, token and time limits, six attempts per task, restarts after infrastructure failures or task repairs, and human review of suspected reward hacks before scoring. It says reliable estimates for public models were published, subject to limited capacity. The March 20 note describes typically eight attempts, so attempt counts vary by run and date.","Model/system eligibility or configuration: V2 S2 P2 C2
+task selection/randomization: V2 S2 P2 C2
+submission/retry/rerun rules: V2 S2 P2 C2
+failure/exclusion handling: V2 S2 P2 C2
+result reporting/publication rules: V2 S2 P2 C2
+Not selected: Search 2
+Comment: The March20 note describes typically 8attempts; the later FAQ describes 6. This is treated as dated/variable practice, not one fixedattemptcount.",Dated/versioned protocol,"Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Explanation: The January 29, 2026 TH1.1 announcement predates the example February 14 GPT-5.3-Codex attempt. This establishes a previously announced version, not a complete frozen protocol.
+
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/params.yaml
+Quote:
+benchmark:
+  name: METR-Horizon-v1.1
+  # mp4-tasks commit
+  long_tasks_version: 799cc9c4b4483a93fc3445623a49ea1bd74fdeb2
+  # inspect-tasks commit
+  swaa_version: f6cc84052e2a79dd540766c8a1b15ff399696371
+Explanation: These configuration entries do not establish when settings were fixed. No TH1.1 preregistration, immutable commitment or escrow confirmation was located.
+
+Source: https://metr.org/time-horizons/ (Updates)
+Explanation: METR records a March 3, 2026 regularization correction, so the January announcement does not prove that all later analysis settings stayed unchanged.","Dated/versioned protocol: V2 S2 P3 C1
+Not selected: Search 2","Benchmark version/snapshot, model version/checkpoint, inference/system configuration, run date, task subset/seed/session","Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl
+Quote:
+""task_id"": ""acdc_bug/fix_checkpointing""
+""run_id"": ""warehouse_2J88DdGkQUe6RHTU6G5vxw""
+""alias"": ""GPT-5.3-Codex""
+""model"": ""flamingo_2""
+""score_binarized"": 0
+""task_source"": ""HCAST""
+""started_at"": 1771067096478.0
+""task_version"": ""1.0.13""
+""tokens_count"": 1943448.0
+""scaffold"": ""mtb/start_metr_task,triframe_inspect/triframe_agent""
+Explanation: These are selected entries from one record. The timestamp is February 14, 2026 at 11:04:56.478 UTC. Token usage is actual consumption, not a configured budget.
+
+Source: https://metr.org/assets/benchmark_results_1_1.yaml
+Quote:
+benchmark_name: METR-Horizon-v1.1
+long_tasks_version: 799cc9c4b4483a93fc3445623a49ea1bd74fdeb2
+Explanation: The example is one task attempt, not the aggregate time-horizon estimate. Complete settings, a model-weight hash, seed and exact harness/scorer version tied to the attempt were not verified.","Benchmark version/snapshot: V2 S2 P3 C2
+model version/checkpoint: V2 S2 P3 C2
+inference/system configuration: V2 S2 P3 C2
+run date: V2 S2 P3 C1
+task subset/seed/session: V2 S2 P3 C1
+Not selected: Search 2","Public outputs/logs/run record, evaluator or third-party replay possible","Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl
+Quote:
+""task_id"": ""acdc_bug/fix_checkpointing""
+""run_id"": ""warehouse_2J88DdGkQUe6RHTU6G5vxw""
+""alias"": ""GPT-5.3-Codex""
+""score_binarized"": 0
+Explanation: Selected entries from one public record. The file contains 24,008 records covering 228 tasks, but not complete conversations or tool actions.
+
+Source: https://github.com/METR/eval-analysis-public (Running the Reports)
+Quote: ""Each report has its own DVC pipeline. To run a report:""
+Quote:
+# Run the time-horizon-1-1 report
+cd reports/time-horizon-1-1
+dvc repro
+Explanation: This pipeline recalculates statistical results from released scores. It does not rerun model attempts or recheck private grading. We inspected the inputs and pipeline but did not execute it.
+
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/dvc.yaml
+Explanation: The DVC stages define bootstrapping and curve fitting from released scores.","Public outputs/logs/run record: V2 S2 P3 C2
+evaluator or third-party replay possible: V2 S2 P3 C2
+Not selected: Search 2
+Comment: Replay here means recalculating statistical results from released scores, not rerunning the original model attempts or private grading."
+10/28/2026 0:19:01,Nhi Truong,GDPval,"OpenAI dataset v2, released 2026-02-10; commit 11e7900cdcac61bc4daf59e65feb238acda98fbf; evidence cutoff 2026-10-26",2026-10-26,https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf,"Model/system eligibility or configuration, task selection/randomization, submission/retry/rerun rules, failure/exclusion handling","Model/system eligibility or configuration [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 3.1 footnote)
+Quote: ""For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling.""
+
+Task selection/randomization [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 3.1 footnote)
+Quote: ""For plots shown, we sampled each model 3 times for each prompt, and then had 3 different human graders grade each sample (yielding 9 comparisons per prompt, per model, across 220 tasks).""
+
+Submission/retry/rerun rules [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 3.1 footnote)
+Quote: ""For plots shown, we sampled each model 3 times for each prompt, and then had 3 different human graders grade each sample (yielding 9 comparisons per prompt, per model, across 220 tasks).""
+
+Failure/exclusion handling [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Appendix A.6.3)
+Quote: ""In the open-source set we mark 12 out of 220 tasks as ungradable due to limitations of the automated grader.""
+Source: https://arxiv.org/html/2510.04374v1 (Appendix A.6.3, Python)
+Quote: ""The automated grader operates in a container that only allows for running Python. Because of this, we excluded 3 Software Developers tasks that require running other languages and downloading external dependencies to properly test.""","Model/system eligibility or configuration: V1 S1 P1 C1
+Task selection/randomization: V1 S1 P1 C1
+Submission/retry/rerun rules: V1 S1 P1 C1
+Failure/exclusion handling: V1 S1 P1 C1
+Not selected: Search 1",none documented,"none documented [Missing]
+Sources checked:
+https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf
+https://huggingface.co/datasets/openai/gdpval/commits/main
+https://arxiv.org/html/2510.04374v1
+https://openai.com/index/gdpval/
+https://openai.com/index/introducing-gpt-5-4/
+
+I don't find any preregistration, hash commitment, escrow record or protocol explicitly tied to a reported v2 run.",Not selected: Search 1,"model version/checkpoint, inference/system configuration","Model version/checkpoint [Found]
+Source: https://openai.com/index/introducing-gpt-5-4/ (summary evaluation table, model column heading)
+Quote: ""GPT‑5.4""
+
+Inference/system configuration [Found]
+Source: https://openai.com/index/introducing-gpt-5-4/ (Knowledge work, GDPval paragraph)
+Quote: ""Reasoning effort was set to xhigh for GPT‑5.4 and heavy for GPT‑5.2 (a slightly lower level in ChatGPT).""","Model version/checkpoint: V1 S1 P1 C1
+Inference/system configuration: V1 S1 P1 C1
+Not selected: Search 1",none documented,"none documented [Missing]
+Sources checked:
+https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf
+https://huggingface.co/datasets/openai/gdpval/commits/main
+https://arxiv.org/html/2510.04374v1
+https://openai.com/index/gdpval/
+https://openai.com/index/introducing-gpt-5-4/
+https://github.com/UKGovernmentBEIS/inspect_evals/tree/main/src/inspect_evals/gdpval
+
+I found no public logs, controlled log access or replay of an identified OpenAI v2 run tied to a reported score.",Not selected: Search 1

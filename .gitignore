@@ -25,3 +25,10 @@ __pycache__/
 /.vercel/
 benchmarks/haiid/clickstream_public.txt.gz
 benchmarks/reliancescope/harbor/
+
+# Paper source, cloned here for reference; it is its own repository.
+/680ac5f6031910ec36db3919/
+
+# Scratch copy of the standalone report-card mock. The annotation CSV exports
+# beside it are the raw record and ARE tracked.
+/website/annotations/test.*

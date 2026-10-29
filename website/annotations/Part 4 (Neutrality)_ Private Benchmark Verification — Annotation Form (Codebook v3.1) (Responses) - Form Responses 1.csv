@@ -1,0 +1,546 @@
+Timestamp,Annotator name or ID,Benchmark name,Benchmark version or snapshot,Frozen corpus cutoff date (YYYY-MM-DD),Benchmark homepage or primary documentation URL,Participation-rule visibility — Who can inspect the rules governing eligibility and access to the benchmark?,Participation-rule visibility — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Differential-treatment disclosure — Does the documentation state whether participants/providers may receive different access or evaluation treatment?,Differential-treatment disclosure — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Evaluator–provider ties — What material relationships between the evaluator/operator and evaluated providers are documented?,Evaluator–provider ties — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies."
+10/11/2026 15:49:26,Ameen Patel,FrontierMath,FrontierMath Tiers 1-3 (v2),2026-09-27,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,Public,"Public [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""Our top priority is to track state of the art AI performance. For this reason, we prioritize leading model releases from the main AI labs.""
+Also on the same page: ""For Epoch AI-administered benchmarks, we only report results for models where we can run evaluations ourselves."" It also says only chat/instruct versions are evaluated.
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""They have access to all problem statements and solutions up to FrontierMath_12-04-24, except for 53 solutions randomly withheld in version FrontierMath_02-28-25 for holdout evaluation.""
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""proactively publicly disclose benchmark sponsorship and data access agreements""","Public: V2 S2 P1 C2
+Comment: Red flag: post-hoc (the OpenAI access terms and the disclosure commitment were published only after the January 2025 controversy).
+
+Not selected: Search 0
+Comment: No sources-checked list for the codes not selected; only Epoch's About/FAQ pages and one operator post are evident.",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""FrontierMath was developed with funding from OpenAI, who has exclusive access to a subset of the benchmark.""
+Source: https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath
+Quote: ""who has exclusive access to: all 290 problems in Tiers 1–3; solutions to 237 of these problems""
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""However, we cannot share the questions and answers with other parties without written permission from OpenAI.""","differential/privileged treatment disclosed or permitted: V2 S2 P2 C2
+Comment: Red flag: post-hoc (the January 2025 clarification post).
+
+Not selected: Search 0
+Comment: No sources-checked list for the codes not selected; only the v2 page and two operator posts are evident.","funding/sponsorship, customer/vendor relationship, research/technical partnership, privileged model/data/API access, other material tie","funding/sponsorship [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""FrontierMath was developed with funding from OpenAI""
+
+customer/vendor relationship [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""OpenAI commissioned Epoch AI to produce 300 advanced math problems for AI evaluation that form the core of the FrontierMath benchmark.""
+Source: https://epoch.ai/benchmarks/gpqa-diamond?view=graph&tab=release-date
+Quote: ""xAI compensated us for this evaluation and provided compute credits.""
+
+research/technical partnership [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""we partnered with OpenAI, who provided both the necessary funding and technical expertise to develop the benchmark.""
+Source: https://x.com/EpochAIResearch/status/2065488154086568445
+Quote: ""This project began in April when OpenAI shared with us that they had found more errors than expected when conducting an internal review.""
+
+privileged model/data/API access [Found]
+Source: https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath
+Quote: ""We had pre-release access to evaluate the model.""
+Source: https://epoch.ai/gradient-updates/less-than-70-percent-of-frontiermath-is-within-reach-for-todays-models
+Quote: ""Thanks to OpenAI for API credits used for the GPT-5 experiments.""
+
+Other material tie [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""As is typical of commissioned work, OpenAI retains ownership of these questions""
+
+Same organization/affiliate [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/latest/openai-and-frontiermath ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://epoch.ai/benchmarks/about ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3 ; https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath","funding/sponsorship: V2 S2 P2 C2
+
+customer/vendor relationship: V2 S2 P2 C2
+Comment: Red flag: post-hoc (the January 2025 clarification).
+
+research/technical partnership: V2 S2 P2 C2
+Comment: Excerpt: the X announcement was read only as a search snippet. Red flag: post-hoc (the January 2025 clarification).
+
+privileged model/data/API access: V2 S2 P1 C2
+Comment: Excerpt: the Gradient Updates post was read only as a search snippet.
+
+Other material tie: V2 S2 P2 C1
+Comment: Red flag: post-hoc (the January 2025 clarification).
+
+Not selected: Search 1
+Comment: Paper and code repository not checked; no web search (required for a 2 on this variable)."
+10/11/2026 16:55:34,Max Zhang,Frontier Math,FrontierMath Tiers 1-3 (v2,2026-9-26,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,Public,"Public [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""For Epoch AI-administered benchmarks, we only report results for models where we can run evaluations ourselves. This means that we do not have data for models that are only deployed internally, such as PaLM or Gopher.""","[V, S, P, C]
+
+Public
+[2, 2, 1, 1]",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://epoch.ai/latest/what-is-epoch
+Quote: ""OpenAI is the only AI company with access to FrontierMath (and the upcoming Tier 4 of this benchmark, an even more difficult set of problems), which has diminished confidence in FrontierMath results for OpenAI models.""","[V, S, P, C]
+
+differential/privileged treatment disclosed or permitted
+[2, 2, 2, 1]","funding/sponsorship, customer/vendor relationship, research/technical partnership, privileged model/data/API access","funding/sponsorship [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""FrontierMath was developed with funding from OpenAI, who has exclusive access to a subset of the benchmark.""
+
+customer/vendor relationship [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""OpenAI commissioned Epoch AI to produce 300 advanced math problems for AI evaluation that form the core of the FrontierMath benchmark.""
+
+research/technical partnership [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""After approaching several potential funders, we partnered with OpenAI, who provided both the necessary funding and technical expertise to develop the benchmark.""
+
+privileged model/data/API access [Found]
+Sources: https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath?utm_source=chatgpt.com
+Quote: “We had pre-release access to evaluate the model.”
+
+Same organization/affiliate [Missing]
+Sources checked: https://epoch.ai/latest/openai-and-frontiermath ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://epoch.ai/latest/what-is-epoch ; https://epoch.ai/benchmarks/about ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/about/transparency (snippet)","[V, S, P, C]
+
+funding/sponsorship
+[1, 2, 2, 1]
+
+customer/vendor relationship
+[1, 2, 2, 1]
+
+research/technical partnership
+[1, 2, 2, 1]
+
+privileged model/data/API access
+[1, 2, 2, 1]"
+10/16/2026 11:42:53,Max Zhang,SWE-Bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026-09-27,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,no rules located,"no rules located [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://scaleapi.github.io/SWE-bench_Pro-os/ ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://scale.com/blog/leaderboard ; https://scale.com/blog/scale-labs
+
+Public [Unclear]
+Sources: https://scale.com/blog/leaderboard ; https://arxiv.org/abs/2509.16941 ; https://github.com/scaleapi/SWE-bench_Pro-os/issues
+Note: Two partial candidates. (1) SEAL's public eligibility rule (""models are only eligible for inclusion the first time their developers have one of their models prompted on the evaluation prompts"") and its contact route (""would like to run your model against these evaluations… seal@scale.com"") are SEAL-dependent, so Unclear per the team rule. The commercial tab also lists several models per developer, which the first-time rule wouldn't seem to allow. (2) The data-access rule is public (""not publicly accessible""), but that governs who sees the data, not who gets evaluated. The only submission route (the Google Form) is public-set, and the one issue asking for leaderboard submission criteria (#95) has no answer.",N/A,not reported,"differential/privileged treatment disclosed or permitted [Unclear]
+Source: https://arxiv.org/abs/2509.16941
+Quote: "" We use Opus 4.1 without extended thinking as reported by Anthropic in their own evaluation on SWE-Bench Verified.""
+Note: It says all models are the same in the paragraph until this sentence where Opus 4.1 is given special treatment, but it is unclear whether it is substantial or not.",N/A,"Same organization/affiliate, funding/sponsorship, customer/vendor relationship, research/technical partnership","Same organization/affiliate [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution
+Quote: ""Following its investment, Meta will hold a minority of Scale’s outstanding equity.""
+
+funding/sponsorship [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution
+Quote: ""Scale AI, Inc. (“Scale” or the “Company”), the humanity-first AI company, today announced a significant new investment from Meta Platforms, Inc. (Nasdaq: META) that values Scale at over $29 billion.""
+
+customer/vendor relationship [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution
+Quote: ""The agreement will also substantially expand Scale and Meta’s commercial relationship to accelerate deployment of Scale’s data solutions.""
+
+research/technical partnership [Found]
+Source: https://www.forbes.com/sites/richardnieva/2026/05/14/scale-meta-deal/
+Quote: ""One customer, of course, Scale didn’t have to worry about losing: Meta, where Scale played a major role in training Muse Spark, the first model built under Wang’s stewardship.""
+Source: https://www.forbes.com/sites/richardnieva/2026/05/14/scale-meta-deal/
+Quote: ""Scale was a very, very critical partner.""
+
+privileged model/data/API access [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://arxiv.org/abs/2509.16941 ; https://scale.com/blog/swe-bench-pro ; https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution ; https://www.scmp.com/tech/tech-trends/article/3316580/scale-ai-ceo-stresses-start-ups-independence-after-meta-deal ; https://scale.com/blog/customer-trust-scale-meta-deal ; https://www.forbes.com/sites/richardnieva/2026/05/14/scale-meta-deal/ ; https://www.khaleejtimes.com/business/tech/meta-releases-first-new-ai-model-since-shaking-up-team-2?amp=1 ; https://github.com/scaleapi/SWE-bench_Pro-os/issues
+
+
+Note: It is quite interesting. Now that Facebook acquired large share of Scale, and SWE-Bench Pro is part of Scale. Muse is the highest ranking model on both the commercial (private) and public subset for SWE.","[V, S, P, C]
+
+Same organization/affiliate
+[1,1,2,1]
+
+funding/sponsorship
+[1,1,2,1]
+
+customer/vendor relationship
+[1,1,2,1]
+
+research/technical partnership
+[1,3,2,1]"
+10/18/2026 15:45:44,Ameen Patel,SWE-bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026/10/17,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,Public,"public [Found]
+Source: https://arxiv.org/abs/2509.16941 (Abstract; access rule)
+Quote: ""Problems in the held-out and the commercial set are not publicly accessible, but we release results on the commercial set.""
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Dataset Summary, Private Set; Legend)
+Quote: ""These codebases were acquired through partnerships and are not publicly accessible.""
+Quote: ""that are grayed out were run with a capped cost limit and turn limit of 50. All other Models on this page* were run with an uncapped cost and with a turn limit of 250.""
+Source: https://scale.com/blog/leaderboard (footnote 1; eligibility rule, operator-wide, 2024)
+Quote: ""To maintain the integrity of the SEAL Leaderboards, by default, models are only eligible for inclusion the first time their developers have one of their models prompted on the evaluation prompts.""
+
+participants/customers or on request only [Borderline]
+Sources: https://scale.com/blog/leaderboard (closing paragraph) ; https://docs.google.com/forms/d/e/1FAIpQLScBjMAoPnm52nUSyOgO_iyWELuCrwjMKm0xzE2s6u-xSRBHug/viewform ; https://github.com/scaleapi/SWE-bench_Pro-os/issues/95 ; https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+Note: Getting onto a leaderboard runs through emailing seal@scale.com (operator-wide) or a submission form for the public set, and no commercial-leaderboard inclusion criteria are published. Nothing says the criteria are shared on request; issue #95 asked for the submission criteria and has no answer.","public: V2 S2 P2 C2
+Not selected: Search 3
+Comment: Red flag: the only published eligibility rule is operator-wide, and the commercial leaderboard does not visibly follow it. It lists several models per developer and grays out entries only for the 50-turn cost cap. Excerpt: the submission form and issue #95 came back as summaries.",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Legend; per-entry gray status and asterisks)
+Quote: ""that are grayed out were run with a capped cost limit and turn limit of 50.""
+Quote: ""*Run with mini-swe-agent harness""
+Source: https://arxiv.org/html/2509.16941v2 (§5, Evaluation settings)
+Quote: ""We enable tool-use when possible, for open-weight models, we use syntax parsing to enable tool-use.""
+Quote: ""We use Opus 4.1 without extended thinking as reported by Anthropic in their own evaluation on SWE-Bench Verified.""
+Source: https://scale.com/blog/leaderboard (footnote 1; operator-wide, 2024)
+Quote: ""In exceptional cases, such as major launches where we believe the overfitting risks are low, we may include newly launched models even if the AI developers may have previously seen the prompt set in API logs.""
+
+uniform treatment explicitly stated [Borderline]
+Source: https://arxiv.org/html/2509.16941v2 (§5, Evaluation settings; Abstract)
+Quote: ""We use the same prompt for all models, which is the default prompt from [16].""
+Quote: ""In our evaluation of widely used coding models, under a unified scaffold, we observe that their performance on SWE-Bench Pro remains below 45% (Pass@1).""
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Legend)
+Quote: ""All other Models on this page* were run with an uncapped cost and with a turn limit of 250.""","uniform treatment explicitly stated: V1 S2 P2 C2
+differential/privileged treatment disclosed or permitted: V2 S2 P3 C2
+Not selected: Search 3","Same organization/affiliate, customer/vendor relationship, other material tie","same organization/affiliate [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution (Scale press release, June 12, 2025)
+Quote: ""Following its investment, Meta will hold a minority of Scale's outstanding equity.""
+Source: https://www.scmp.com/tech/tech-trends/article/3316580/scale-ai-ceo-stresses-start-ups-independence-after-meta-deal (Bloomberg via SCMP, July 2, 2025)
+Quote: ""despite the social media giant taking a 49 per cent stake just weeks ago""
+Source: https://finance.yahoo.com/sectors/technology/article/meta-launches-muse-spark-ai-model-as-part-of-its-ai-turnaround-171109510.html (Yahoo Finance, April 8, 2026; Meta's Muse Spark and Muse Spark 1.1 are on the commercial leaderboard, 1.1 ranked first)
+Quote: ""The model, called Muse Spark, is the first from the company's Meta Superintelligence Lab (MSL).""
+
+customer/vendor relationship [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution
+Quote: ""The agreement will also substantially expand Scale and Meta's commercial relationship""
+Source: https://www.scmp.com/tech/tech-trends/article/3316580/scale-ai-ceo-stresses-start-ups-independence-after-meta-deal
+Quote: ""Interim Chief Executive Officer Jason Droege said Meta, a customer since 2019, will not receive special treatment""
+Source: https://techcrunch.com/2025/06/18/openai-drops-scale-ai-as-a-data-provider-following-meta-deal (TechCrunch, June 18, 2025; OpenAI and Google are also listed providers)
+Quote: ""OpenAI is phasing out its work with Scale AI and cutting ties with the data provider following Meta's deal with the startup""
+Quote: ""Last week, Reuters reported that Google was discussing plans to drop Scale AI as a data provider as well.""
+Source: https://scale.com/blog/leaderboard (SEAL launch post, May 29, 2024; operator-wide)
+Quote: ""As a third-party model evaluator trusted by leading AI labs""
+
+other material tie [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution (board and leadership overlap)
+Quote: ""In addition, Scale's founder, Alexandr Wang, is joining Meta to work on Meta's AI efforts.""
+Quote: ""Wang will continue to serve as a director on the Scale Board of Directors""
+Source: https://www.scmp.com/tech/tech-trends/article/3316580/scale-ai-ceo-stresses-start-ups-independence-after-meta-deal
+Quote: ""Scale's 28-year-old former CEO and co-founder Alexandr Wang left the start-up to lead a new superintelligence unit at Meta""
+
+funding/sponsorship [Borderline]
+Sources: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution ; https://www.scmp.com/tech/tech-trends/article/3316580/scale-ai-ceo-stresses-start-ups-independence-after-meta-deal ; https://scale.com/blog/leaderboard
+Note: Meta's US$14.3 billion is an equity purchase whose proceeds Scale says go to shareholders and vested equity holders. No source says Meta funds Scale's operations, SEAL or SWE-Bench Pro, and the SEAL post calls the leaderboards ""all funded and developed by Scale"". I think it should be classified as ""Missing.""
+
+research/technical partnership [Borderline]
+Sources: https://poolside.ai/blog/through-the-looking-glass ; https://labs.scale.com/leaderboard/swe_bench_pro_public_v2 (Update September 22, 2026)
+Note: Poolside collaborated with Scale on a SWE-Bench Pro fix, and V2 was ""co-developed with Reflection"", but neither company appears on the commercial leaderboard. No collaboration with a listed provider is documented.
+
+privileged model/data/API access [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://scale.com/blog/swe-bench-pro ; https://arxiv.org/html/2509.16941v2 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/leaderboard ; https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution ; https://scale.com/blog/customer-trust-scale-meta-deal ; https://www.scmp.com/tech/tech-trends/article/3316580/scale-ai-ceo-stresses-start-ups-independence-after-meta-deal ; https://techcrunch.com/2025/06/18/openai-drops-scale-ai-as-a-data-provider-following-meta-deal","same organization/affiliate: V1 S2 P2 C3
+customer/vendor relationship: V1 S2 P2 C3
+other material tie: V1 S2 P1 C3
+Not selected: Search 3
+Comment: Red flag: no SWE-Bench Pro page discloses Meta's stake, yet the commercial leaderboard ranks Meta's Muse Spark 1.1 first and does not say who ran it. Red flag: Scale vouches for its own independence (""no preferential access"", customer-trust post) with no artifact. Red flag: every tie source dates from June-July 2025; Meta's stake and Wang's board seat as of October 2026 are unverified. Other material tie rests on linking Wang's Meta unit to Muse Spark across two sources (P1). Excerpt: the Business Wire, SCMP, TechCrunch, Yahoo Finance, Scale customer-trust and Poolside pages came back as summaries with short quotes."
+10/19/2026 13:55:51,Nhi Truong,SWE-bench Pro,commercial/private subset; assessment snapshot as of 2026-10-01.,2026-10-01,https://arxiv.org/html/2509.16941v2#S3.SS3,no rules located,"No rules located [Selected for commercial participation rules]
+Sources checked:
+https://arxiv.org/html/2509.16941v2
+https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+https://scale.com/blog/swe-bench-pro
+https://scale.com/blog/leaderboard
+https://github.com/scaleapi/SWE-bench_Pro-os
+No supporting passage specifying who may apply for commercial evaluation, or how participants obtain its access rules, was located.
+
+General SEAL policy [Unclear applicability]
+Source: https://scale.com/blog/leaderboard
+Note: This 2024 announcement describes eligibility and exceptions for the original SEAL leaderboards. I did not locate confirmation that this policy governs SWE-Bench Pro's later commercial subset. The statement that commercial data remain private is not itself a participation policy.",Not selected: Search 3,differential/privileged treatment disclosed or permitted,"Differential/privileged treatment disclosed or permitted [Borderline, selected]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Private Dataset tab, Legend)
+Quote: ""capped cost limit and turn limit of 50.""
+Quote: ""*Run with mini-swe-agent harness""
+Note: The legend distinguishes older capped runs from runs with an uncapped cost and a 250-turn limit, and marks results using a different agent harness. Selected for disclosed differences in evaluation conditions. This does not establish favoritism, special data access, or a general policy permitting preferred providers to receive better treatment. A policy covering equal participation access was not located.","Differential/privileged treatment disclosed or permitted: V2 S2 P1 C1
+Not selected: Search 3
+Comment: The current private legend discloses different turn budgets. Interpretation as participant-treatment policy and applicability at the cutoff remain uncertain. Live pages were read on 12 October without a 1 October archive; their present state does not establish the cutoff state.","Same organization/affiliate, funding/sponsorship, customer/vendor relationship, other material tie","Funding/sponsorship [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution (Scale's June 12, 2025 announcement)
+Quote: ""investment from Meta Platforms, Inc.""
+
+Customer/vendor relationship [Found]
+Source: https://scale.com/blog/customer-trust-scale-meta-deal
+Quote: ""Meta’s commercial relationship with Scale""
+
+Same organization/affiliate [Borderline, selected]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution
+Quote: ""Meta will hold a minority of Scale’s outstanding equity.""
+Note: Selected because the definition includes ownership ties. This is a minority investment, not evidence that Meta controls Scale. Scale publicly states that it remains independent.
+
+Other material tie [Found]
+Source: https://www.businesswire.com/news/home/20250612873954/en/Scale-AI-Announces-Next-Phase-of-Companys-Evolution
+Quote: ""Wang will continue to serve as a director""
+Note: The announcement describes Alexandr Wang joining Meta while remaining on Scale's board. This records a disclosed governance connection; it does not establish biased evaluation.
+
+Connection to an evaluated provider:
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+Quote: ""Muse Spark 1.1*""
+Source: https://research.meta.ai/blog/introducing-muse-spark-meta-model-api
+Quote: ""the latest model from Meta Superintelligence Labs""
+
+Research/technical partnership [Unclear, not selected for commercial evaluation]
+Source: https://labs.scale.com/blog/swe-bench-pro-v2
+Note: Reflection's collaboration is described for the public V2 release. I did not establish its role in the commercial evaluation and have not transferred the public-set partnership to this code.
+
+Privileged model/data/API access [Missing]
+Sources checked:
+https://arxiv.org/html/2509.16941v2
+https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+https://scale.com/blog/customer-trust-scale-meta-deal
+https://labs.scale.com/blog/swe-bench-pro-v2
+No supporting passage establishing privileged model, data, or API access for the commercial evaluator was located.
+
+Explicit no material ties and No relationship information located are not selected because relevant ties are documented.","Funding/sponsorship: V2 S1 P1 C3
+Same organization/affiliate: V2 S1 P1 C3
+Customer/vendor relationship: V1 S2 P1 C2
+Other material tie: V1 S2 P1 C2
+Not selected: Search 3
+Comment: A dated private provider record at cutoff was not located, so the tie ratings use P1. Meta’s report dates a public 731-task evaluation. Affiliate classification remains uncertain; Meta’s filing reports no significant influence. The Meta-authored financial filing is an interested source (S1), even when hosted by the SEC. Research/technical partnership remains a candidate addition awaiting adjudication and is not selected."
+10/20/2026 12:58:03,Nhi Truong,FrontierMath,FrontierMath Tiers 1–3 v2 (2026-06-12 update),2026-10-18,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2,Public,"Public [Found]
+Source: https://epoch.ai/benchmarks/about 
+Quote: ""We only consider the chat/instruct version of each model, rather than the base model (see the model identifier).""
+Quote: ""For Epoch AI-administered benchmarks, we only report results for models where we can run evaluations ourselves.""
+Note: Anyone can read this requirement on Epoch’s website. It states one condition for evaluating a model. However, I didn't find a complete policy for FrontierMath v2 explaining who can request an evaluation or how private benchmark access is granted.
+Other sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/frontiermath/tiers-1-4/about .","Public: V2 S2 P1 C1
+Not selected: Search 2",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 (About)
+Quote: ""FrontierMath was developed with funding from OpenAI, who has exclusive access to a subset of the benchmark.""
+Explanation: This explicitly discloses special benchmark-data access for OpenAI.","differential/privileged treatment disclosed or permitted: V1 S2 P3 C2
+Not selected: Search 2","funding/sponsorship, customer/vendor relationship, research/technical partnership, privileged model/data/API access","funding/sponsorship; privileged data access [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 (About)
+Quote: ""FrontierMath was developed with funding from OpenAI, who has exclusive access to a subset of the benchmark.""
+Explanation: The current benchmark page discloses both funding and special data access.
+
+customer/vendor relationship [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""OpenAI commissioned Epoch AI to produce 300 advanced math problems for AI evaluation that form the core of the FrontierMath benchmark.""
+
+research/technical partnership [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""After approaching several potential funders, we partnered with OpenAI, who provided both the necessary funding and technical expertise to develop the benchmark.""
+
+Also checked: https://epoch.ai/about/transparency ; https://epoch.ai/frontiermath/tiers-1-4/about","funding/sponsorship: V1 S2 P3 C2
+customer/vendor relationship: V1 S2 P1 C2
+research/technical partnership: V1 S2 P1 C2
+privileged model/data/API access: V1 S2 P3 C2
+Not selected: Search 2"
+10/24/2026 21:02:05,Max Zhang,GDPval,"GDPval Hidden split (1,100 of 1,320; unversioned)",2026-10-24,https://openai.com/index/gdpval/,no rules located,"no rules located
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/form/gdpval-customer-contribution/ ; https://openai.com/form/real-world-knowledge-work/ ; https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://github.com/tkarcheski/robotframework-chat/issues/706 ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/
+
+Public [Unclear]
+Sources: https://arxiv.org/abs/2510.04374 ; https://openai.com/index/gdpval ; https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/
+Note: The only access rule is for the gold set: a ""public automated grader service at evals.openai.com"" that anyone could use (Inspect Evals: OpenAI provides the grader for free), now reportedly inactive. No rule states who may be evaluated on the hidden split or how a provider gets a score; OpenAI selected and ran all models itself.
+
+participants/customers or on request only [Missing]
+Sources checked: (same list)
+Note: The customer and expert forms govern contributing tasks to future rounds, not evaluation eligibility or access to the benchmark.",N/A,differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf
+Quote: ""We sampled Claude, Gemini and Grok via the UI to enable the maximum GDPval-relevant performance.""
+Quote: ""For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling.""
+Quote: ""We also preinstalled several libraries not available in the base image, see section A.6.4.""
+
+Uniform treatment explicitly stated [Missing]
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/","[V, S, P, C]
+
+differential/privileged treatment disclosed or permitted
+[2, 2, 1, 1]",Same organization/affiliate,"Same organization/affiliate [Found]
+Source: https://openai.com/index/gdpval
+Quote: ""Measuring the performance of our models on real-world tasks"" [page title]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""We evaluated GPT-4o, o4-mini, o3, GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 [copy rest of sentence from §3.1]""
+
+funding/sponsorship [Missing]
+customer/vendor relationship [Missing]
+research/technical partnership [Missing]
+privileged model/data/API access [Missing]
+other material tie [Missing]
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://openai.com/form/gdpval-customer-contribution/ ; https://openai.com/form/real-world-knowledge-work/ ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-4/ ; https://openai.com/index/introducing-gpt-5-5/ ; https://openai.com/index/gpt-5-6/ ; web search ""GDPval vendor Mercor OR Handshake OR Scale AI OpenAI task writers"" ; web search ""GDPval Mercor experts contracted OpenAI benchmark creation""
+Note: OpenAI funds the benchmark and runs its own models, but that is covered by same organization. No tie between OpenAI and the other evaluated providers (Anthropic, Google, xAI) is documented; their models were ""sampled… via the UI"", i.e. through ordinary public access. The paper's unnamed ""vendor partners"" and the customer-contribution channel are ties to OpenAI as operator, not to evaluated providers.","[V, S, P, C]
+
+Same organization/affiliate
+[2, 2, 3, 2]
+
+Not selected: Search 2"
+10/25/2026 9:48:52,Max Zhang,METR Time Horizon / HCAST task suite,HCast Time Horizon 1.1,2026-10-24,https://metr.org/blog/2026-01-29-time-horizon-1-1/,Public,"Public [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""We tend to prioritize evaluations when they are used to assess autonomy-related AI risks.""
+Quote: ""once a model was public and we had a time horizon estimate we could stand behind, we published it. [copy full sentence]""
+Quote: ""identify a provider with stable, correct inference that supports zero data retention (required for our private tasks).""
+Source: https://github.com/METR/hcast-public
+Quote: ""In addition to this license we informally request that people take reasonable steps to keep these tasks out of LLM training data and avoid overfitting, including:""
+
+participants/customers or on request only [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://github.com/METR/hcast-public ; https://metr.org/about ; https://metr.org/coi-policy.pdf ; https://metr.org/evaluations/gpt-5-report/
+Note: No eligibility or access rules are available only to participants or on request. The per-evaluation NDA terms with labs (""This evaluation was conducted under a standard NDA"") are not published, but they govern METR's access to models, not providers' eligibility for the benchmark.","[V, S, P, C]
+
+Public
+[2, 2, 2, 2]
+
+Not selected: Search 1",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""This is where we choose an appropriate scaffold (ReAct, Triframe, Claude Code, Codex, etc.) [copy full sentence]""
+Quote: ""Due to our limited capacity, some models were measured long after release and others were skipped entirely.""
+Source: https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/
+Quote: ""Claude Opus 4.5 had 8 million tokens, and GPT-5 had 16 million.""
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/
+Quote: ""Access to GPT-5.6 Sol with raw chain-of-thought via API""
+
+Uniform treatment explicitly stated [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://arxiv.org/abs/2503.14499 ; https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/ ; https://metr.org/evaluations/gpt-5-report/ ; https://metr.org/blog/2026-06-26-gpt-5-6-sol/","[V, S, P, C]
+
+differential/privileged treatment disclosed or permitted
+[2, 2, 3, 2]
+
+Not selected: Search 1","research/technical partnership, privileged model/data/API access, other material tie","research/technical partnership [Found]
+Source: https://metr.org/about
+Quote: ""We have previously partnered with OpenAI, Anthropic, Google DeepMind, Meta and Amazon to pilot frontier risk assessments.""
+Source: https://www.anthropic.com/news/an-update-on-independent-evaluators
+Quote: ""Other METR employees are siloed from that team's work, including researchers who work with us on other projects. [copy full sentence]""
+
+privileged model/data/API access [Found]
+Source: https://metr.org/evaluations/gpt-5-report/
+Quote: ""We received access to GPT-5 four weeks prior to its release.""
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/
+Quote: ""Access to GPT-5.6 Sol, both the final checkpoint and a 'railfree' version, via API""
+
+other material tie [Found]
+Source: https://metr.org/blog/2026-08-14-funding-update/
+Quote: ""frontier AI companies currently provide a significant amount of free tokens [copy full sentence]""
+Source: https://metr.org/evaluations/gpt-5-report/
+Quote: ""OpenAI's comms and legal team required review and approval of this post.""
+
+Same organization/affiliate [Missing]
+funding/sponsorship [Missing]
+customer/vendor relationship [Missing]
+Sources checked: https://metr.org/about ; https://metr.org/blog/2026-08-14-funding-update/ ; https://metr.org/coi-policy.pdf ; https://metr.org/evaluations/gpt-5-report/ ; https://metr.org/blog/2026-06-26-gpt-5-6-sol/ ; https://www.anthropic.com/news/an-update-on-independent-evaluators ; https://officechai.com/ai/metrs-independence-questioned-after-x-user-highlights-financial-links-between-company-and-anthropic/ ; web search ""METR funding policy does not accept money from AI companies pre-deployment access OpenAI Anthropic"" ; web search ""Anthropic METR employee-like access audit Claude 2026""
+Note: METR states ""METR has not accepted funding from AI companies"", and the COI policy states ""To date, we have not received payment for work on company-identifying risk assessments"", so neither funding nor customer/vendor is documented. Free tokens are coded as an other material tie (in-kind support) rather than funding, consistent with METR's own distinction. The Good Ventures/Anthropic allegations are unverified third-party claims and are not coded.","[V, S, P, C]
+
+research/technical partnership
+[1, 2, 1, 3]
+
+privileged model/data/API access
+[1, 2, 3, 2]
+
+other material tie
+[1, 2, 2, 2]
+
+Not selected: Search 3
+Comment: Other material tie: METR says it ""did not make changes to conclusions, takeaways or tone"" after OpenAI's review. That's the source vouching for itself, with no artifact (such as the pre-review draft) to show it."
+10/25/2026 12:19:01,Ameen Patel,GDPval,GDPval v2,2026/10/23,https://openai.com/index/gdpval/,Public,"public [Found]
+Source: https://web.archive.org/web/20251003113651js_/https://evals.openai.com/assets/index-QELVwLUy.js (Wayback Machine copy, 3 Oct 2025, of the code behind evals.openai.com/gdpval/grading)
+Quote: ""upload them to Hugging Face and share the URL with us through this form""
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""While human expert comparison is still our recommended method of grading, we make an experimental automated grader publicly available as well, which is linked from the Hugging Fave, and also available at evals.openai.com.""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer ky9x, 22 Nov 2025)
+Quote: ""also provide a free grader service so external parties can grade their samples using the same autograder as discussed in the paper""
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party)
+Quote: ""After uploading, the user should submit the OpenAI form to request grading.""
+Note: The archived form asked for a public Hugging Face dataset URL and a contact email. These rules cover only grading submissions; no rules were found for leaderboard listing or for access to the hidden set, and the dataset card states no license.
+participants/customers or on request only [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://huggingface.co/datasets/openai/gdpval/commits/main ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://web.archive.org/web/20251003113651js_/https://evals.openai.com/assets/index-QELVwLUy.js ; https://web.archive.org/web/20251212004323js_/https://evals.openai.com/assets/index-CnfaqUmw.js ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)","public: V2 S2 P3 C3
+Not selected: Search 3
+Comment: Red flag: the live grading page differs from its archived copy. The October 2025 version carried the submission form and rules; the live page now says grading requests are no longer taken (an announced change). Excerpt: OpenAI's X launch post was read only as a search snippet.",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""We sampled Claude, Gemini and Grok via the UI to enable the maximum GDPval-relevant performance.""
+Quote: ""For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling. We also preinstalled several libraries not available in the base image, see appendix A.7.5.""
+Quote: ""Gemini and Grok had similar API file-handling limitations so we sampled completions via their first party platforms in order to solicit the best possible performance.""
+Quote: ""We created a prompt which encouraged GPT-5 to rigorously check deliverables for correctness, check layouts by rendering files as images, avoid nonstandard unicode characters, and avoid excess verbosity.""
+Quote: ""We report results using GPT-family models as a stand-in for frontier models generally.""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer uLMP, 22 Nov 2025)
+Quote: ""But sampling from the UIs is more time consuming and lacks time and token-cost data similar to an API, so while an apples-to-apples comparison on performance was possible, a comparison on time and cost was not.""
+Source: https://openai.com/index/gdpval/
+Quote: ""we incrementally trained an internal, experimental version of GPT‑5""
+Note: Disclosed differences: interface (API with tools for OpenAI models, consumer UIs for others), prompt tuning and best-of-N only for GPT-5, speed and cost analysis only for GPT models, and the operator training its own model for GDPval.
+uniform treatment explicitly stated [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD
+Note: The grading protocol is stated the same for every model (3 samples, 3 blinded expert graders), and the rebuttal calls the performance comparison ""apples-to-apples"". No source states that providers received the same access or sampling conditions.","differential/privileged treatment disclosed or permitted: V2 S2 P3 C2
+Not selected: Search 3
+Comment: Red flag: sources disagree. The blog says OpenAI ""incrementally trained"" an internal GPT-5 for GDPval, while the rebuttal says the paper's experiments involve no weight updates to GPT-5, and the ICLR paper does not mention the training.","Same organization/affiliate, funding/sponsorship","same organization/affiliate [Found]
+Source: https://openai.com/index/gdpval/
+Quote: ""Measuring the performance of our models on real-world tasks""
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026; all 19 authors listed under OpenAI)
+Quote: ""We evaluated GPT-4o, o4-mini, o3, GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 using blind pairwise comparisons by professional industry experts.""
+Source: https://www.testmuai.com/learning-hub/gdpval/ (third party, published 19 Oct 2026)
+Quote: ""GDPval is OpenAI's benchmark of 1,320 real work tasks from 44 occupations""
+Note: OpenAI built and runs GDPval and is one of the evaluated providers (GPT-4o, o4-mini, o3, GPT-5).
+funding/sponsorship [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Note: The paper refers to ""our current data budget"" and paid contributors, so OpenAI funded the benchmark. The funder is the operator itself, already coded under same organization/affiliate.
+other material tie [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Note: The automated grader is built on an evaluated provider's model (""based on GPT-5-high""), and the paper reports it agrees less with experts on capable OpenAI models' outputs. This may already be covered by same organization/affiliate.
+privileged model/data/API access [Unclear]
+Sources: https://openai.com/index/gdpval/ ; https://openreview.net/forum?id=hcuEdq6eKD
+Note: The blog says OpenAI ""incrementally trained"" an internal, experimental GPT-5 for GDPval, access no other provider had. The rebuttal says the paper's experiments involve no weight updates to GPT-5. The conflict is unresolved.
+customer/vendor relationship [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://web.archive.org/web/20251003113651js_/https://evals.openai.com/assets/index-QELVwLUy.js ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)
+research/technical partnership [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://web.archive.org/web/20251003113651js_/https://evals.openai.com/assets/index-QELVwLUy.js ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)","same organization/affiliate: V2 S2 P3 C3
+Not selected: Search 3
+Comment: Excerpt: OpenAI's X launch post was read only as a search snippet."
+10/25/2026 15:33:37,Ameen Patel,METR Time Horizon / HCAST task suite,METR-Horizon-v1.1,2026/10/25,https://metr.org/hcast.pdf,Public,"Public [Found]
+Source: https://metr.org/time-horizons/ (TH1.1 page, FAQ on why some models are reported and others not; last updated 8 Sep 2026)
+Quote: ""We tend to prioritize evaluations when they are used to assess autonomy-related AI risks.""
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, reasons models were not re-estimated)
+Quote: ""the model no longer being publicly available""
+Source: https://github.com/METR/hcast-public (README, read from a clone at commit 0343823) (adjacent: public subset; its task versions differ from those run in TH1.1)
+Quote: ""This repo is licensed under the MIT License.""
+participants/customers or on request only [Borderline]
+Sources: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ ; https://metr.org/evaluations/gpt-5-1-codex-max-report/ (sibling: TH1.0-era evaluation) ; https://github.com/METR/hcast-public/commit/7a3795e (earlier README version, Mar 2025 to Jul 2026)
+Note: Pre-deployment evaluations run under a standard NDA whose terms are not published, and until Jul 2026 full-suite access was arranged by contacting METR. Those terms reach only the parties involved, but the rules on which models METR evaluates and how the public tasks may be used are public. Not selected.","Public: V2 S2 P2 C2
+Not selected: Search 3",differential/privileged treatment disclosed or permitted,"differential/privileged treatment disclosed or permitted [Found]
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, 29 Jan 2026)
+Quote: ""We re-estimated horizons for only 14 of 33 models""
+Source: https://metr.org/time-horizons/ (TH1.1 page; last updated 8 Sep 2026)
+Quote: ""some models were measured long after release and others were skipped entirely""
+Source: https://metr.org/notes/2026-02-13-measuring-time-horizon-using-claude-code-and-codex/ (METR staff research note on the TH1.1 suite, 13 Feb 2026; states it does not necessarily reflect METR's views)
+Quote: ""Claude Opus 4.5 had 8 million tokens, and GPT-5 had 16 million""
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026; developer review before publication)
+Quote: ""OpenAI’s comms and legal team required review and approval of this post""
+Uniform treatment explicitly stated [Borderline]
+Sources: https://metr.org/time-horizons/
+Note: The page says its publication policy was the same for every model, but that covers only when results were published, not access or evaluation conditions, which other sources show differ. Not selected.","differential/privileged treatment disclosed or permitted: V2 S2 P3 C2
+Not selected: Search 3","research/technical partnership, privileged model/data/API access, other material tie","research/technical partnership [Found]
+Source: https://metr.org/about (operator-wide: METR About page, Partnerships section)
+Quote: ""partnered with OpenAI, Anthropic, Google DeepMind, Meta and Amazon to pilot frontier risk assessments""
+Source: https://metr.org/blog/2026-10-14-our-approach-to-risk-assessment/ (operator-wide policy post, 14 Oct 2026, on its pilot Frontier Risk Report)
+Quote: ""grew out of work with Anthropic, Google, Meta and OpenAI""
+privileged model/data/API access [Found]
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026)
+Quote: ""Access to GPT-5.6 Sol with raw chain-of-thought via API""
+Source: https://metr.org/time-horizons/ (TH1.1 page; last updated 8 Sep 2026)
+Quote: ""For nonpublic models, this involves setting up access controls""
+Source: https://www.anthropic.com/news/an-update-on-independent-evaluators (evaluated provider's statement, 15 Oct 2026; footnote on METR's terms updated 16 Oct)
+Quote: ""We’ve onboarded six METR employees with company hardware, office space""
+other material tie [Other]
+Sources: https://metr.org/blog/2026-08-14-funding-update/ ; https://metr.org/blog/2026-08-31-security-update/ ; https://metr.org/evaluations/gpt-5-1-codex-max-report/ (sibling: TH1.0-era evaluation) ; https://metr.org/blog/2026-06-26-gpt-5-6-sol/ ; https://metr.org/coi-policy.pdf (version 1.1, effective 9 Oct 2026)
+Note: Two ties fall outside the listed codes. (1) In-kind support: METR says frontier AI companies provide ""a significant amount of free tokens"" for its work; attackers used about $600,000 of credits on one stolen key, all granted free by a model developer. (2) Contract terms: pre-deployment evaluations run under a standard NDA, and OpenAI's comms and legal team reviewed and approved METR's GPT-5.1-Codex-Max and GPT-5.6 Sol posts before publication.
+funding/sponsorship [Borderline]
+Sources: https://metr.org/blog/2026-08-14-funding-update/ ; https://metr.org/about ; https://metr.org/coi-policy.pdf ; https://www.coloradopolitics.com/2026/09/17/anthropic-allies-are-behind-independent-groups-ringing-alarm-bells-about-ai/ (third party, 17 Sep 2026) ; https://officechai.com/ai/metrs-independence-questioned-after-x-user-highlights-financial-links-between-company-and-anthropic/ (third party, 15 Sep 2026)
+Note: METR states it has taken no funding from frontier AI companies or their staff (free tokens are coded under Other). Press reports link some METR funders (Jaan Tallinn, whose Survival and Flourishing Fund METR lists; Dustin Moskovitz-linked funds) to early Anthropic investment. These links are indirect, partly unverified, and not funding from a provider. Not selected.
+Same organization/affiliate [Missing]
+Sources checked: https://metr.org/about (leadership, advisors, collaborators) ; https://metr.org/coi-policy.pdf ; https://metr.org/blog/2026-10-14-our-approach-to-risk-assessment/ ; https://www.anthropic.com/news/an-update-on-independent-evaluators ; https://www.coloradopolitics.com/2026/09/17/anthropic-allies-are-behind-independent-groups-ringing-alarm-bells-about-ai/ ; https://officechai.com/ai/metrs-independence-questioned-after-x-user-highlights-financial-links-between-company-and-anthropic/ ; web search for METR conflict-of-interest and independence reporting
+customer/vendor relationship [Missing]
+Sources checked: https://metr.org/about (only a European AI Office contract named) ; https://metr.org/coi-policy.pdf ; https://metr.org/blog/2026-10-14-our-approach-to-risk-assessment/ ; https://metr.org/blog/2026-08-14-funding-update/ ; https://www.anthropic.com/news/an-update-on-independent-evaluators ; web search for METR conflict-of-interest and independence reporting","research/technical partnership: V2 S2 P2 C3
+privileged model/data/API access: V1 S2 P3 C3
+other material tie: V1 S2 P2 C2
+Not selected: Search 3
+Comment: Red flag, claims made after the controversy they address. METR's 14 Oct 2026 policy post and its COI policy v1.1 (effective 9 Oct 2026) followed the September 2026 independence dispute, though its no-funding and free-token statements predate it (14 Aug 2026 funding update). Red flag, live page changed: Anthropic's 15 Oct post was updated on 16 Oct to clarify METR's terms."
+10/26/2026 16:15:06,Nhi Truong,METR Time Horizon / HCAST task suite,"Time Horizon 1.1 (TH1.1), released 2026-01-29; METR mixed task suite including HCAST. Evidence cutoff: 2026-10-26.",2026-10-26,https://metr.org/blog/2026-01-29-time-horizon-1-1/,Public,"Source: https://metr.org/time-horizons/ (evaluation and model-coverage FAQs)
+Quote: ""We tend to prioritize evaluations when they are used to assess autonomy-related AI risks.""
+Explanation: This shows partial public rules. Open-source model evaluation also requires stable inference and zero retention for private tasks. It does not promise outside researchers access to private tasks.","Public: V2 S2 P2 C1
+Not selected: Search 2",differential/privileged treatment disclosed or permitted,"Source: https://metr.org/blog/2026-05-19-frontier-risk-report/ (Model access and evaluation details)
+Explanation: The TH1.1 report says permission to process model outputs and chain of thought through third-party AI services was optional, and METR adapted to each company’s preferences. It also discloses different scaffolds and token budgets.
+
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/
+Explanation: This nonpublic TH1.1 evaluation required an NDA and OpenAI confidentiality review, illustrating different access and publication conditions.","differential/privileged treatment disclosed or permitted: V2 S2 P3 C2
+Not selected: Search 2","funding/sponsorship, research/technical partnership, privileged model/data/API access, other material tie","Source: https://metr.org/about (Partnerships and Funding)
+Quote: ""These companies have also provided access and tokens, which we use for evaluations, research, and engineering.""
+Explanation: The preceding sentence names OpenAI, Anthropic, Google DeepMind, Meta and Amazon. METR reports no AI-company funding while disclosing substantial free tokens; we count those as in-kind support. The disclosure is organization-wide.
+
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/
+Quote: ""This evaluation was conducted under a standard NDA.""
+Quote: ""For this evaluation, OpenAI provided:
+• Access to GPT-5.6 Sol with raw chain-of-thought via API""
+Explanation: The post concerns a nonpublic TH1.1 evaluation. OpenAI required communication/legal review and could block conclusions based on nonpublic information. METR says the review did not change its conclusions or tone. This supports privileged access and another material tie.","funding/sponsorship: V2 S2 P1 C1
+research/technical partnership: V2 S2 P1 C2
+privileged model/data/API access: V2 S2 P3 C2
+other material tie: V2 S2 P3 C1
+Not selected: Search 2"
+10/28/2026 0:19:04,Nhi Truong,GDPval,"OpenAI dataset v2, released 2026-02-10; commit 11e7900cdcac61bc4daf59e65feb238acda98fbf; evidence cutoff 2026-10-26",2026-10-26,https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf,no rules located,"no rules located [Missing]
+Sources checked:
+https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf
+https://huggingface.co/datasets/openai/gdpval/commits/main
+https://arxiv.org/html/2510.04374v1
+https://openai.com/index/gdpval/
+
+I found no v2 rules for requesting an official evaluation or accessing the remaining full set.",Not selected: Search 1,differential/privileged treatment disclosed or permitted,"Differential/privileged treatment disclosed or permitted [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 3.1 footnote)
+Quote: ""We sampled Claude via the UI to enable the maximum GDPval-relevant features. For example, for Claude, we wanted to evaluate its ‘Upgraded file creation and analysis’ feature (https://www.anthropic.com/news/create-files). For the OpenAI models, we enabled the web search tool and the code interpreter tool, with background sampling.""","Differential/privileged treatment disclosed or permitted: V1 S1 P1 C1
+Not selected: Search 1",Same organization/affiliate,"Same organization/affiliate [Found]
+Source: https://arxiv.org/html/2510.04374v1 (author affiliation)
+Quote: ""OpenAI""
+Source: https://arxiv.org/html/2510.04374v1 (Section 3.1)
+Quote: ""We evaluated GPT-4o, o4-mini, o3, GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, and Grok 4 using blind pairwise comparisons by professional industry experts.""
+Source: https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf (pinned v2 repository owner, released 2026-02-10)
+Quote: ""openai""","Same organization/affiliate: V2 S1 P3 C2
+Not selected: Search 1"

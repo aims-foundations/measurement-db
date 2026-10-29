@@ -1,0 +1,1028 @@
+Timestamp,Annotator name or ID,Benchmark name,Benchmark version or snapshot,Frozen corpus cutoff date (YYYY-MM-DD),Benchmark homepage or primary documentation URL,Claim framing — Which elements needed to interpret the benchmark claim are explicitly stated?,Claim framing — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Task transparency — What lets an outsider understand the task without seeing the live private set?,Task transparency — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Hidden-set coverage evidence — What evidence supports assessing whether the hidden set covers the stated task space?,Hidden-set coverage evidence — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies.",Scoring transparency — What lets an outsider understand how model outputs become reported scores?,Scoring transparency — Evidence and notes,"Evidence quality. Rate the evidence for this variable using the Evidence Quality Rubric. For each selected code, give the four scores (V, S, P, C). Give one Search score for the codes not selected. Comment only when S, P or C is 0, a source was read as an excerpt, or a red flag applies."
+10/10/2026 20:36:18,Max Zhang,Frontier Math,FrontierMath Tiers 1-3 (v2),2026-9-26,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""FrontierMath is a benchmark we created to evaluate the mathematical capabilities of frontier AI models.""
+
+intended use or decision purpose [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""This remains our core mission—to help the AI community and the public at large accurately understand and measure AI capabilities.""
+
+target domain/population [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""The questions cover most major branches of modern mathematics – from computationally intensive problems in number theory and real analysis to abstract questions in algebraic geometry and category theory.""
+
+limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/html/2411.04872v7
+Quote: ""First, the practical focus on automatically verifiable and numerical answers excludes proof-writing and open-ended exploration, which are significant parts of modern math research.""","[V, S, P, C]
+
+Measured capability/construct
+[2, 2, 2, 1]
+
+intended use or decision purpose
+[1, 2, 1, 1]
+
+target domain/population
+[2, 2, 2, 1]
+
+limits or out-of-scope interpretation
+[2, 2, 1, 1]",Representative public items/dev set,"Representative public items/dev set [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems
+Quote: ""These sample problems span the difficulty levels and subject areas covered in the benchmark.""
+
+detailed task blueprint/schema [Unclear]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""For each FrontierMath question, the model needs to submit a Python function answer() that returns the answer. The answer is a Python object, often (although not always) an integer or a sympy object.""
+Quote: ""FrontierMath consists of natural-language math problems with solutions expressed as closed-form mathematical expressions.”
+Explanatory note: It is unclear to me whether this counts as ""detailed"" enough","[V, S, P, C]
+
+Representative public items/dev set
+[2, 2, 2, 1]","Sampling/source method documented, documented expert or independent review of hidden set","Sampling/source method documented [Found]
+Source: https://arxiv.org/html/2411.04872v7
+Quote: ""Each mathematician created new problems following guidelines designed to ensure clarity, verifiability, and definitive answers across various difficulty levels and mathematical domains.""
+
+documented expert or independent review of hidden set [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""Each problem undergoes peer review by expert mathematicians who verify correctness, check for ambiguities, and assess difficulty ratings.""
+
+public-private comparability evidence [Unclear]
+Sources: https://arxiv.org/html/2411.04872v7 ; https://epoch.ai/benchmarks/about ; https://ourworldindata.org/grapher/ai-frontiermath-over-time ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Explanatory Note: There is no documented direct comparision of public/private splits.","[V, S, P, C]
+
+Sampling/source method documented
+[2, 2, 2, 1]
+
+documented expert or independent review of hidden set
+[1, 2, 2, 1]","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""If your answer is correct you will get 1 point. If it is incorrect, or if you don't submit an answer, you will get 0 points.""
+
+judge/scorer details public [Found]
+Source: https://arxiv.org/html/2411.04872v7
+Quote: ""If the problem has a unique integer solution, it checks for an exact match. If the problem has a unique symbolic real answer, it uses SymPy evaluation to check that the difference between the submitted answer and the actual answer simplifies to 0.""
+
+aggregation/threshold rules public [Found]
+Source: https://ourworldindata.org/grapher/ai-frontiermath-over-time
+Quote: ""This indicator shows the share of FrontierMath problems that AI models solve correctly, based on Epoch AI's evaluation.""
+
+rubric/judge criteria public [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v1 ; https://epoch.ai/benchmarks/about ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://arxiv.org/html/2411.04872v7
+
+controlled inspection only [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://epoch.ai/benchmarks/about ; https://epoch.ai/frontiermath/tiers-1-4/about ; https://arxiv.org/html/2411.04872v7 ; https://epoch.ai/latest/openai-and-frontiermath","[V, S, P, C]
+
+Metric/formula public
+[2, 2, 3, 1]
+
+judge/scorer details public
+[2, 2, 2, 1]
+
+aggregation/threshold rules public
+[1, 1, 2, 1]"
+10/11/2026 15:10:37,Ameen Patel,FrontierMath,FrontierMath Tiers 1-3 (v2),2026-09-27,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2?view=graph&tab=release-date,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""each problem is carefully crafted to evaluate genuine mathematical understanding""
+
+intended use or decision purpose [Found]
+Source: https://epoch.ai/latest/openai-and-frontiermath
+Quote: ""the AI community and the public at large accurately understand and measure AI capabilities""
+
+target domain/population [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""Expert-written math problems covering advanced undergrad through early career research.""
+
+limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/html/2411.04872v7#S4.SS2.SSS1
+Quote: ""this does not mean that its reasoning was correct""
+Source: https://epoch.ai/benchmarks/about
+Quote: ""it may not always generalize to other contexts or use cases""","Measured capability/construct: V1 S2 P2 C2
+
+intended use or decision purpose: V2 S2 P1 C2
+Comment: Red flag: post-hoc (January 2025 clarification).
+
+target domain/population: V2 S2 P3 C2
+
+limits or out-of-scope interpretation: V2 S2 P2 C2
+
+Not selected: none (all codes selected)","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems
+Quote: ""span the difficulty levels and subject areas covered in the benchmark""
+Source: https://arxiv.org/html/2411.04872v7#A1
+Quote: ""with one chosen at random from each quintile of difficulty""
+Source: https://epoch.ai/benchmarks/about
+Quote: ""only available to see model traces on the 10 public questions""
+
+detailed task blueprint/schema [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""natural-language math problems with solutions expressed as closed-form mathematical expressions"" Also includes the three problem requirements (definite verifiable answer, guessproof, computationally tractable) and tier definitions based on background, creativity, and execution.
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""the model needs to submit a Python function answer() that returns the answer""","Representative public items/dev set: V2 S2 P2 C2
+
+detailed task blueprint/schema: V2 S2 P2 C2
+Comment: Red flag: numbers differ (the About page says 300 core and 350 total problems; the v2 page says 295 and 338).
+
+Not selected: none (all substantive codes selected)","Sampling/source method documented, documented expert or independent review of hidden set","Sampling/source method documented [Found]
+Source: https://arxiv.org/pdf/2411.04872
+Quote: ""FrontierMath contains problems across 70% of the top-level subjects in the MSC2020 classification"" ; ""Each mathematician created new problems following guidelines designed to ensure clarity, verifiability, and definitive answers across various difficulty levels and mathematical domains.""
+
+documented expert or independent review of hidden set [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""peer review by expert mathematicians who verify correctness""
+Source: https://x.com/EpochAIResearch/status/2065488154086568445
+Quote: ""engaged mathematicians to review these flags""
+
+public-private comparability evidence [Borderline]
+Sources: https://arxiv.org/html/2411.04872v7#A1 ; https://epochai.substack.com/p/gpt-54-set-a-new-record-on-frontiermath
+Note: The paper's public samples were drawn at random, one from each difficulty quintile, but the public and private splits are never compared directly. The GPT-5.4 post compares two private splits (held-out and non-held-out), not public against private.","Sampling/source method documented: V1 S2 P1 C2
+
+documented expert or independent review of hidden set: V1 S2 P1 C2
+Comment: Excerpt: the X announcement was read only as a search snippet.
+
+Not selected: Search 1
+Comment: v2 page, changelog and code repository not listed as checked; dataset card not named as absent.","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""If your answer is correct you will get 1 point.""
+Also in the same prompt: a wrong answer or no answer scores 0.
+Source: https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb
+Quote: @scorer(metrics=[accuracy(), stderr()], name=""verification_code"")
+
+judge/scorer details public [Found]
+Source: https://arxiv.org/html/2411.04872v7#S2.SS2
+Quote: ""If the problem has a unique integer solution, it checks for an exact match.""
+
+aggregation/threshold rules public [Found]
+Source: https://epoch.ai/benchmarks/about
+Quote: ""a confidence interval of plus and minus one standard error""
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3
+Quote: ""We allow up to 1% of samples to fail without being scored""
+
+rubric/judge criteria public [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb ; https://arxiv.org/html/2411.04872v7 ; https://epoch.ai/benchmarks/about ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3 ; https://epoch.ai/frontiermath/tiers-1-4/about
+
+controlled inspection only [Missing]
+Sources checked: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 ; https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb ; https://arxiv.org/html/2411.04872v7 ; https://epoch.ai/benchmarks/about ; https://epoch.ai/benchmarks/frontiermath-tiers-1-3 ; https://epoch.ai/frontiermath/tiers-1-4/about","Metric/formula public: V2 S2 P3 C2
+
+judge/scorer details public: V2 S2 P1 C1
+
+aggregation/threshold rules public: V2 S2 P1 C2
+Comment: Excerpt: the pre-v2 hub page (1% failure rule) was read only as a search snippet.
+
+Not selected: Search 1
+Comment: Operator posts not checked; dataset card not named as absent. Excerpt: pre-v2 hub page."
+10/16/2026 10:45:15,Max Zhang,SWE-Bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026-09-27,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro
+Quote: “test of generalization on complex, industrial-grade code”. Scale
+
+intended use or decision purpose [Found]
+Source: https://scale.com/blog/swe-bench-pro
+Quote: ""Use these results to plan deployments strategically; since an agent's success varies significantly by programming language and repository complexity, you can target the specific teams and codebases where the technology will be most effective.""
+
+target domain/population [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""(2) acquiring commercial codebases from real startups to capture enterprise-grade problems in a commercial set (18 repositories).""
+
+limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""Here, models are evaluated on their ability to implement a given repair or patch after being given significant details (rather than their ability to resolve ambiguity).""","[V, S, P, C]
+
+Measured capability/construct
+[2, 2, 2, 1]
+
+intended use or decision purpose
+[2, 2, 1, 1]
+
+target domain/population
+[2, 2, 3, 1]
+
+limits or out-of-scope interpretation
+[2, 2, 2, 1]","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""Public. We release 731 instances openly on HuggingFace and report the relevant statistics and model performances in this paper.""
+
+detailed task blueprint/schema [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""Each task instance in SWE-Bench Pro is complete with human-augmented problem statement, requirements and interface as the task description for the model. The model must generate a patch file to resolve the issue and pass a suite of human-reviewed tests as validation.""","[V, S, P, C]
+
+Representative public items/dev set
+[2, 2, 1, 1]
+
+detailed task blueprint/schema
+[2, 2, 2, 1]","Sampling/source method documented, public-private comparability evidence, documented expert or independent review of hidden set","Sampling/source method documented [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""In addition, we source commercial repositories. These repositories are private and sourced from startups, where we contacted the company and purchased their engineering repos.""
+
+public-private comparability evidence [Found]
+Source: https://arxiv.org/abs/2509.16941
+Quote: ""There is also a significant performance gap between the public and commercial set, where the best models score less than 20% in the commercial set, highlighting the difficulty of navigating enterprise codebases.""
+
+documented expert or independent review of hidden set [Found]
+Source: https://arxiv.org/abs/2509.16941 ; https://epoch.ai/benchmarks/swe-bench-pro/review
+Quote: ""SWE-Bench Pro consists of a total of 1865 human-verified and augmented problems, divided as three subsets: public, commercial, and held-out.""
+Quote: ""However, audits of SWE-Bench Pro have estimated that 30% or more of tasks are broken, leading us to designate this benchmark as Flawed.""
+Quote: ""“each problem in SWE-Bench Pro goes through a human augmentation and verification process.”
+- Note: Epoch AI","[V, S, P, C]
+
+Sampling/source method documented
+[1, 2, 2, 1]
+
+public-private comparability evidence
+[1, 2, 2, 1]
+
+documented expert or independent review of hidden set
+[1, 2, 2, 2]","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+Quote: ""The primary metric is Resolve Rate, which is the percentage of tasks an agent successfully resolves.""
+
+aggregation/threshold rules public [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private
+Quote: ""A task is marked as ""resolved"" only if a submitted code patch satisfies two strict conditions within the evaluation environment:""
+
+judge/scorer details public [Found]
+Sources: https://arxiv.org/abs/2509.16941
+Quote: ""Quote: “We rely on a test suite of fail2pass and pass2pass to verify problem solutions.”
+
+rubric/judge criteria public [Missing]
+controlled inspection only [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://arxiv.org/abs/2509.16941 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://scale.com/blog/swe-bench-pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/issues ; https://scaleapi.github.io/SWE-bench_Pro-os/ ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro","[V, S, P, C]
+
+Metric/formula public
+[2, 2, 3, 1]
+
+aggregation/threshold rules public
+[2, 2, 2, 1]
+
+judge/scorer details public
+[1, 2, 2, 1]"
+10/18/2026 15:32:01,Ameen Patel,SWE-bench Pro,"Commercial set (""Private Set""): 276 tasks from 18 proprietary startup repositories",2026-10-17,https://labs.scale.com/leaderboard/swe_bench_pro?tab=private,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","measured capability/construct [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Dataset Summary, Private Set)
+Quote: ""This set is designed as the ultimate test of generalization on complex, industrial-grade code that is not publicly accessible and is unlikely to have been included in model training data.""
+Source: https://scale.com/blog/swe-bench-pro (Learn More)
+Quote: ""A commercial leaderboard reporting results exclusively on the tasks from our private, commercial codebases, serving as a measure of true generalization.""
+
+intended use or decision purpose [Found]
+Source: https://scale.com/blog/swe-bench-pro (What SWE-Bench Pro Results Mean; benchmark-wide)
+Quote: ""Use these results to plan deployments strategically; since an agent's success varies significantly by programming language and repository complexity, you can target the specific teams and codebases where the technology will be most effective.""
+Source: https://arxiv.org/html/2509.16941v2 (§1; benchmark-wide)
+Quote: ""SWE-Bench Pro offers a rigorous foundation for measuring progress beyond the saturation of SWE-Bench Verified, establishing a common yardstick for researchers and practitioners developing next-generation coding agents.""
+
+target domain/population [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Dataset Summary, Private Set)
+Quote: ""this set includes 276 instances sourced from 18 private, proprietary codebases from startups.""
+Source: https://arxiv.org/html/2509.16941v2 (Table 2 caption)
+Quote: ""Commercial problems are sourced from startup repositories, where each problem is augmented with an environment and relevant information.""
+Source: https://scale.com/blog/swe-bench-pro (A Benchmark to Meet Today's Coding Needs)
+Quote: ""1,865 total instances (731 public, 858 held-out, and 276 commercial) across 41 repositories (11 public, 12 held-out, and 18 from enterprise startups)""
+
+limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§5, Issue Ambiguity; benchmark-wide)
+Quote: ""Here, models are evaluated on their ability to implement a given repair or patch after being given significant details (rather than their ability to resolve ambiguity).""
+Source: https://arxiv.org/html/2509.16941v2 (§7.1, Limitations; benchmark-wide)
+Quote: ""some widely-used languages like Java, C++, and Rust are underrepresented. This may limit the benchmark's ability to assess agent performance across the full spectrum of modern software development.""
+Quote: ""However, real software engineering tasks may have a variety of correct solutions, even if they do not pass the original tests outlined in the task.""
+Source: https://scale.com/blog/swe-bench-pro (What SWE-Bench Pro Results Mean)
+Quote: ""The only true measure of an agent's utility is its performance on your own internal repositories.""
+Source: https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf (§7.1, Issue Scope; not in arXiv v2)
+Quote: ""Real-world software engineering encompasses broader activities such as system design, code review, documentation, and architectural decisions that are not captured in the current benchmark structure.""","measured capability/construct: V2 S2 P3 C2
+intended use or decision purpose: V2 S2 P2 C2
+target domain/population: V2 S2 P3 C2
+limits or out-of-scope interpretation: V2 S2 P2 C2
+Not selected: no Search score (every code is selected)
+Comment: Red flag (limits): arXiv v2 keeps two of the four limitations in the Scale-hosted PDF and drops ""Issue Scope"" and ""Reduction in Ambiguity"". Red flag (construct, target domain): the leaderboard prose still cites the September 2025 commercial results (Opus 4.1 at 17.8%) above a current table topped at 51.50.","Representative public items/dev set, detailed task blueprint/schema","representative public items/dev set [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§3.3, Public)
+Quote: ""We release 731 instances openly on HuggingFace and report the relevant statistics and model performances in this paper.""
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Methodology; one workflow for public and private repositories)
+Quote: ""Each problem in SWE-Bench Pro is created using a four-stage workflow:""
+Quote: ""Repositories are selected from a curated set of public and private repositories""
+Source: https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro (V2 card; the default config now holds 642 tasks with rewritten instructions, so the v1 config is the release built with the same process as the commercial set)
+Quote: ""The original 731-task release is preserved unchanged as config v1 and as git tag v1.0.""
+
+detailed task blueprint/schema [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§3.2, Task Specification; §3.2 and §4 also define the problem statement, requirements, interface, environment and tests, and Appendix B gives a full example)
+Quote: ""Each task instance in SWE-Bench Pro is complete with human-augmented problem statement, requirements and interface as the task description for the model. The model must generate a patch file to resolve the issue and pass a suite of human-reviewed tests as validation.""
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Methodology, Augmentation)
+Quote: ""Human experts organize unstructured commits and issue metadata into two artifacts: a problem statement and a requirements brief with an optional interface.""
+Source: https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro (SWE-bench Pro V2; the Fields table documents every column)
+Quote: ""Each task gives an agent a repository at a base commit plus a PR description with explicit requirements and interfaces; the agent's patch is graded by hidden fail-to-pass and pass-to-pass tests in a pristine container.""","representative public items/dev set: V1 S2 P2 C2
+detailed task blueprint/schema: V2 S2 P2 C2
+Not selected: no Search score (every code is selected)","Sampling/source method documented, public-private comparability evidence","sampling/source method documented [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§3.1)
+Quote: ""In addition, we source commercial repositories. These repositories are private and sourced from startups, where we contacted the company and purchased their engineering repos. We sample repositories from a diverse range of topics, including consumer applications with complex UI logic, B2B platforms with intricate business rules, and developer tools with sophisticated APIs.""
+Source: https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf (§4.1; not in arXiv v2)
+Quote: ""Private repositories were sourced from Scale's internal assets, including companies acquired through mergers and acquisitions, startups founded by Scale employees, and purchased codebases via external data partnerships.""
+Source: https://arxiv.org/abs/2509.16941 (Abstract)
+Quote: ""a commercial set of 18 proprietary repositories where we have formal partnership agreements with early-stage startups.""
+Source: https://arxiv.org/html/2509.16941v2 (§4.1, Sourcing Problems; applies to all subsets)
+Quote: ""To collect the problems, we leverage the evolution of a codebase through its commit history. Specifically, we identify pairs of consecutive commits that together capture the resolution of an issue.""
+
+public-private comparability evidence [Found]
+Source: https://arxiv.org/html/2509.16941v2 (§5, Results; Tables 1 and 2)
+Quote: ""There is also a significant performance gap between the public and commercial set, where the best models score less than 20% in the commercial set, highlighting the difficulty of navigating enterprise codebases.""
+Source: https://scale.com/blog/swe-bench-pro (Results; the same passage is on the leaderboard page)
+Quote: ""The private commercial subset of the SWE-Bench Pro leaderboard reveals a drop in performance. Claude Opus 4.1 decreases from 22.7% to 17.8% resolution, and OpenAI GPT-5 falls from 23.1% to 14.9%.""
+
+documented expert or independent review of hidden set [Borderline]
+Sources: https://arxiv.org/html/2509.16941v2 (§3.1, Verified and Human-Augmented; §4.3) ; https://epoch.ai/benchmarks/swe-bench-pro/review ; https://openai.com/index/separating-signal-from-noise-coding-evaluations/ ; https://cursor.com/blog/reward-hacking-coding-benchmarks ; https://www.lesswrong.com/posts/nAMhbz5sfpcynjPP5/swe-bench-pro-is-even-worse ; https://discuss.huggingface.co/t/agentseal-a-corpus-availability-audit-of-swe-bench-pro/177267
+Note: Scale's own human verification covers every problem and claims ""problems are representative of real-world software engineering tasks"", but it is per-task internal QA, not a review of the commercial set's coverage. Every outside audit located covers only the public set. I think this should be classified as ""Missing.""","sampling/source method documented: V1 S2 P2 C2
+public-private comparability evidence: V1 S2 P3 C2
+Not selected: Search 3
+Comment: Red flag (sampling): the Scale-hosted PDF says the private repositories came from Scale's internal assets, including acquired companies and startups founded by Scale employees; arXiv v2 says Scale contacted startups and purchased their repos. Red flag (sampling): 276 tasks across 18 repositories averages 15.3 per repository, below the stated ""Each repository contributes between 50 and 100 instances"" (arXiv §1). Red flag (comparability): public baselines differ within Scale's own pages (blog and leaderboard give Opus 4.1 and GPT-5 as 23.1% and 23.3%, then 22.7% and 23.1% in the comparison), and GPT-5's commercial score is 14.9% in the PDF but 15.7% (high) and 14.9% (medium) in arXiv v2. Excerpt: the Epoch, OpenAI, Cursor, LessWrong and AgentSeal pages came back as summaries.","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","metric/formula public [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Primary Metric: Resolve Rate)
+Quote: ""The primary metric is Resolve Rate, which is the percentage of tasks an agent successfully resolves. A task is marked as ""resolved"" only if a submitted code patch satisfies two strict conditions within the evaluation environment:""
+Source: https://arxiv.org/html/2509.16941v2 (§5, Results)
+Quote: ""We report Pass@1 as the resolve rate.""
+
+judge/scorer details public [Found]
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/blob/main/swe_bench_pro_eval.py (lines 555-558; the v1 pipeline. Its 1,000 run_scripts/ entries all belong to the 11 public repositories, and no source says the commercial runs use this harness.)
+Quote: ""f2p = set(eval(raw_sample[""fail_to_pass""]))""
+Quote: ""result = (f2p | p2p) <= passed_tests""
+Source: https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 (The locked protocol; public split)
+Quote: ""The locked agents capture the agent's git diff as model.patch; patch_replay:PatchReplayAgent applies it to a pristine image and runs the unchanged verifier.""
+
+aggregation/threshold rules public [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private (Primary Metric; Legend)
+Quote: ""No Regressions: The patch must not break any existing functionality. This is verified when all pre-existing ""pass-to-pass"" tests continue to pass after the patch is applied.""
+Quote: ""Rank (UB): 1 + the number of models whose lower CI bound exceeds this model's upper CI bound.""
+Source: https://scaleapi.github.io/SWE-bench_Pro-os/ (public-set leaderboard; the commercial page shows ± values without stating the method)
+Quote: ""The (+/-) column shows the 95% confidence interval (margin of error) for each score, calculated using binomial proportion statistics (total problems: 730).""
+
+rubric/judge criteria public [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://scale.com/blog/swe-bench-pro ; https://arxiv.org/html/2509.16941v2 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://github.com/scaleapi/SWE-bench_Pro-os/tree/main/v2 ; https://scaleapi.github.io/SWE-bench_Pro-os/ (scoring is test-based; no qualitative criteria exist)
+
+controlled inspection only [Missing]
+Sources checked: https://labs.scale.com/leaderboard/swe_bench_pro?tab=private ; https://scale.com/blog/swe-bench-pro ; https://arxiv.org/html/2509.16941v2 ; https://static.scale.com/uploads/654197dc94d34f66c0f5184e/SWEAP_Eval_Scale%20(9).pdf ; https://huggingface.co/datasets/ScaleAI/SWE-bench_Pro ; https://github.com/scaleapi/SWE-bench_Pro-os ; https://scale.com/blog/leaderboard ; https://epoch.ai/benchmarks/swe-bench-pro/review","metric/formula public: V2 S2 P2 C2
+judge/scorer details public: V2 S2 P1 C2
+aggregation/threshold rules public: V2 S2 P2 C2
+Not selected: Search 3
+Comment: Red flag (aggregation): the public scorer divides by the patches it evaluated (sum(eval_results.values()) / len(eval_results)), not by all tasks. In Scale's own traj/ files, Claude Sonnet 4 resolved 240 of 562 evaluated instances; 240/562 = 42.70%, the figure arXiv v2 Table 1 reports for ""N=731"" and github.io lists against ""total problems: 730"" (240/730 = 32.88%). The other October 2025 runs use a ~730 denominator. No source states the denominator rule for the commercial set. Excerpt: the Epoch review (checked for controlled inspection) came back as a summary."
+10/19/2026 13:42:34,Nhi Truong,SWE-bench Pro,commercial/private subset; assessment snapshot as of 2026-10-01.,2026-10-01,https://arxiv.org/html/2509.16941v2#S3.SS3,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://arxiv.org/html/2509.16941v2#S5 (Issue Ambiguity paragraph)
+Quote: ""implement a given repair or patch after being given significant details""
+
+Intended use or decision purpose [Found]
+Source: https://scale.com/blog/swe-bench-pro (What SWE-Bench Pro Results Mean)
+Quote: ""For Developers & Engineering Leaders: Use these results to plan deployments strategically;""
+
+Target domain/population [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro (introductory benchmark description)
+Quote: ""The private subset consists of proprietary codebases from startup partners.""
+
+Limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/html/2509.16941v2#S5 (Issue Ambiguity paragraph)
+Quote: ""rather than their ability to resolve ambiguity""","Measured capability/construct: V2 S2 P3 C2
+Intended use or decision purpose: V2 S2 P3 C1
+Target domain/population: V2 S2 P3 C2
+Limits or out-of-scope interpretation: V2 S2 P3 C1","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://arxiv.org/html/2509.16941v2#A2 (Appendix B, Example Task Instance; Open Library example)
+Quote: ""This section includes an example instance of SWE-Bench Pro with descriptions of each key field.""
+
+Detailed task blueprint/schema [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro (Methodology, Augmentation)
+Quote: ""Human experts organize unstructured commits and issue metadata into two artifacts: a problem statement and a requirements brief with an optional interface.""
+Source: https://arxiv.org/html/2509.16941v2#S3.SS2 (Task Specification)
+Quote: ""The model must generate a patch file""","Representative public items/dev set: V2 S2 P3 C1
+Detailed task blueprint/schema: V2 S2 P3 C2","Sampling/source method documented, public-private comparability evidence","Sampling/source method documented [Found]
+Source: https://arxiv.org/html/2509.16941v2#S3.SS1 (Characteristics of SWE-Bench Pro, commercial repository sourcing)
+Quote: ""These repositories are private and sourced from startups, where we contacted the company and purchased their engineering repos.""
+
+Public-private comparability evidence [Found]
+Source: https://scale.com/blog/swe-bench-pro (September 19, 2025; The Private Commercial Subset is Harder)
+Quote: ""Claude Opus 4.1 decreases from 22.7% to 17.8% resolution, and OpenAI GPT-5 falls from 23.1% to 14.9%.""
+
+Documented expert or independent review of hidden set [Borderline, not selected]
+Source: https://arxiv.org/html/2509.16941v2#S3.SS1 (Verified and Human-Augmented)
+Quote: ""human augmentation and verification process""
+Source: https://arxiv.org/html/2509.16941v2#S4.SS3 (Creating Environments, human test verification)
+Source: https://labs.scale.com/blog/swe-bench-pro-v2 (September 22, 2026; The human expert effort behind V2)
+Quote: ""They spent 1,897 hours across the public and private sets""
+Note: Human review of task descriptions, environments and tests is documented, including corrections across public and private sets. The paper also asserts real-world representativeness, but no clearly described expert assessment of commercial-set coverage against the stated task space was located in these sources. The relevance of this review to coverage remains unclear, so this option is left unselected for this field.","Sampling/source method documented: V2 S2 P3 C2
+Public-private comparability evidence: V2 S2 P3 C2
+Not selected: Search 2
+Comment: Numeric discrepancy: GPT-5’s public score is 23.1% in the launch post and 23.3% in paper v1. The assessment above uses the agreeing Opus comparison (22.7% public and 17.8% private). Expert appropriateness review supports a candidate addition under the codebook’s appropriateness clause. Classification is awaiting team adjudication; it is not added to the submitted selections.","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://arxiv.org/html/2509.16941v2#S5 (Results)
+Quote: ""We report Pass@1 as the resolve rate.""
+
+Judge/scorer details public [Borderline, selected]
+Source: https://arxiv.org/html/2509.16941v2#S7.SS1 (Dependency on Test Suite)
+Quote: ""We rely on a test suite of fail2pass and pass2pass to verify problem solutions.""
+Source: https://arxiv.org/html/2509.16941v2#S3.SS2 (Tests, describing the roles of fail2pass and pass2pass)
+Note: Selected for the publicly described test-based scoring mechanism and the roles of its two test groups. This is a limited interpretation of scorer details. It does not establish that the exact commercial test suites or complete commercial scoring implementation are public. The public V2 verifier release is not treated as proof of commercial implementation disclosure.
+
+Aggregation/threshold rules public [Found]
+Source: https://labs.scale.com/leaderboard/swe_bench_pro (Primary Metric: Resolve Rate)
+Quote: ""The primary metric is Resolve Rate, which is the percentage of tasks an agent successfully resolves.""
+
+Rubric/judge criteria public; Controlled inspection only [Missing]
+Sources checked:
+https://arxiv.org/html/2509.16941v2 (Sections 3.2, 5, 6.3 and 7)
+https://labs.scale.com/leaderboard/swe_bench_pro
+https://github.com/scaleapi/SWE-bench_Pro-os
+https://labs.scale.com/blog/swe-bench-pro-v2
+No supporting passage was located for the qualitative grading criteria used to produce the primary commercial score, or for a procedure allowing outsiders to inspect commercial scoring details, only under restricted access.","Metric/formula public: V2 S2 P3 C2
+Judge/scorer details public: V2 S2 P3 C2
+Aggregation/threshold rules public: V2 S2 P3 C2
+Not selected: Search 2
+Comment: Original-design text agrees with the paper; the live page carries a cutoff caveat. Live pages were read on 12 October without a 1 October archive; their present state does not establish the cutoff state."
+10/20/2026 12:57:39,Nhi Truong,FrontierMath,FrontierMath Tiers 1–3 v2 (2026-06-12 update),2026-10-18,https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability and target domain [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+Quote: ""Expert-written math problems covering advanced undergrad through early career research.""
+Quote: ""FrontierMath is a benchmark of hundreds of original, exceptionally challenging mathematics problems crafted and vetted by expert mathematicians.""
+Explanation: The page identifies both the advanced mathematical task and the intended difficulty range.
+
+Intended use [Found]
+Source: https://arxiv.org/html/2411.04872v3 (abstract)
+Quote: ""As AI systems advance toward expert-level mathematical abilities, FrontierMath offers a rigorous testbed that quantifies their progress.""
+Explanation: The stated purpose is to measure progress toward expert-level mathematics.
+
+Limits [Found]
+Source: https://arxiv.org/html/2411.04872v3 (section 2.2)
+Quote: ""While this approach enables efficient and scalable evaluation, it does impose certain limitations. Most notably, we cannot include problems that require mathematical proofs or formal reasoning steps, as these would demand human evaluation to assess correctness and clarity.""
+Explanation: The paper explains that automatically checking final answers leaves proof-writing outside this evaluation format.
+
+Note: This describes advanced mathematical reasoning and progress measurement. The earlier paper states the proof-writing limitation.","Measured capability/construct: V1 S2 P3 C2
+intended use or decision purpose: V1 S2 P1 C2
+target domain/population: V1 S2 P3 C2
+limits or out-of-scope interpretation: V1 S2 P1 C2
+Not selected: Search 2","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/benchmark-problems
+Quote: ""These sample problems span the difficulty levels and subject areas covered in the benchmark.""
+
+Detailed task blueprint/schema [Found]
+Source: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 (Methodology)
+Quote: ""For each FrontierMath question, the model needs to submit a Python function `answer()` that returns the answer. The answer is a Python object, often (although not always) an integer or a `sympy` object. Our implementation allows the model to reason and run Python code.""
+Explanation: The page publishes the answer format and the prompt specifying Python tools and resource limits.","Representative public items/dev set: V2 S2 P3 C2
+detailed task blueprint/schema: V2 S2 P3 C2
+Not selected: Search 2","Sampling/source method documented, documented expert or independent review of hidden set","Sampling/source method [Found]
+Source: https://arxiv.org/html/2411.04872v3 (section 2.1)
+Quote: ""Each mathematician created new problems following guidelines designed to ensure clarity, verifiability, and definitive answers across various difficulty levels and mathematical domains.""
+
+documented expert review [Found]
+Source: https://epoch.ai/frontiermath/tiers-1-4/about
+Quote: ""Each problem undergoes peer review by expert mathematicians who verify correctness, check for ambiguities, and assess difficulty ratings.""
+Source: https://arxiv.org/html/2411.04872v3 (sections 2.1–2.3)
+
+public-private comparability evidence [Missing]
+No direct comparison of the corrected v2 public/private distributions located in these sources or https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2 .","Sampling/source method documented: V1 S2 P1 C2
+documented expert or independent review of hidden set: V1 S2 P1 C2
+Not selected: Search 2","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","Metric, scorer details and aggregation [Found]
+Source: https://gist.github.com/tadamcz/7b3a45d0d5d35f758bb6deb8000731bb (scorer.py)
+Code excerpt (scorer declaration):
+@scorer(metrics=[accuracy(), stderr()], name=""verification_code"")
+def verification_code_scorer() -> Scorer:
+    """"""Score a FrontierMath problem submission.""""""
+
+Code excerpt (verification and outcome):
+with ExitOnException(exit_code={EXIT_VERIFY_ERROR}):
+    is_correct = verify(a)
+
+if is_correct:
+    sys.exit({EXIT_VERIFY_TRUE})
+else:
+    sys.exit({EXIT_VERIFY_FALSE})
+
+Explanation: The linked scorer checks the returned object using verify(a) and declares accuracy as its metric.
+Also: https://epoch.ai/benchmarks/frontiermath-tiers-1-3-v2
+
+Note: The general harness is inspectable; private-item verifier functions are withheld. No qualitative human/LLM grading rubric was located.","Metric/formula public: V2 S2 P3 C2
+judge/scorer details public: V2 S2 P2 C2
+aggregation/threshold rules public: V2 S2 P2 C1
+Not selected: Search 2"
+10/24/2026 20:40:00,Max Zhang,GDPval,"GDPval Hidden split (1,100 of 1,320; unversioned)",2026-10-24,https://openai.com/index/gdpval/,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""We introduce GDPval, a benchmark evaluating AI model capabilities on real-world economically valuable tasks.""
+Source: https://openai.com/index/gdpval
+Quote: ""We're introducing GDPval, a new evaluation that measures model performance on economically valuable, real-world tasks across 44 occupations.""
+
+intended use or decision purpose [Found]
+Source: https://openai.com/index/gdpval
+Quote: ""Evaluations like GDPval help ground conversations about future AI improvements in evidence rather than guesswork, and can help us track model improvement over time.""
+
+target domain/population [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""GDPval covers tasks from 9 sectors and 44 occupations that collectively earn $3T annually.""
+Source: https://openai.com/index/gdpval
+Quote: ""GDPval, the first version of this evaluation, spans 44 occupations selected from the top 9 industries contributing to U.S. GDP.""
+
+limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""It is therefore a limited, initial cut of knowledge work tasks, not a comprehensive evaluation of all possible occupational tasks.""
+Source: https://openai.com/index/gdpval
+Quote: ""However, most jobs are more than just a collection of tasks that can be written down.""","[V, S, P, C]
+
+Measured capability/construct
+[2, 2, 2, 2]
+
+intended use or decision purpose
+[2, 2, 2, 1]
+
+target domain/population
+[2, 2, 3, 2]
+
+limits or out-of-scope interpretation
+[2, 2, 2, 2]","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""with at least 30 tasks per occupation in the full set (and 5 tasks per occupation in the gold subset), across 44 occupations.""
+Source: https://openai.com/index/gdpval
+Quote: ""The GDPval full set includes 1,320 specialized tasks (220 in the gold open-sourced set).""
+
+detailed task blueprint/schema [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""Each GDPval task consists of two primary components: a request (often with reference files) [copy the rest of the sentence from §2.3]""
+Quote: ""Tasks require manipulating a variety of formats (e.g., CAD design files, photos, video, audio, social media posts, diagrams, slide decks, spreadsheets, and customer support conversations).""
+Quote: ""Each task also requires parsing through up to 17 reference files in the gold subset, and 38 in the full set.""","[V, S, P, C]
+
+Representative public items/dev set
+[2, 2, 2, 2]
+
+detailed task blueprint/schema
+[2, 2, 3, 1]","Sampling/source method documented, public-private comparability evidence, documented expert or independent review of hidden set","Sampling/source method documented [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""This top-down approach allows for representativeness of tasks across occupations.""
+Quote: ""Selected sectors that contribute over 5% to US GDP as determined by Q2 2024 Value Added by Industry [copy rest from §2.1]""
+Source: https://openai.com/index/gdpval
+Quote: ""For each occupation, we worked with experienced professionals to create representative tasks.""
+
+public-private comparability evidence [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""Summary statistics for GDPval gold subset tasks"" (Table 3) ; ""Summary statistics for GDPval full set tasks"" (Table 4)
+
+documented expert or independent review of hidden set [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""All 1,320 tasks in the full GDPval set went through an iterative review pipeline [copy rest from §2.4]""
+Quote: ""Each task received an average of five human reviews (with a minimum of three reviews).""
+Source: https://openai.com/index/gdpval
+Quote: ""Each task went through a multi-step review process to ensure it was representative of real work.""","[V, S, P, C]
+
+Sampling/source method documented
+[1, 2, 2, 2]
+
+public-private comparability evidence
+[1, 2, 1, 1]
+
+documented expert or independent review of hidden set
+[1, 2, 3, 2]","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""our primary metric is win rate, which allows for continuous evaluation.""
+Quote: ""w is how often the model deliverable is rated better than the human deliverable by the human expert grader.""
+Source: https://openai.com/index/gdpval
+Quote: ""we recorded when model outputs were rated as better than (""wins"") or on par with (""ties"") the deliverables from industry experts [copy full sentence]""
+
+judge/scorer details public [Found]
+Source: https://arxiv.org/abs/2510.04374
+Quote: ""Additional occupational experts were sourced to grade human and model deliverables.""
+Source: https://openai.com/index/gdpval
+Quote: ""These graders blindly compare model-generated deliverables with those produced by task writers.""
+
+aggregation/threshold rules public [Found]
+Source: https://openai.com/index/introducing-gpt-5-2/
+Quote: ""beats or ties top industry professionals on 70.9% of comparisons [copy full sentence]""
+Source: https://openai.com/index/gdpval
+Quote: (same wins/ties sentence as above)
+
+rubric/judge criteria public [Unclear]
+Sources: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://www.testmuai.com/learning-hub/gdpval/
+Note: Rubrics exist (""Task writers also created detailed scoring rubrics for their occupations,"" blog) and the paper lists general factors graders consider (""structure, style, format, aesthetics, and relevance""), but the rubrics were not published at launch. They were reportedly released for the 220 gold tasks in the Feb 2026 Hugging Face ""v2"" commit (third-party report; unverified). No rubric for the hidden tasks is public.
+
+controlled inspection only [Missing]
+Sources checked: https://openai.com/index/gdpval ; https://arxiv.org/abs/2510.04374 ; https://openreview.net/pdf/d2846f194055c8e103af098f3554de4a536dc5a6.pdf ; https://ukgovernmentbeis.github.io/inspect_evals/evals/gdpval/ ; https://openai.com/index/introducing-gpt-5-2/ ; https://openai.com/index/introducing-gpt-5-5/","[V, S, P, C]
+
+Metric/formula public
+[2, 2, 3, 2]
+
+judge/scorer details public
+[1, 2, 2, 2]
+
+aggregation/threshold rules public
+[2, 2, 1, 2]
+
+Not selected: Search 1"
+10/25/2026 9:34:46,Max Zhang,METR Time Horizon / HCAST task suite,HCast Time Horizon 1.1,2026-10-24,https://metr.org/blog/2026-01-29-time-horizon-1-1/,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""For example, the 50%-time horizon is the duration at which an agent is predicted to succeed half the time.""
+Source: https://metr.org/notes/2026-01-22-time-horizon-limitations/
+Quote: ""Rather, it's the amount of serial human labor they can replace with a 50% success rate.""
+
+intended use or decision purpose [Found]
+Source: https://metr.org/notes/2026-01-22-time-horizon-limitations/
+Quote: ""The most important numbers to estimate were the slope of the long-run trend.""
+Source: https://metr.org/time-horizons/
+Quote: ""We tend to prioritize evaluations when they are used to assess autonomy-related AI risks.""
+
+target domain/population [Found]
+Source: https://metr.org/time-horizons/
+Quote: ""These primarily consist of software engineering, machine learning, and cybersecurity tasks.""
+Source: https://metr.org/notes/2026-01-22-time-horizon-limitations/
+Quote: ""The original paper measured it on mostly software and research tasks.""
+
+limits or out-of-scope interpretation [Found]
+Source: https://metr.org/notes/2026-01-22-time-horizon-limitations/
+Quote: ""Time horizon is not the length of time AIs can work independently.""
+Quote: ""A 50% time horizon of X hours does not mean we can delegate tasks under X hours to AIs.""
+Source: https://metr.org/time-horizons/
+Quote: ""Measurements above 16 hrs are unreliable with our current task suite""","[V, S, P, C]
+
+Measured capability/construct
+[2, 2, 2, 2]
+
+intended use or decision purpose
+[2, 2, 2, 2]
+
+target domain/population
+[2, 2, 2, 2]
+
+limits or out-of-scope interpretation
+[2, 2, 3, 2]","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/
+Quote: ""public statements and solutions are available for 1/66 SWAA tasks, 28/157 HCAST tasks, and all 5/5 RE-Bench tasks within the 1.1 task suite""
+Source: https://arxiv.org/abs/2503.17354
+Quote: ""We release 11 example task families from HCAST, but we withhold the rest to prevent data contamination, and to reduce hill-climbing against HCAST.""
+
+detailed task blueprint/schema [Found]
+Source: https://github.com/METR/task-standard
+Quote: ""A string of instructions for the agent, describing what it's supposed to accomplish.""
+Quote: ""Optionally, a way to automatically score the agent's attempt, based on a string submitted by the agent and the state of the environment after the agent has interacted with it.""
+Source: https://arxiv.org/abs/2503.17354
+Quote: ""Tasks are grouped into 78 task families which share setup code and scoring logic.""
+Quote: ""Most tasks return a binary score (i.e. either 0 or 1), but some are continuously scored.""","[V, S, P, C]
+
+Representative public items/dev set
+[2, 2, 2, 2]
+
+detailed task blueprint/schema
+[2, 2, 2, 2]","Sampling/source method documented, public-private comparability evidence","Sampling/source method documented [Found]
+Source: https://arxiv.org/abs/2503.17354
+Quote: ""Each task is intended to represent a single end-to-end activity a human might undertake, across a wide range of lengths.""
+Quote: ""Most of the tasks we create are one of general software engineering, machine learning, or cybersecurity.""
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Quote: ""The additions represent HCAST tasks that were not included in the original time horizon paper [copy full sentence]""
+
+public-private comparability evidence [Found]
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/
+Quote: ""Generally results are within 5-10% for 50% TH, with models sometimes performing better or worse on the private only tasks""
+Quote: ""Opus 4.6 in particular sees a 40% decrease in 50% TH on the private-only tasks to 7h 11m (from 11h 59m).""
+
+documented expert or independent review of hidden set [Found]
+Source: https://arxiv.org/abs/2503.17354
+Quote: ""an individual who has not been previously exposed to the family attempt a task in the family [copy full sentence, §2.3]""
+Quote: ""manually read through each of the 945 resulting transcripts [copy full sentence, §2.3]""
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Quote: ""The modifications and removals generally represent cases where a task description was confusing, or easy to reward-hack, or the scoring function had errors.""","[V, S, P, C]
+
+Sampling/source method documented
+[1, 2, 2, 2]
+
+public-private comparability evidence
+[1, 2, 3, 1]
+
+documented expert or independent review of hidden set
+[1, 2, 2, 2]","Metric/formula public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://arxiv.org/abs/2503.14499
+Quote: ""we fit time horizons by performing the following logistic regression [copy full sentence + equation, §3.1]""
+Source: https://github.com/METR/eval-analysis-public
+Quote: ""Fitting a logistic curve modeling P(success) as a function of log2(human_minutes)""
+
+aggregation/threshold rules public [Found]
+Source: https://arxiv.org/abs/2503.14499
+Quote: ""Continuously scored tasks are binarized via a task-specific threshold chosen to represent human performance.""
+Quote: ""we weight each task by the inverse square root of the number of tasks in the family it belongs to.""
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Quote: ""Technically the confidence intervals come from bootstrapping over task families, tasks, and runs.""
+
+judge/scorer details public [Unclear]
+Sources: https://arxiv.org/abs/2503.17354 ; https://github.com/METR/task-standard ; https://metr.org/time-horizons/
+Note: Each task has its own automatic scoring function; these are public for the 34 public tasks but private for the rest (""By default, agents are not allowed to see the scoring code""). Reward-hack rescoring is described in general terms (""We flag runs for potential reward hacks both automatically (with LLMs and keyword search) and manually""), without naming the judge model or prompts.
+
+rubric/judge criteria public [Unclear]
+Sources: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ ; https://metr.org/blog/2025-06-05-recent-reward-hacking
+Note: Task scoring is mostly automatic (binary or continuous), so qualitative criteria apply mainly to manual reward-hack review. The standard treatment is stated (""our standard methodology of marking cheating attempts as failures""), but no public criteria define what counts as cheating for private tasks.
+
+controlled inspection only [Missing]
+Sources checked: https://metr.org/time-horizons/ ; https://metr.org/blog/2026-01-29-time-horizon-1-1/ ; https://arxiv.org/abs/2503.14499 ; https://arxiv.org/abs/2503.17354 ; https://github.com/METR/eval-analysis-public ; https://metr.org/blog/2026-02-17-how-we-protect-confidential-information/
+Note: No route for outsiders to inspect private scorers under restricted access is documented.","[V, S, P, C]
+
+Metric/formula public
+[3, 2, 3, 3]
+
+aggregation/threshold rules public
+[2, 2, 3, 2]"
+10/25/2026 12:12:41,Ameen Patel,GDPval,GDPval v2,2026/10/23,https://openai.com/index/gdpval/,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","measured capability/construct [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""We introduce GDPval, a benchmark evaluating AI model capabilities on real-world economically valuable digital knowledge-work tasks.""
+Quote: ""Given the complexity of automatically grading these tasks, our primary evaluation metric is head-to-head human expert comparison.""
+Source: https://evals.openai.com/ (GDPval card; read from site code)
+Quote: ""Real-world, economically valuable knowledge work tasks.""
+intended use or decision purpose [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""AI capability evaluations can provide clearer, more directly attributable evidence about model abilities, allowing us to assess economic relevance ahead of widespread adoption.""
+Quote: ""We hope this work contributes to the science of tracking model progress, so that we have better data to assess the social impacts of AI models.""
+Source: https://openai.com/index/gdpval/
+Quote: ""designed to help us track how well our models and others perform""
+target domain/population [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""GDPval covers the top 9 sectors contributing to U.S. GDP (Gross Domestic Product), with at least 30 tasks per occupation in the full set (and 5 tasks per occupation in the gold subset), across 44 occupations.""
+Quote: ""Tasks in the initial version of GDPval are oriented around knowledge work that can be performed on a computer, particularly around digital deliverables.""
+Source: https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md (dataset card as released, 25 Sep 2025)
+Quote: ""220 real-world knowledge tasks across 44 occupations.""
+limits or out-of-scope interpretation [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""Manual labor and physical tasks are not included in the current version. Moreover, tasks that involve extensive tacit knowledge, access to personally identifiable information, use of proprietary software tools, or communication between individuals are out of scope for the current evaluation.""
+Quote: ""Results could be misused to make premature claims about job replacement or to target specific roles for automation without context.""
+Quote: ""These results are research findings and are not intended to inform or justify personnel decisions (e.g., hiring, firing, promotion, or compensation).""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author responses to Reviewer uLMP, 22 and 23 Nov 2025)
+Quote: ""We agree the abstract should reflect the digital nature of the work and revised it to “real-world, economically valuable digital knowledge-work tasks” to make this limitation explicit.""
+Quote: ""Though we do not claim full coverage of all tasks in each occupation, the resulting submitted tasks did cover majority of task types.""","measured capability/construct: V2 S2 P2 C2
+intended use or decision purpose: V2 S2 P2 C2
+target domain/population: V2 S2 P3 C2
+limits or out-of-scope interpretation: V2 S2 P2 C2
+Not selected: none (every element is selected; none documented is not rated)","Representative public items/dev set, detailed task blueprint/schema","representative public items/dev set [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""We open-source the prompts and reference files in our 220-task gold subset on Hugging Face (dataset: GDPval).""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author responses to Reviewers uLMP and JEiu, 22 and 23 Nov 2025)
+Quote: ""The gold set is a subset of 5 tasks per occupation (220 tasks total) that we chose to be representative set by selecting, for each occupation, tasks that covered a broad range of O*NET tasks, were rated as high quality by reviewers, and were possible to scrub of any information that could potentially be used to re-identify the original task writer.""
+Quote: ""We also note that, because these results are on the open source set, they include fewer audio, video, and CAD files than the full set, because those file types were most difficult to scrub of potentially identifying information about the task writer.""
+Source: https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md (dataset card as released, 25 Sep 2025)
+Quote: ""Each task consists of a text prompt and a set of supporting reference files.""
+Note: The public tasks share the private set's form, but by the operator's own account they under-represent audio, video and CAD tasks.
+detailed task blueprint/schema [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""Each GDPval task consists of two primary components: a request (often with reference files) and a deliverable (work product). Tasks are based on work performed by experts in their professional experience and then mapped to O*NET occupational tasks for their occupation to ensure broad and representative coverage across tasks (National Center for O*NET Development, 2025).""
+Quote: ""Tasks require manipulating a variety of formats (e.g., CAD design files, photos, video, audio, social media posts, diagrams, slide decks, spreadsheets, and customer support conversations). Each task also requires parsing through up to 17 reference files in the gold subset, and 38 in the full set.""
+Source: https://openai.com/index/gdpval/
+Quote: ""the expected deliverables span documents, slides, diagrams, spreadsheets, and multimedia""
+Note: The paper also gives full-set summary statistics (quality, difficulty, time, dollar value; Table 5) and the review pipeline (Appendix A.5) without exposing live items.","representative public items/dev set: V2 S2 P3 C2
+detailed task blueprint/schema: V2 S2 P3 C2
+Not selected: none (both codes are selected; none documented is not rated)
+Comment: Red flag (detailed task blueprint/schema): numbers differ. The paper's Table 6, labelled as gold-set file counts, gives a maximum of 38 reference files, while the text says the gold subset has up to 17 and the Hugging Face gold data shows 0 to 17 per task.","Sampling/source method documented, public-private comparability evidence, documented expert or independent review of hidden set","sampling/source method documented [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""Selected sectors that contribute over 5% to US GDP as determined by Q2 2024 Value Added by Industry as a Percentage of Gross Domestic Product (see Federal Reserve Bank of St. Louis (2025)).""
+Quote: ""Selected the 5 occupations within each sector that contribute most to total wages and compensation and are predominantly digital.""
+Quote: ""the GDPval full set covers 1,320 tasks across 44 occupations, sourced to cover the majority of Work Activities tracked by O*NET for each occupation""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer uLMP, 23 Nov 2025)
+Quote: ""Yes, multiple experts contributed tasks per occupation and then mapped their tasks to the representative O*NET tasks.""
+public-private comparability evidence [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""Table 4: Summary statistics for GDPval gold subset tasks ... Difficulty (1–5) 3.32 0.95 1.00 3.00 3.00 4.00 5.00""
+Quote: ""Table 5: Summary statistics for GDPval full set tasks ... Difficulty (1–5) 3.20 0.92 1.00 3.00 3.00 4.00 5.00""
+Quote: ""Table 8: Task specification scores Label %, gold set %, full set Underspecified 8.28% 8.41% Well-specified 89.07% 89.34% Overspecified 2.66% 2.26%""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer JEiu, 22 Nov 2025)
+Quote: ""We also note that, because these results are on the open source set, they include fewer audio, video, and CAD files than the full set, because those file types were most difficult to scrub of potentially identifying information about the task writer.""
+documented expert or independent review of hidden set [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""All 1,320 tasks in the full GDPval set went through an iterative review pipeline involving both automated model-based screening and multiple stages of human expert review. Each task received an average of five human reviews (with a minimum of three reviews).""
+Quote: ""Occupation-specific expert review: An occupation-specific reviewer assessed the representativeness of the task for the occupation, and confirmed that the task was possible for another member of the occupation to complete with the provided context.""
+Quote: ""Table 5: Summary statistics for GDPval full set tasks ... Representativeness (1–5) 4.43 0.76 1.00 4.00 5.00 5.00 5.00""
+Source: https://openai.com/index/gdpval/
+Quote: ""On average, each task received 5 rounds of expert review""
+Note: The reviewers were experts recruited and paid by OpenAI, not independent parties.","sampling/source method documented: V1 S2 P3 C2
+public-private comparability evidence: V1 S2 P3 C2
+documented expert or independent review of hidden set: V1 S2 P3 C2
+Not selected: none (all three codes are selected; none documented is not rated)
+Comment: Red flag (public-private comparability evidence): numbers differ. The paper's Table 6, labelled gold set, gives a mean of 1.92 and a maximum of 38 reference files per task, and Appendix A.4.1 says 67.7% of tasks need at least one. My count of the 220 public tasks (Hugging Face rows API, 24 Oct 2026) gives a mean of 1.19, a maximum of 17, and 56.8% (125 tasks).","Metric/formula public, judge/scorer details public, aggregation/threshold rules public","metric/formula public [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf (ICLR 2026 camera-ready, published 20 Apr 2026)
+Quote: ""Model win rate w is how often the model deliverable is rated better than the human deliverable by the human expert grader.""
+Quote: ""In fig. 5, on the GDPval gold subset, 47.6% of deliverables by Claude Opus 4.1 were graded as better than (wins) or as good as (ties) the human deliverable.""
+Quote: ""For a given sample s, let the human score H and automated grader score A take values in {0, 0.5, 1}, where 1 indicates preference for the model deliverable, 0 indicates preference for the human deliverable, and 0.5 indicates a tie.""
+Source: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md (third party: UK AI Security Institute's inspect_evals; read via raw.githubusercontent.com)
+Quote: ""Note that the preliminary metric in the paper is the win rate against human deliverables, which is at is implemented in the OpenAI grading server.""
+judge/scorer details public [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""To grade the 220 open-sourced gold subset, we conducted blinded expert pairwise comparisons, where experts in the relevant occupation were presented with unlabeled work deliverables, including those from models and from human experts, and asked to rank them based on which better fulfilled the task request given its reference files.""
+Quote: ""For the gold subset, we trained an experimental grading model to perform pairwise comparisons in the style of industry professional experts. The automated grader is presented with the request and reference files, two deliverables, and a rubric, and asked to pick which completion is better.""
+Quote: ""Our automated grader, based on GPT-5-high, shows lower correlation with human expert graders when assessing outputs from capable OpenAI models.""
+Quote: ""In the open-source set we mark 12 out of 220 tasks as ungradable due to limitations of the automated grader.""
+Source: https://openreview.net/forum?id=hcuEdq6eKD (author response to Reviewer ky9x, 23 Nov 2025)
+Quote: ""Rubrics are used by the autograder only (not by human expert graders).""
+Note: The grader's prompt and model were not released; the paper lists its container limits and installed packages (Appendix A.7.4 and A.7.5).
+aggregation/threshold rules public [Found]
+Source: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf
+Quote: ""For plots shown, we sampled each model 3 times for each prompt, and then had 3 different human graders grade each sample (yielding 9 comparisons per prompt, per model, across 220 tasks).""
+Quote: ""Plots below show 95% confidence intervals obtained by bootstrapping (resampling with replacement the available automated grader scores or human grades for each sample, computing the mean per sample, and averaging across all samples or for the specified model).""
+Source: https://openai.com/index/gdpval/
+Quote: ""rated as better than (“wins”) or on par with (“ties”)""
+rubric/judge criteria public [Borderline]
+Sources: https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://huggingface.co/datasets/openai/gdpval/commits/main
+Note: Human graders' criteria are described only at a high level (""which better fulfilled the task request""; structure, style, format, aesthetics, relevance). The autograder's per-task rubrics were not public in v0; they were released in v2 on 10 Feb 2026.
+controlled inspection only [Missing]
+Sources checked: https://openai.com/index/gdpval/ ; https://arxiv.org/html/2510.04374v1 ; https://proceedings.iclr.cc/paper_files/paper/2026/file/290c2430f91912204f30bbcc990fff1d-Paper-Conference.pdf ; https://openreview.net/forum?id=hcuEdq6eKD ; https://huggingface.co/datasets/openai/gdpval ; https://huggingface.co/datasets/openai/gdpval/blob/a3848a2/README.md ; https://huggingface.co/datasets/openai/gdpval/commits/main ; https://evals.openai.com/gdpval/grading ; https://evals.openai.com/gdpval/leaderboard ; https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/src/inspect_evals/gdpval/README.md ; https://x.com/OpenAI/status/1971249374077518226 (snippet only)","metric/formula public: V2 S2 P3 C3
+judge/scorer details public: V2 S2 P3 C2
+aggregation/threshold rules public: V2 S2 P3 C2
+Not selected: Search 3
+Comment: Excerpt: OpenAI's X launch post was read only as a search snippet."
+10/25/2026 15:13:54,Ameen Patel,METR Time Horizon / HCAST task suite,METR-Horizon-v1.1,2026/10/25,https://metr.org/hcast.pdf,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://github.com/METR/eval-analysis-public (README, commit 52cb829; the repo holds the TH1.1 report)
+Quote: ""The time horizon methodology measures AI agent capabilities""
+Source: https://arxiv.org/abs/2503.14499v4 (sibling: Time Horizon 1.0 paper, revised 10 Jul 2026)
+Quote: ""the time humans typically take to complete tasks that AI models can complete""
+intended use or decision purpose [Found]
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026)
+Quote: ""nor do we believe it meets the Critical capability threshold for AI Self-Improvement""
+Source: https://metr.org/hcast.pdf (earlier version: HCAST paper, Mar 2025, 189 tasks; predates TH1.1)
+Quote: ""can an agent be trusted to complete a task""
+target domain/population [Found]
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, restating the TH1.0 paper's description of the suite)
+Quote: ""datasets designed to capture skills required for research or software engineering""
+Source: https://metr.org/evaluations/gpt-5-1-codex-max-report/ (sibling: TH1.0-era evaluation, Nov 2025)
+Quote: ""our suite of agentic software engineering tasks""
+limits or out-of-scope interpretation [Found]
+Source: https://metr.org/time-horizons/ (TH1.1 page; notice added 8 May 2026)
+Quote: ""Measurements above 16 hrs are unreliable with our current task suite""
+Source: https://metr.org/notes/2026-01-22-time-horizon-limitations/ (METR staff research note, 22 Jan 2026, one week before TH1.1; states it does not necessarily reflect METR's views)
+Quote: ""does not mean we can delegate tasks under X hours to AIs""","Measured capability/construct: V2 S2 P2 C2
+intended use or decision purpose: V2 S2 P3 C2
+target domain/population: V2 S2 P3 C2
+limits or out-of-scope interpretation: V2 S2 P3 C2
+Not selected: no rating (only none documented is unselected)","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://github.com/METR/hcast-public (README, read from a clone at commit 0343823) (adjacent: public subset; its task versions differ from those run in TH1.1)
+Quote: ""source code for a subset of the tasks used in the HCAST""
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/data/raw/runs.jsonl (TH1.1 run data, commit 52cb829; 28 of the 29 public task IDs appear among the 157 TH1.1 HCAST tasks)
+Quote: ""task_id"":""local_research_tex\/33b_better_than_65b""
+detailed task blueprint/schema [Found]
+Source: https://metr.org/hcast.pdf (earlier version: HCAST paper, Mar 2025, 189 tasks; predates TH1.1; Section 2.2 and Table 5, which summarises all 78 families, including the 69 used in TH1.1)
+Quote: ""Each tasks consists of an instruction string, a containerized environment""
+Source: https://github.com/METR/task-standard (README, commit 83ad6fd; operator-wide; the README says METR no longer maintains it and now defines tasks in Inspect)
+Quote: ""A string of instructions for the agent, describing what it's supposed to accomplish.""
+Source: https://metr.org/time-horizons/ (TH1.1 page; last updated 8 Sep 2026)
+Quote: ""with clear success criteria that can be automatically evaluated""","Representative public items/dev set: V2 S2 P1 C2
+detailed task blueprint/schema: V2 S2 P1 C2
+Not selected: no rating (only none documented is unselected)","Sampling/source method documented, public-private comparability evidence, documented expert or independent review of hidden set","Sampling/source method documented [Found]
+Source: https://metr.org/time-horizons/ (TH1.1 page; last updated 8 Sep 2026)
+Quote: ""drawn from RE-Bench, HCAST, and a set of shorter novel software tasks""
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/params.yaml (commit 52cb829; the line is commented as the mp4-tasks commit)
+Quote: long_tasks_version: 799cc9c4b4483a93fc3445623a49ea1bd74fdeb2
+Source: https://metr.org/hcast.pdf (earlier version: HCAST paper, Mar 2025, 189 tasks; predates TH1.1; Section 2.1)
+Quote: ""created 143 tasks, and 46 tasks were acquired through the METR task bounty""
+public-private comparability evidence [Found]
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (METR research note on the TH1.1 suite, 20 Mar 2026, by Alexander Barry, whom METR lists as an Epoch AI research collaborator; states it does not necessarily reflect METR's views; counts 28 of 157 HCAST tasks as public)
+Quote: ""Generally results are within 5-10% for 50% TH""
+documented expert or independent review of hidden set [Found]
+Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/ (TH1.1 release post, on the 73 added HCAST tasks)
+Quote: ""subsequently passed our quality check processes""
+Source: https://metr.org/evaluations/gpt-5-1-codex-max-report/ (sibling: TH1.0-era evaluation, Nov 2025)
+Quote: ""excluding 7 tasks that we identified as problematic""","Sampling/source method documented: V2 S2 P2 C2
+public-private comparability evidence: V2 S1 P3 C1
+documented expert or independent review of hidden set: V1 S2 P3 C2
+Not selected: no rating (only none documented is unselected)","Metric/formula public, rubric/judge criteria public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/src/horizon/wrangle/logistic.py (analysis code behind the TH1.1 report, commit 52cb829)
+Quote: from sklearn.linear_model import LogisticRegression
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (METR research note on the TH1.1 suite, 20 Mar 2026, by Alexander Barry, whom METR lists as an Epoch AI research collaborator; states it does not necessarily reflect METR's views)
+Quote: ""gives the task-length at which an LLM is predicted to succeed 50% of the time""
+Source: https://arxiv.org/abs/2503.14499v4 (sibling: Time Horizon 1.0 paper, revised 10 Jul 2026)
+Quote: ""the time humans typically take to complete tasks that AI models can complete""
+rubric/judge criteria public [Found]
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/ (TH1.1-era evaluation, 26 Jun 2026; definition of cheating used to mark runs as failures)
+Quote: ""behavior where the model improves evaluation performance by exploiting bugs in the evaluation environment""
+Source: https://metr.org/time-horizons/ (TH1.1 page; last updated 8 Sep 2026)
+Quote: ""multiple human reviewers check the flagged runs, finalize any re-scoring of runs""
+judge/scorer details public [Found]
+Source: https://github.com/METR/hcast-public/blob/main/debug_small_libs/README.md (scorer description for a public task, commit 0343823) (adjacent: public subset; its task versions differ from those run in TH1.1)
+Quote: ""the score is the proportion of tests that pass, ranging from 0 to 1""
+Source: https://github.com/METR/inspect-metr-task-bridge/blob/main/mtb/scorer.py (operator-wide tool, commit 20a430c, Apr 2026; named as the HCAST runner in the TH1.1 run data)
+Quote: score = await driver.score(answer)
+Source: https://metr.org/evaluations/gpt-5-1-codex-max-report/ (sibling: TH1.0-era evaluation, Nov 2025; reward-hack monitor)
+Quote: ""we ran a monitor based on GPT-5 across 385 runs""
+aggregation/threshold rules public [Found]
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/params.yaml (TH1.1 report settings, commit 52cb829)
+Quote: - weight_col: invsqrt_task_weight
+Source: https://metr.org/hcast.pdf (earlier version: HCAST paper, Mar 2025, 189 tasks; predates TH1.1; Section 2.2)
+Quote: ""we define a success threshold, which we use to binarize scores""
+controlled inspection only [Borderline]
+Sources: https://github.com/METR/hcast-public/commit/7a3795e (earlier README version, Mar 2025 to Jul 2026) ; https://metr.org/hcast.pdf
+Note: Scorers for the private tasks are withheld. Until 6 Jul 2026 the README offered the full suite on request, which would have exposed them under restricted access, but no source describes a scorer-inspection route for TH1.1. Not selected.","Metric/formula public: V2 S2 P3 C2
+rubric/judge criteria public: V1 S2 P3 C2
+judge/scorer details public: V2 S2 P1 C2
+aggregation/threshold rules public: V2 S2 P3 C2
+Not selected: Search 3
+Comment: Red flag, numbers differ across sources. Until 3 Mar 2026 the fitting code used a penalized regression, not the plain logistic fit described. The fix cut recent models' 50% horizons by up to 20% (per the 20 Mar 2026 note), so the figures in the 29 Jan 2026 TH1.1 post predate the fix."
+10/26/2026 16:15:02,Nhi Truong,METR Time Horizon / HCAST task suite,"Time Horizon 1.1 (TH1.1), released 2026-01-29; METR mixed task suite including HCAST. Evidence cutoff: 2026-10-26.",2026-10-26,https://metr.org/blog/2026-01-29-time-horizon-1-1/,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Source: https://arxiv.org/html/2503.14499v4 (Abstract)
+Quote: ""To quantify the capabilities of AI systems in terms of human capabilities, we propose a new metric: 50%-task-completion time horizon, the time humans typically take to complete tasks that AI models can complete with 50% success rate.""
+
+Source: https://arxiv.org/html/2503.17354v1 (Abstract)
+Quote: ""We present HCAST (Human-Calibrated Autonomy Software Tasks), a benchmark of 189 machine learning engineering, cybersecurity, software engineering, and general reasoning tasks.""
+Explanation: The 189-task count refers to the earlier HCAST suite; the TH1.1 mixed suite contains 228 tasks.
+
+Source: https://arxiv.org/html/2503.14499v4 (Appendix B.2)
+Quote: ""The tasks we use to benchmark AI capabilities are systematically different from real tasks. These differences could result in the trends we observe on these tasks not generalizing to real world tasks.""
+
+Source: https://metr.org/time-horizons/ (Definition and FAQ)
+Explanation: The current page applies the metric to software engineering, machine learning and cybersecurity. It warns against generalizing to all intellectual work and treats measurements above 16 hours as unreliable.
+
+Source: https://arxiv.org/html/2503.14499v4 (Introduction)
+Quote: ""Understanding AI capabilities helps inform the development of safety guardrails as systems become increasingly powerful.""","Measured capability/construct: V2 S2 P3 C2
+intended use or decision purpose: V2 S2 P1 C2
+target domain/population: V2 S2 P3 C2
+limits or out-of-scope interpretation: V2 S2 P3 C2
+Not selected: Search 2","Representative public items/dev set, detailed task blueprint/schema","Source: https://github.com/METR/hcast-public (README)
+Quote: ""This repo contains source code for a subset of the tasks used in the HCAST: Human-Calibrated Autonomy Software Tasks paper.""
+
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (Private vs public tasks)
+Explanation: The TH1.1 note identifies 34 public tasks: 1 SWAA, 28 HCAST and 5 RE-Bench.
+
+Source: https://arxiv.org/html/2503.17354v1 (Section 2.2)
+Quote: ""Each tasks consists of an instruction string, a containerized environment where the agent program runs as the “agent” user, and a scoring function that runs in the task environment as root.""
+Explanation: This describes the HCAST component; TH1.1 also includes SWAA and RE-Bench.","Representative public items/dev set: V2 S2 P3 C2
+detailed task blueprint/schema: V2 S2 P1 C2
+Not selected: Search 2","Sampling/source method documented, public-private comparability evidence, documented expert or independent review of hidden set","Source: https://metr.org/blog/2026-01-29-time-horizon-1-1/
+Explanation: The TH1.1 release explains task additions, removals, updates and quality checks, while acknowledging that selection criteria were not rigid.
+
+Source: https://metr.org/notes/2026-03-20-impact-of-modelling-assumptions-on-time-horizon-results/ (Private vs public tasks)
+Explanation: METR compares all-task with private-only time horizons: most 50% estimates differ by 5-10%, while Opus 4.6 falls by 40%; 80% estimates generally change more. This comparison does not prove equivalence.
+
+Source: https://arxiv.org/html/2503.17354v1 (Section 2.3)
+Quote: ""For the majority of task families, we have an individual who has not been previously exposed to the family attempt a task in the family. They take notes on bugs they discover and ambiguities in the instructions or scoring logic.""
+Explanation: This review describes earlier HCAST tasks; it does not establish that the full TH1.1 suite represents all real software work.","Sampling/source method documented: V2 S2 P3 C2
+public-private comparability evidence: V2 S2 P3 C1
+documented expert or independent review of hidden set: V1 S2 P1 C2
+Not selected: Search 2","Metric/formula public, rubric/judge criteria public, judge/scorer details public, aggregation/threshold rules public","Source: https://arxiv.org/html/2503.14499v4 (Figure 2)
+Quote: ""Third, we fit a logistic model to find the time horizon at which each AI agent has a 50% chance of success, and plot this against the release date of the model.""
+
+Source: https://metr.org/time-horizons/ (Methodological Details)
+Source: https://github.com/METR/eval-analysis-public
+Source: https://github.com/METR/eval-analysis-public/blob/main/reports/time-horizon-1-1/params.yaml
+Explanation: The current page also reports 80% horizons. Public TH1.1 code, parameters and run scores expose curve fitting, task-family weights and bootstrap calculations.
+
+Source: https://metr.org/blog/2026-06-26-gpt-5-6-sol/
+Explanation: METR counts attempts that exploit environment bugs or use disallowed strategies as failures.
+
+Source: https://arxiv.org/html/2503.17354v1 (Section 2.2)
+Quote: ""Most tasks return a binary score (i.e. either 0 or 1), but some are continuously scored. For continuously scored tasks, we define a success threshold, which we use to binarize scores, for consistency in our analysis and interpretation of results.""
+
+Source: https://github.com/METR/hcast-public/blob/main/local_research_tex/local_research_tex.py (TaskFamily.score)
+Explanation: This public example returns 1 for an accepted answer and 0 otherwise. The paper describes earlier HCAST scoring; most private TH1.1 scorers and thresholds were not inspected.
+
+Source: https://arxiv.org/html/2610.12466v1 (Sections 2.2–2.3)
+Explanation: Nguyen and Fithian reanalyze the public statistical fitting method, not private-task scorers.","Metric/formula public: V2 S2 P3 C3
+rubric/judge criteria public: V2 S2 P3 C1
+judge/scorer details public: V2 S2 P1 C2
+aggregation/threshold rules public: V2 S2 P3 C3
+Not selected: Search 2"
+10/28/2026 0:18:59,Nhi Truong,GDPval,"OpenAI dataset v2, released 2026-02-10; commit 11e7900cdcac61bc4daf59e65feb238acda98fbf; evidence cutoff 2026-10-26",2026-10-26,https://huggingface.co/datasets/openai/gdpval/tree/11e7900cdcac61bc4daf59e65feb238acda98fbf,"Measured capability/construct, intended use or decision purpose, target domain/population, limits or out-of-scope interpretation","Measured capability/construct [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Abstract)
+Quote: ""We introduce GDPval, a benchmark evaluating AI model capabilities on real-world economically valuable tasks.""
+
+Intended use or decision purpose [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 6)
+Quote: ""We hope this work contributes to the science of tracking model progress, so that we have better data to assess the social impacts of AI models.""
+
+Target domain/population [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Abstract)
+Quote: ""GDPval covers the majority of U.S. Bureau of Labor Statistics Work Activities for 44 occupations across the top 9 sectors contributing to U.S. GDP (Gross Domestic Product). Tasks are constructed from the representative work of industry professionals with an average of 14 years of experience.""
+Source: https://huggingface.co/datasets/openai/gdpval/blob/11e7900cdcac61bc4daf59e65feb238acda98fbf/data/train-00000-of-00001.parquet
+Quote: ""sector"", ""occupation""
+
+Limits or out-of-scope interpretation [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 5)
+Quote: ""The GDPval full set currently consists of only 44 occupations and 30 total tasks per occupation. It is therefore a limited, initial cut of knowledge work tasks, not a comprehensive evaluation of all possible occupational tasks.""
+Source: https://arxiv.org/html/2510.04374v1 (Section 5, Focus on self-contained knowledge work)
+Quote: ""Manual labor and physical tasks are not included in the current version. Moreover, tasks that involve extensive tacit knowledge, access to personally identifiable information, use of proprietary software tools, or communication between individuals are out of scope for the current evaluation.""","Measured capability/construct: V1 S1 P1 C2
+Intended use or decision purpose: V1 S1 P1 C2
+Target domain/population: V2 S1 P3 C2
+Limits or out-of-scope interpretation: V1 S1 P1 C2
+Not selected: Search 1","Representative public items/dev set, detailed task blueprint/schema","Representative public items/dev set [Found]
+Source: https://huggingface.co/datasets/openai/gdpval/blob/11e7900cdcac61bc4daf59e65feb238acda98fbf/README.md (v2, 2026-02-10)
+Quote: ""220 real-world knowledge tasks across 44 occupations. Each task consists of a text prompt and a set of supporting reference files.""
+
+Detailed task blueprint/schema [Found]
+Source: https://huggingface.co/datasets/openai/gdpval/blob/11e7900cdcac61bc4daf59e65feb238acda98fbf/data/train-00000-of-00001.parquet (v2, 2026-02-10, public data file column names)
+Quote: ""task_id"", ""sector"", ""occupation"", ""prompt"", ""reference_files"", ""deliverable_files"", ""rubric_pretty"", ""rubric_json""","Representative public items/dev set: V2 S1 P3 C1
+Detailed task blueprint/schema: V2 S1 P3 C1
+Not selected: Search 2","Sampling/source method documented, public-private comparability evidence, documented expert or independent review of hidden set","Sampling/source method documented [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 2)
+Quote: ""We first identify the sectors that contribute most to U.S. GDP, then source tasks drawn from the highest-earning knowledge work occupations within those sectors.""
+Source: https://arxiv.org/html/2510.04374v1 (Section 2.3)
+Quote: ""Experts classified their requests against O*NET occupational tasks for their occupation to ensure broad and representative coverage across tasks (U.S. Bureau of Labor Statistics, 2025a).""
+
+Public-private comparability evidence [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Appendix A.4.3, Table 7)
+Quote: ""Table 7: Task specification scores
+Label | %, gold set | %, full set
+Underspecified | 8.28% | 8.41%
+Well-specified | 89.07% | 89.34%
+Overspecified | 2.66% | 2.26%""
+Explanation: The comparison uses overlapping groups because the full set includes the gold subset.
+
+Documented expert or independent review of hidden set [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 2.4)
+Quote: ""All 1,320 tasks in the full GDPval set went through an iterative review pipeline involving both automated model-based screening and multiple stages of human expert review. Each task received an average of five human reviews (with a minimum of three reviews).""","Sampling/source method documented: V1 S1 P1 C1
+Public-private comparability evidence: V2 S1 P1 C1
+Documented expert or independent review of hidden set: V1 S1 P1 C1
+Not selected: Search 1","Metric/formula public, rubric/judge criteria public, judge/scorer details public, aggregation/threshold rules public","Metric/formula public [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Appendix A.2.1)
+Quote: ""Model win rate w is how often the model deliverable is rated better than the human deliverable by the human expert grader.""
+
+Rubric/judge criteria public [Found]
+Source: https://huggingface.co/datasets/openai/gdpval/blob/11e7900cdcac61bc4daf59e65feb238acda98fbf/data/train-00000-of-00001.parquet (v2, 2026-02-10, task 83d10b06-26d1-4636-a32c-23f92c57f30b, rubric_json entry)
+Quote: {""score"": 2, ""criterion"": ""The submitted deliverable is an Excel workbook file whose basename is 'Sample' (accept .xlsx, .xls, or .xlsm)."", ""author_type"": ""human""}
+
+Judge/scorer details public [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 2.5)
+Quote: ""To grade the 220 open-sourced gold subset, we conducted blinded expert pairwise comparisons, where experts in the relevant occupation were presented with a request and reference files and asked to rank two or more unlabeled work deliverables.""
+Source: https://arxiv.org/html/2510.04374v1 (Appendix A.6.2)
+Quote: ""Our automated grader, based on GPT-5-high, shows lower correlation with human expert graders when assessing outputs from capable OpenAI models.""
+
+Aggregation/threshold rules public [Found]
+Source: https://arxiv.org/html/2510.04374v1 (Section 3.1 footnote)
+Quote: ""For plots shown, we sampled each model 3 times for each prompt, and then had 3 different human graders grade each sample (yielding 9 comparisons per prompt, per model, across 220 tasks).""
+Source: https://arxiv.org/html/2510.04374v1 (Appendix A.2.1)
+Quote: ""Model win rate w is how often the model deliverable is rated better than the human deliverable by the human expert grader.""","Metric/formula public: V2 S1 P1 C2
+Rubric/judge criteria public: V2 S1 P3 C1
+Judge/scorer details public: V1 S1 P1 C2
+Aggregation/threshold rules public: V2 S1 P1 C1
+Not selected: Search 1"
