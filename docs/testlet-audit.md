@@ -1,6 +1,6 @@
 # Testlet migration audit
 
-Audit complete; preview publication pending. This audit covers all 290 checked-in definitions, including the 270 benchmarks in the current preview. Verification scope is recorded per benchmark: full original-source reconciliation for component conversions, complete existing-item parity for additive groupings, and importer-contract review for unchanged atomic items. Two changed upstream snapshots remain blocked. No new data from this audit has been published yet.
+This audit covers all 290 checked-in definitions, including the 270 benchmarks in the preview. Verification scope is recorded per benchmark: full original-source reconciliation for component conversions, complete existing-item parity for additive groupings, and importer-contract review for unchanged atomic items. Two changed upstream snapshots remain blocked. The reviewed data for 207 public benchmarks is published on the [HF preview branch](https://huggingface.co/datasets/aims-foundations/measurement-db/tree/b6a371ea5121bea3639154baafbf2a7c09d865c6); existing publication restrictions remain in force for the other definitions. Production was not changed.
 
 A testlet groups related items from one source task or stimulus. Each released check retains its native grade and scale. Missing verdicts stay missing. Established shared executions and full answers belong to `attempts.parquet`; another judge or metric does not create another execution. A published collection alone does not establish a shared execution: preserve that association in observation evidence and leave `attempt_id` null. Original aggregates, weights and aggregation rules remain available as evidence.
 
@@ -254,3 +254,14 @@ The machine-readable [ledger](testlet-audit.json) lists every benchmark, evidenc
 - **workarena**: The imported AgentRewardBench annotation records one human success judgment for a trajectory. Additional human ratings are rating occasions, and automatic environment rewards are separate evidence; no per-step human success vector is supplied.
 - **workbench_revisited**: Reviewed all 144 selected CSV exports covering 16,560 runs: they contain task, function_calls, full_response and error. The separate released verdict table supplies one final-state success flag; per-database state comparisons are not saved. Ground-truth action sequences alone are not separately graded checks.
 - **xstest**: Five recorded judgments already share each completion as distinct grading protocols. Numeric refusal categories remain unordered and do not imply continuous correctness.
+
+## Release verification
+
+- Builder and audit code: [25521b794ee4](https://github.com/aims-foundations/measurement-db/commit/25521b794ee4930fc498dc38a614ab8aac2f2730).
+- Backend suite: 893 passed, one skipped, and 2,450 subtests passed; the final asset-cache lifecycle and Parquet-writing checks also passed (31 tests).
+- All 290 metadata definitions passed the current public-repository contract validation.
+- Every newly published HF object was checked against its local content hash; retired tables were checked for removal.
+- For grouping-only changes, 289 physically different retained tables were compared against the immutable prior HF snapshot. Every existing value matched; newly introduced execution-link columns contained only nulls. Matching physical files were published so browser range reads use the correct layout and sizes.
+- All prepared matrix exports cover their complete item tables and preserve exact testlet memberships. Large item and answer records have independently checked bounded previews.
+- Fresh native-source audits cover 42 grouping-only benchmarks. The other 123 grouping changes were checked against complete previously reviewed canonical tables without rerunning upstream imports.
+- SWE-Together and FrontierOR retain their previous data because their upstream snapshots changed. Aggregate-only source cases retain native scores where individual outcomes cannot be established.

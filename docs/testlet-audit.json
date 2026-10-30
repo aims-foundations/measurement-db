@@ -1,6 +1,6 @@
 {
   "scope": "All 290 checked-in benchmark definitions, including 270 published in the current preview",
-  "status": "AUDIT_COMPLETE_PREVIEW_PENDING",
+  "status": "AUDIT_COMPLETE_DATA_PREVIEW_PUBLISHED",
   "criteria": "Group source-declared related checks or shared-stimulus items. Extract only released or exactly reproducible component grades. Preserve real execution identity, native scales, missingness and original task aggregates.",
   "benchmarks": [
     {
@@ -39,7 +39,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "advprompter",
@@ -77,7 +78,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "afrieval",
@@ -89,7 +91,7 @@
         "benchmarks/afrieval/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_subjects": 948,
         "source_items": 856369,
@@ -106,7 +108,8 @@
         "source_observed_testlets": 35195
       },
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "afrimedqa",
@@ -127,7 +130,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "agc_bench",
@@ -163,10 +167,11 @@
         "source_connection_group_observations": 16600,
         "source_partial_connection_runs": 1268
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "review_note": "Full source reconciliation passed for 267,018 original generations and all 449,942 recorded measurements. The four native Connections groups yield 16,600 binary observations, including partial recoveries in 1,268 runs previously hidden by the full-wall grade. All other metrics, 182,924 panel judgments, complete original outputs and recorded configurations remain attributed. The converted tables contain 462,392 observations over 8,750 items in 5,027 testlets.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "agentdojo",
@@ -189,8 +194,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The importer already separates user-task utility from attacker-goal success. These two recorded flags are distinct grading items; original user tasks now link them in testlets. Security success retains its original lower-is-better direction for the defender."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The importer already separates user-task utility from attacker-goal success. These two recorded flags are distinct grading items; original user tasks now link them in testlets. Security success retains its original lower-is-better direction for the defender.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "agentic_review_perturbation",
@@ -213,7 +219,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "agi_elo",
@@ -251,7 +258,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "aider",
@@ -263,7 +271,7 @@
         "benchmarks/aider/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_attempts": 5356,
         "source_component_observations": 66810,
@@ -272,7 +280,8 @@
         "source_test_cycles": 9268
       },
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "algotune",
@@ -316,7 +325,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "alpacaeval",
@@ -354,7 +364,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "annotating_errors_wcf",
@@ -377,8 +388,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Eight criterion ratings from each identified teacher are already separate items. Shared feedback-instance membership links those items; the two raters do not represent two generated outputs."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Eight criterion ratings from each identified teacher are already separate items. Shared feedback-instance membership links those items; the two raters do not represent two generated outputs.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "appworld",
@@ -401,10 +413,11 @@
         "imported_items": 4428,
         "source_observed_testlets": 585
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Each released requirement verdict retains the complete test_data and grading code. The full original audit preserves 10,530 runs and 79,650 observations over 585 tasks, including untruncated released execution logs.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "arcagi",
@@ -435,10 +448,11 @@
         "imported_items": 599,
         "source_observed_testlets": 514
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "review_note": "Each test grid is an item. Full source checks preserve 35,260 evaluation episodes, both candidate grids, all original request settings, historical puzzle versions and duplicate aliases. The conversion has 39,646 observations over 599 items in 514 puzzle testlets; incomplete exports retain unknown task scores.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "arena_140k",
@@ -494,10 +508,11 @@
         "imported_items": 3036,
         "source_observed_testlets": 2038
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full native source reconciliation preserves all 37,421 original attempts, complete historical prompts and model settings, including 492 ungraded runs and 23 unknown subjudgments. The conversion has 40,931 observations, 3,036 items and 2,038 testlets; repeated occurrences are numbered before check expansion.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "auditing_sabotage_bench",
@@ -518,7 +533,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "autoresearchbench",
@@ -545,9 +561,10 @@
         "imported_items": 98,
         "source_observed_testlets": 60
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "averimatec",
@@ -600,8 +617,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/babilong-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Exact question and complete passage bytes group prompt variants into 50,568 testlets. All 526,202 item IDs and 2,020,951 original grades remain unchanged. Full source and cache-parity checks passed; the 700 unresolved historical contexts remain ungrouped."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Exact question and complete passage bytes group prompt variants into 50,568 testlets. All 526,202 item IDs and 2,020,951 original grades remain unchanged. Full source and cache-parity checks passed; the 700 unresolved historical contexts remain ungrouped.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bbq",
@@ -622,7 +640,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "beavertails",
@@ -643,7 +662,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bedd_basalt",
@@ -666,8 +686,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Native human questions and comparison protocols are already separate items. Ties at 0.5 are human preference judgments, not partially passed task checks. Ratings of the same saved video remain dependent judgments."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Native human questions and comparison protocols are already separate items. Ties at 0.5 are human preference judgments, not partially passed task checks. Ratings of the same saved video remain dependent judgments.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "benger",
@@ -688,7 +709,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bertaqa",
@@ -709,7 +731,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bigfinancebench",
@@ -763,7 +786,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bird_sql",
@@ -784,7 +808,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bountybench",
@@ -837,7 +862,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "braveguard",
@@ -858,7 +884,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "bridging_gap",
@@ -879,7 +906,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "care_enzymes",
@@ -906,10 +934,11 @@
         "imported_items": 4404,
         "source_observed_testlets": 4136
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Each original reference EC label is a binary check, with 18,425 observations from 16,817 complete ranked outputs. Full native input, bank, subject and rank reconciliation passed and independently reproduced all 45 saved paper summary scores.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "causal_axioms",
@@ -964,8 +993,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The import already separates reported terminal cash, survival and above-starting-cash outcomes. Daily ledger entries are dependent trajectory states, not independently graded task requirements. Keep the original endpoint metrics and native/display cash differences."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The import already separates reported terminal cash, survival and above-starting-cash outcomes. Daily ledger entries are dependent trajectory states, not independently graded task requirements. Keep the original endpoint metrics and native/display cash differences.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "ceval",
@@ -986,7 +1016,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "chartmuseum",
@@ -1007,7 +1038,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "chatgpt_drift",
@@ -1030,8 +1062,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The imported unit is one source query and its native whole-answer judgment. Code outcomes preserve the released Code_Submit acceptance report and Directly Usable flag; the source contract provides no named historical unit-test verdict roster. Numeric-output tasks compare one final number or whole answer. Date and API snapshot variants share the source question."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The imported unit is one source query and its native whole-answer judgment. Code outcomes preserve the released Code_Submit acceptance report and Directly Usable flag; the source contract provides no named historical unit-test verdict roster. Numeric-output tasks compare one final number or whole answer. Date and API snapshot variants share the source question.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "chi_bench",
@@ -1088,8 +1121,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The final paper reports individual design/method/metric measurements, with no released algorithm-produced placements or full evaluation logs. Preserve metric units and null PPA results; internal EDA constraints cannot be reconstructed from rounded paper cells."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The final paper reports individual design/method/metric measurements, with no released algorithm-produced placements or full evaluation logs. Preserve metric units and null PPA results; internal EDA constraints cannot be reconstructed from rounded paper cells.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "clasheval",
@@ -1110,7 +1144,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "classroom_ai",
@@ -1142,10 +1177,11 @@
         "imported_items": 5872,
         "source_observed_testlets": 734
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Eight native readability indices per question; their metric-specific numeric values are preserved exactly. One execution retains the original integrated grade, all labels and complete answer. Full original source and component audits passed.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "cmmlu",
@@ -1180,8 +1216,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/cmmlu-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Remove only the documented optional CoT sentence from the prompt header to identify 11,580 shared questions. Actual prompts, formatting quirks, references, model outputs and IDs stay intact. Full native audit and cache parity passed for all 254,804 observations."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Remove only the documented optional CoT sentence from the prompt header to identify 11,580 shared questions. Actual prompts, formatting quirks, references, model outputs and IDs stay intact. Full native audit and cache parity passed for all 254,804 observations.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "coffeebench",
@@ -1223,10 +1260,11 @@
         "imported_items": 5297,
         "source_observed_testlets": 1150
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "All 5,297 native scoring questions are items in 1,150 instruction testlets. Full source and rubric audits preserve 17,250 generations, including seven missing outputs; all 79,455 component grades remain unknown because no historical judgments were released.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "confagents",
@@ -1264,10 +1302,11 @@
         "imported_items": 543,
         "source_observed_testlets": 90
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "The full original task, configuration and report audit passes for 1,956 executions and 3,791 observations over 543 items in 90 capsule testlets. Named subquestions are binary only when replay reproduces the original correct/total counts; unreconciled task grades retain their explicit fractional scale.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "critic_discernment_game",
@@ -1305,7 +1344,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "cruxeval",
@@ -1326,7 +1366,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "csedb",
@@ -1354,10 +1395,11 @@
         "imported_items": 4303,
         "source_observed_testlets": 2069
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "The full native audit preserves all 41,922 assessments and complete clinical cases, original answers and weighted rubrics. Eleven missing or invalid judgments now remain linked as unknown outcomes, yielding 88,068 observations over 4,303 items and 2,069 testlets.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "cseo_bench",
@@ -1378,7 +1420,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "cybench",
@@ -1442,9 +1485,10 @@
         "imported_items": 3024,
         "source_observed_testlets": 108
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "data_juicer2",
@@ -1494,7 +1538,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "dbpa",
@@ -1523,7 +1568,7 @@
         "benchmarks/decodingtrust/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_responses": 2456958,
         "source_subjects": 11,
@@ -1548,7 +1593,8 @@
       },
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Complete source reconciliation preserves 2,456,958 original attempts. The 316 released complete output-attribute assessments supply finer component results; other assessments keep their native scalar or unknown grade. Full original input, configuration and trace checks passed.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "decompile_bench",
@@ -1583,8 +1629,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/decompile_bench-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Compiler variants share a testlet only when their full original function, dependencies and test definitions agree. The 72,059 items group into 22,518 testlets. Native edit-similarity grades remain continuous; full source and exact cache parity passed for 141,131 recorded outputs."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Compiler variants share a testlet only when their full original function, dependencies and test definitions agree. The 72,059 items group into 22,518 testlets. Native edit-similarity grades remain continuous; full source and exact cache parity passed for 141,131 recorded outputs.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "devbench",
@@ -1622,7 +1669,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "donotanswer",
@@ -1645,8 +1693,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Harmfulness and action category are already separate label families. The six action numbers are unordered categories, not counts or fractions of checks; no synthetic component correctness is introduced."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Harmfulness and action category are already separate label families. The six action numbers are unordered categories, not counts or fractions of checks; no synthetic component correctness is introduced.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "doris_mae",
@@ -1667,7 +1716,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "dpai",
@@ -1696,9 +1746,10 @@
         "imported_items": 20010,
         "source_observed_testlets": 153
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "dqvis",
@@ -1719,7 +1770,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "dtap_bench",
@@ -1742,8 +1794,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Task success and attack success already have separate observation protocols. Related histories lack per-verdict attempt identifiers, so shared task membership does not invent a shared physical execution."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Task success and attack success already have separate observation protocols. Related histories lack per-verdict attempt identifiers, so shared task membership does not invent a shared physical execution.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "editbench",
@@ -1795,8 +1848,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The released SATA fidelity grade is a three-level whole-selection rubric (exact set, nonempty strict subset, otherwise zero), not the fraction of correct option judgments. Keep that ordinal scale and the separately recorded exact-set grade. Adversarial verdicts, applicable refusal quality and expert votes are already separate; votes do not become independent model executions."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The released SATA fidelity grade is a three-level whole-selection rubric (exact set, nonempty strict subset, otherwise zero), not the fraction of correct option judgments. Keep that ordinal scale and the separately recorded exact-set grade. Adversarial verdicts, applicable refusal quality and expert votes are already separate; votes do not become independent model executions.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "edumath",
@@ -1819,8 +1873,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The two original quality classifiers already define distinct grading items. They use opposite label conventions and do not publish finer criterion verdicts; preserve both native scales in their shared generation-condition testlet."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The two original quality classifiers already define distinct grading items. They use opposite label conventions and do not publish finer criterion verdicts; preserve both native scales in their shared generation-condition testlet.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "egoschema",
@@ -1841,7 +1896,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "ehrflowbench",
@@ -1879,7 +1935,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "embodied_agent_interface",
@@ -1903,10 +1960,11 @@
         "imported_items": 1008,
         "source_observed_testlets": 100
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "The full native audit preserves 2,500 executions and 25,200 unknown predicate observations in 100 task testlets. Each goal retains all conditional alternatives and repeated predicate positions. Historical alternative selections and verdicts were not released; all component grades remain unknown.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "emoji_attack",
@@ -1927,7 +1985,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "engdesign",
@@ -1960,10 +2019,11 @@
         "imported_items": 378,
         "source_observed_testlets": 101
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Explicit named checks and rubric subtotals become 378 items across 101 engineering testlets. Preserve native binary, ordinal and point scales, all fallback task verdicts, 5,394 full executions, and dependent refinement occasions. Complete original input, image, grading-code and trace audits passed; diagnostics and unreleased finer simulation results are not treated as verdicts.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "engibench",
@@ -1984,8 +2044,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The three imported values per saved design are initial, accumulated and final numerical optimization gaps. Full intermediate optimization histories and exact execution versions are unavailable. They are dependent numerical measurements, not a released roster of binary design tests."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The three imported values per saved design are initial, accumulated and final numerical optimization gaps. Full intermediate optimization histories and exact execution versions are unavailable. They are dependent numerical measurements, not a released roster of binary design tests.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "enginemt_qa",
@@ -2006,7 +2067,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "erbench",
@@ -2027,7 +2089,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "evouna",
@@ -2054,7 +2117,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "exploitgym",
@@ -2075,7 +2139,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "faithcot",
@@ -2098,7 +2163,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "felm",
@@ -2121,7 +2187,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "fetv",
@@ -2144,8 +2211,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Human dimensions, applicable attribute ratings and automatic metrics are already individual measurements of the generated video. Corpus-level FID/FVD and unassociated auxiliary QA records do not supply additional item-level outcomes."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Human dimensions, applicable attribute ratings and automatic metrics are already individual measurements of the generated video. Corpus-level FID/FVD and unassociated auxiliary QA records do not supply additional item-level outcomes.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "fewshot_ttt_bbh",
@@ -2183,8 +2251,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Each Boolean question is already an exact-match observation; each numerical question is a single squared-error observation. A real-valued prediction error is not evidence of multiple graded checks. Preserve native zero-value exclusions and group only demonstrated shared stimuli."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Each Boolean question is already an exact-match observation; each numerical question is a single squared-error observation. A real-valued prediction error is not evidence of multiple graded checks. Preserve native zero-value exclusions and group only demonstrated shared stimuli.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "financebench",
@@ -2205,7 +2274,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "find_interp",
@@ -2228,8 +2298,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Released MSE values and description annotations are separate assessment protocols. The historical numerical test grid and evaluation revision are not recorded, so function-level error cannot be expanded into attributed pointwise errors. Keep missing grades and conflicting written judgments unchanged."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Released MSE values and description annotations are separate assessment protocols. The historical numerical test grid and evaluation revision are not recorded, so function-level error cannot be expanded into attributed pointwise errors. Keep missing grades and conflicting written judgments unchanged.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "finegrain_t2i",
@@ -2299,8 +2370,9 @@
         },
         "release_scope": "Existing item links only; retain the previously published PDF assets and item IDs. New PDF bytes differ despite identical rendered pixels, text, and document metadata."
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Shared source question coordinates group 57 standalone GPT prompts with their student practice items; exams remain separate. Full native audit and exact non-asset field/grade comparisons passed. All 12 regenerated worksheets have identical extracted text, rendered pixels and document metadata but different PDF bytes; publish only cached item links and retain existing PDF assets and item IDs."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Shared source question coordinates group 57 standalone GPT prompts with their student practice items; exams remain separate. Full native audit and exact non-asset field/grade comparisons passed. All 12 regenerated worksheets have identical extracted text, rendered pixels and document metadata but different PDF bytes; publish only cached item links and retain existing PDF assets and item IDs.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "ghosts_math",
@@ -2350,9 +2422,10 @@
         "imported_items": 778,
         "source_observed_testlets": 327
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "haiid",
@@ -2390,7 +2463,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "harmbench",
@@ -2411,7 +2485,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "healthadminbench",
@@ -2441,10 +2516,11 @@
         "imported_items": 3666,
         "source_observed_testlets": 135
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full original source reconciliation preserves 3,510 physical runs, both 7,020 strict/revised assessments, and 41,292 component or retained aggregate observations. The 270 runs without evaluator records keep both policy grades on one execution. All task inputs, check definitions, policy flags and complete released evaluator records passed.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_afr",
@@ -2473,7 +2549,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_afr"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_airbench",
@@ -2502,7 +2579,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_airbench"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_anthropic_redteam",
@@ -2531,7 +2609,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_anthropic_redteam"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_bbq",
@@ -2560,7 +2639,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_bbq"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_bold",
@@ -2589,7 +2669,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_bold"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_cleva",
@@ -2625,7 +2706,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_cleva"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_harmbench",
@@ -2655,7 +2737,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_harmbench"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_real_toxicity_prompts",
@@ -2684,7 +2767,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_real_toxicity_prompts"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_simple_safety_tests",
@@ -2713,7 +2797,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_simple_safety_tests"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_thaiexam",
@@ -2742,7 +2827,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_thaiexam"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "helm_xstest",
@@ -2771,7 +2857,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/helm_xstest"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "hivmedqa",
@@ -2794,8 +2881,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The current import already retains each clinical rubric dimension, grading protocol and native iteration separately. Preserve fractional 0-5 scores and missing/non-numeric judgments; no additional dimension is inferred from the complete judge prose."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The current import already retains each clinical rubric dimension, grading protocol and native iteration separately. Preserve fractional 0-5 scores and missing/non-numeric judgments; no additional dimension is inferred from the complete judge prose.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "hle",
@@ -2860,7 +2948,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "igakuqa",
@@ -2881,7 +2970,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "igakuqa119",
@@ -2938,8 +3028,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Existing items already distinguish compiler success and each configured image/code similarity metric. Image similarity and edit distance are whole-output metrics; pixels, tokens and compiler log lines are not additional released test verdicts. Original generations and compiler annotations remain intact."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Existing items already distinguish compiler success and each configured image/code similarity metric. Image similarity and edit distance are whole-output metrics; pixels, tokens and compiler log lines are not additional released test verdicts. Original generations and compiler annotations remain intact.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "imagenet_hard",
@@ -2968,7 +3059,7 @@
         "benchmarks/imgedit/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_subjects": 1,
         "source_items": 737,
@@ -2988,7 +3079,8 @@
       },
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Three named rubric dimensions per editing task. The full audit checks every original image and judge reply, recovers literal Markdown-formatted ratings, and preserves all historical mean-parser omissions. 737 executions yield 2,211 observations; three judgments remain unknown.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "indeterminacy",
@@ -3009,8 +3101,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The existing import already expands the released paired-trial tensor into separate FC and RS categorical judgments. Numeric category IDs are unordered response labels, not averaged checks. Empty tensor positions remain absent."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The existing import already expands the released paired-trial tensor into separate FC and RS categorical judgments. Numeric category IDs are unordered response labels, not averaged checks. Empty tensor positions remain absent.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "ineqmath",
@@ -3031,7 +3124,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "infibench",
@@ -3060,9 +3154,10 @@
         "imported_items": 717,
         "source_observed_testlets": 369
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "interchangeable_token_embeddings",
@@ -3100,8 +3195,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Reviewed every one of the 17,740 pinned episodes: turn histories contain actions, observations, rewards and optional validity/thought/step fields, but no named checker-result breakdown. Keep native episode maxima, including Bash partial rewards and SQL signed similarity. Intermediate rewards and parse validity are not new constituent task checks."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Reviewed every one of the 17,740 pinned episodes: turn histories contain actions, observations, rewards and optional validity/thought/step fields, but no named checker-result breakdown. Keep native episode maxima, including Bash partial rewards and SQL signed similarity. Intermediate rewards and parse validity are not new constituent task checks.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "jailbreakbench",
@@ -3122,7 +3218,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "jetts",
@@ -3238,7 +3335,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "lambda_fp_course",
@@ -3259,8 +3357,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Released question keys and rubric categories are already individual grading units. CodeGen discarded attempt IDs and some ratings use a random fallback; saved generated code cannot be uniquely attached to those observations. Do not infer unit-test verdicts from ordinal ratings or merge unassociated code outputs."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Released question keys and rubric categories are already individual grading units. CodeGen discarded attempt IDs and some ratings use a random fallback; saved generated code cannot be uniquely attached to those observations. Do not infer unit-test verdicts from ordinal ratings or merge unassociated code outputs.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "lawbench",
@@ -3272,7 +3371,7 @@
         "benchmarks/lawbench/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_responses": 918000,
         "source_subjects": 51,
@@ -3307,7 +3406,8 @@
       },
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "The exact native scorer under Python 3.12.12 was replayed for all 918,000 original assessments. Recoverable label, statute and entity comparisons yield 1,338,648 observations over 340,210 items; corpus-only metrics and native negative or partial rewards are preserved without invented binary judgments.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "legal_rag_bench",
@@ -3330,7 +3430,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "legalbench",
@@ -3361,7 +3462,8 @@
         "output_directory": "artifacts/testlet-audit/rebuilt/legalbench",
         "ambiguous_parent_items": 4
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "lexeval",
@@ -3418,8 +3520,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/lexeval-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "The exact native scorer audit under the declared Python 3.14.6 runtime and canonical cache parity passed for 1,076,280 observations. Identical complete questions across prompting settings form 25,069 testlets; all 39,908 existing item identities and grades remain unchanged."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The exact native scorer audit under the declared Python 3.14.6 runtime and canonical cache parity passed for 1,076,280 observations. Identical complete questions across prompting settings form 25,069 testlets; all 39,908 existing item identities and grades remain unchanged.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "lingoly",
@@ -3442,7 +3545,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "live_agent_risk",
@@ -3486,7 +3590,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "livebench",
@@ -3528,10 +3633,11 @@
         "source_unavailable_assertion_labels": 3290,
         "source_assessment_collections": 1792
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full source reconciliation passed for all 5,348 original program/metric assessments and 15,084 converted observations. The 11,364 individual assertion predictions include 3,290 unknown labels. Pass/fail is a model-reported judgment, not an executed correctness verdict. All 1,792 execution-reasoning source assessment collections retain complete outputs and original categories in observation evidence; attempt_id stays null because shared physical executions are not established. Other metrics stay intact.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "llm_bp_tag",
@@ -3591,7 +3697,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "llmail_inject",
@@ -3622,10 +3729,11 @@
         "imported_items": 1036455,
         "source_observed_testlets": 207291
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "All five native objective flags are retained for every imported job, including 577 ungraded jobs. Full original email, scenario, corpus asset and recorded target configuration reconciliation passed for 461,593 executions and 2,307,965 observations; unavailable target settings remain explicitly unknown.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "llms_lean_formalization",
@@ -3675,8 +3783,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/lohi_drug_discovery-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Property and training-task variants with the exact same released SMILES share a molecular-stimulus testlet. Full source audit and cache parity passed for all 1,246,925 prediction records. Historical item-level grades remain unavailable; dataset-level AUC and regression metrics do not supply individual verdicts."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Property and training-task variants with the exact same released SMILES share a molecular-stimulus testlet. Full source audit and cache parity passed for all 1,246,925 prediction records. Historical item-level grades remain unavailable; dataset-level AUC and regression metrics do not supply individual verdicts.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "matharena",
@@ -3699,8 +3808,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The existing import already separates each released proof criterion and judge, with awarded/max-point values preserved. Final-answer problems remain one native answer check. Testlet links group related proof criteria without replacing fractional criterion grades by invented binary checks."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The existing import already separates each released proof criterion and judge, with awarded/max-point values preserved. Final-answer problems remain one native answer check. Testlet links group related proof criteria without replacing fractional criterion grades by invented binary checks.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "matharena_platform",
@@ -3737,10 +3847,11 @@
         "source_excluded_records": 0,
         "source_successes": 7640
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Separate native satisfiability and witness-verification flags into 860 items across 504 exact-question testlets. UNSAT has no witness item; its vacuous native solution_correct=True remains only in the trace. Full source reconciliation preserves 11,862 executions, 11 duplicate question-name aliases, and all 20,326 applicable binary judgments.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mathvista_mini",
@@ -3793,8 +3904,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medagentboard-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "The full source rebuild and exact canonical cache parity passed for all 16,847 observations. Shared-source identity is explicit, but all 2,301 imported task stimuli are distinct. A new capture of the same paper version changes only the contextual HTML source hash; no imported record changed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The full source rebuild and exact canonical cache parity passed for all 16,847 observations. Shared-source identity is explicit, but all 2,301 imported task stimuli are distinct. A new capture of the same paper version changes only the contextual HTML source hash; no imported record changed.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medarabiq",
@@ -3840,7 +3952,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_ehr_sql"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_head_qa",
@@ -3869,7 +3982,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_head_qa"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_med_mcqa",
@@ -3898,7 +4012,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_med_mcqa"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_med_qa",
@@ -3927,7 +4042,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_med_qa"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_medbullets",
@@ -3956,7 +4072,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_medbullets"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_medcalc_bench",
@@ -3985,7 +4102,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_medcalc_bench"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_medec",
@@ -4014,7 +4132,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_medec"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_medhallu",
@@ -4043,7 +4162,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_medhallu"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_pubmed_qa",
@@ -4072,7 +4192,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_pubmed_qa"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medhelm_race_based_med",
@@ -4101,7 +4222,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/medhelm_race_based_med"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "medwatermark_fws",
@@ -4124,7 +4246,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mergebench",
@@ -4162,7 +4285,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mj_bench",
@@ -4185,7 +4309,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mlip_arena",
@@ -4208,8 +4333,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Per-system physical metrics already have distinct grading items, with the original units and undefined values. Curve correlations, simulation lifetime, force variation and endpoint optimization measurements are properties of the complete recorded system/trajectory. Group their common native system; individual time steps are dependent states, not released correctness checks."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Per-system physical metrics already have distinct grading items, with the original units and undefined values. Curve correlations, simulation lifetime, force variation and endpoint optimization measurements are properties of the complete recorded system/trajectory. Group their common native system; individual time steps are dependent states, not released correctness checks.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mlrbench",
@@ -4232,8 +4358,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Each released stage, rubric dimension and reviewer already defines a separate item. The overall assessment is an independent native reviewer judgment, not a reconstructable average of lower-level criteria. Group the shared source research task and preserve each scale."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Each released stage, rubric dimension and reviewer already defines a separate item. The overall assessment is an independent native reviewer judgment, not a reconstructable average of lower-level criteria. Group the shared source research task and preserve each scale.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mmbench_v11",
@@ -4254,7 +4381,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mmdocrag",
@@ -4277,10 +4405,11 @@
         "imported_items": 10000,
         "source_observed_testlets": 2000
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "All five released rubric dimensions remain separate, including unknown ratings from 129 incomplete assessments. Full original question, answer, reference and configuration checks passed for 342,695 executions and 1,713,475 observations in 2,000 testlets.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mmedbench",
@@ -4335,7 +4464,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mmmu_dev_val",
@@ -4369,8 +4499,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/mmmu_dev_val-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Prompt variants share a testlet only when their complete ordered source-image sequences agree. Full native audit and exact canonical cache parity passed; predictions remain ungraded where historical judgments were not released."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Prompt variants share a testlet only when their complete ordered source-image sequences agree. Full native audit and exact canonical cache parity passed; predictions remain ungraded where historical judgments were not released.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mmoral_bench",
@@ -4408,8 +4539,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/mmoral_bench-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Exact image bytes group 1,069 questions into 200 image testlets. Full native audit and exact canonical cache parity passed for all 28,679 observations, retaining missing options, copied exports and original grades."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Exact image bytes group 1,069 questions into 200 image testlets. Full native audit and exact canonical cache parity passed for all 28,679 observations, retaining missing options, copied exports and original grades.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mochi",
@@ -4443,8 +4575,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/mochi-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Original image-set trials group reordered presentations and readout variants. All 48,456 observations retain their native values, including 19,448 negative normalized accuracy estimates. Full source and exact cache parity passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Original image-set trials group reordered presentations and readout variants. All 48,456 observations retain their native values, including 19,448 negative normalized accuracy estimates. Full source and exact cache parity passed.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "moe_cap",
@@ -4481,8 +4614,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/moe_cap-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Shared complete native questions group baseline and prompt variants. Ambiguous canonical requests that match multiple source questions retain null links. Full source audit and cache parity passed for all 65,238 observations; missing Arena judgments remain unknown."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Shared complete native questions group baseline and prompt variants. Ambiguous canonical requests that match multiple source questions retain null links. Full source audit and cache parity passed for all 65,238 observations; missing Arena judgments remain unknown.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "monkey_power_laws",
@@ -4522,7 +4656,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "morqa",
@@ -4545,8 +4680,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Each observation is already one evaluator's scalar quality rating for a question/candidate pair. Human annotations remain separate reference evidence. Ratings and their occasional non-rubric numeric values are not compound correctness scores."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Each observation is already one evaluator's scalar quality rating for a question/candidate pair. Human annotations remain separate reference evidence. Ratings and their occasional non-rubric numeric values are not compound correctness scores.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mtbbench",
@@ -4569,7 +4705,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "mtbench",
@@ -4592,8 +4729,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The importer already keeps per-turn, per-judge ratings and complete prior conversation context. Fractional ratings are native quality judgments, not a fraction of released unit-test verdicts."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The importer already keeps per-turn, per-judge ratings and complete prior conversation context. Fractional ratings are native quality judgments, not a fraction of released unit-test verdicts.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "multi_moe",
@@ -4614,8 +4752,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "MMLU and TruthfulQA rows already contain one native option verdict. The nonbinary catalog classification comes from ungraded MT-Bench conversations; only model/turn aggregates are reported, with no released per-item judge outcomes or conversation aggregation rule. Do not expand those summaries into ratings."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "MMLU and TruthfulQA rows already contain one native option verdict. The nonbinary catalog classification comes from ungraded MT-Bench conversations; only model/turn aggregates are reported, with no released per-item judge outcomes or conversation aggregation rule. Do not expand those summaries into ratings.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "multi_swebench",
@@ -4692,7 +4831,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "naep_llm_students",
@@ -4764,7 +4904,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "nester",
@@ -4785,7 +4926,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "nis3d",
@@ -4816,10 +4958,11 @@
         "source_observed_testlets": 6,
         "source_reconciled_prediction_arrays": 30
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "review_note": "Full independent dense-matcher and original-source audits passed. All 30 released output arrays reproduce all five published metrics to paper precision. The 265,230 component or retained aggregate observations cover 44,205 items in six volume testlets and preserve all 180 original rounded paper measurements. Nucleus recovery is binary, matched overlap is continuous, and false positives remain a count. The six missing arrays retain their original published metrics; no segmentation is rerun.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "nyu_ctf_bench",
@@ -4840,7 +4983,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "oasst",
@@ -4890,8 +5034,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/ocrbench_v2-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Exact source-image bytes group 9,868 questions into 8,957 image testlets. Full source audit and cache parity passed for all 10,000 ungraded observations; structured references alone do not provide historical sub-verdicts."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Exact source-image bytes group 9,868 questions into 8,957 image testlets. Full source audit and cache parity passed for all 10,000 ungraded observations; structured references alone do not provide historical sub-verdicts.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "ood_prediction",
@@ -4928,10 +5073,11 @@
         "source_successes": 2215,
         "source_ungraded_observations": 14
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Complete original question, weighted-rubric, configuration and full-answer reconciliation preserves 7,227 executions. All 14 ungraded checklists now carry explicit unknown criterion observations; 53,691 observations retain native 0, partial-credit and full-credit values across 4,881 items in 657 testlets.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "os_harm",
@@ -4954,7 +5100,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "osworld",
@@ -5052,10 +5199,11 @@
         "imported_items": 14676,
         "source_observed_testlets": 400
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Each original scene groups per-reference-block checks and an excess-placement count for its applicable native grading conditions. The full pinned-checker and source audit preserves 8,390 original executions, 9,524 dependent F1 assessments, and 102,594 component observations. The two graders share one execution rather than doubling its plan.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "pku_saferlhf",
@@ -5085,9 +5233,10 @@
         "imported_items": 759886,
         "source_observed_testlets": 39994
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "planbench",
@@ -5108,7 +5257,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "prediction_arena",
@@ -5146,8 +5296,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Each released AI-judge label is one preference over the complete answer pair. The underlying per-order token log-probabilities are unavailable, and opposite presentation orders are repeated judgments rather than testlet subquestions."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Each released AI-judge label is one preference over the complete answer pair. The underlying per-order token log-probabilities are unavailable, and opposite presentation orders are repeated judgments rather than testlet subquestions.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "prism",
@@ -5170,8 +5321,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The original subjective rating and chosen flag already form separate grading items for each utterance. Conversation membership groups related turns; current outputs and future turns never enter the input stimulus."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The original subjective rating and chosen flag already form separate grading items for each utterance. Conversation membership groups related turns; current outputs and future turns never enter the input stimulus.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "prm800k",
@@ -5194,7 +5346,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "programbench",
@@ -5235,7 +5388,7 @@
         "benchmarks/proteininvbench/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "review_note": "Convert saved argmax token matches, retaining native coordinate mapping and padding. Full tensors and float32 recovery stay on the attempt; shared backbones are input assets. Full tensor, reference, backbone-asset and execution reconciliation passed.",
       "verification": {
         "source_responses": 23872,
@@ -5252,7 +5405,8 @@
         "source_observed_testlets": 2754
       },
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "prox",
@@ -5273,7 +5427,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "psychosis_bench",
@@ -5296,8 +5451,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "DCS, HES and SIS are already separate turn-specific assessment dimensions with different applicability thresholds. Preserve their ordinal/binary meanings and unknown ratings. Multiple ratings of one generation do not establish additional executions."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "DCS, HES and SIS are already separate turn-specific assessment dimensions with different applicability thresholds. Preserve their ordinal/binary meanings and unknown ratings. Multiple ratings of one generation do not establish additional executions.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "putnam_axiom",
@@ -5320,7 +5476,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "pxplore",
@@ -5343,7 +5500,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "qatch",
@@ -5377,10 +5535,11 @@
         "imported_items": 3078614,
         "source_observed_testlets": 7417
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "review_note": "The pinned table metrics expose reference-value membership and exact reference-row multiplicity predicates. Conversion requires a literal returned table and exact agreement with the released metric, retains repeated-value aggregation weights, and preserves all original metric values. EQUAL export markers, empty/unparseable tables and replay discrepancies retain scalar observations. Full original source, table context, configuration, metric and component reconciliation passed: 14,829 original attempts, 3,285,426 observations and 3,078,614 items.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "radar",
@@ -5420,8 +5579,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Each original judge record supplies one overall numeric rubric rating; no per-criterion rating vector is released. Some judge groups assessed different saved answers, so shared question testlets do not assert a shared generation across judges."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Each original judge record supplies one overall numeric rubric rating; no per-criterion rating vector is released. Some judge groups assessed different saved answers, so shared question testlets do not assert a shared generation across judges.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "rclicks",
@@ -5444,8 +5604,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The source metric contract uses 100 stochastic simulated-click samples, including KS-test accept/reject outcomes. Published per-image metric CSVs do not retain that historical sample roster or individual p-values. Human click references are not the missing model samples. Keep the native aggregate metrics and shared image/object/click-state testlets."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The source metric contract uses 100 stochastic simulated-click samples, including KS-test accept/reject outcomes. Published per-image metric CSVs do not retain that historical sample roster or individual p-values. Human click references are not the missing model samples. Keep the native aggregate metrics and shared image/object/click-state testlets.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "real_pocqi",
@@ -5468,8 +5629,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Each source row is a physician preference on one clinical dimension. Win/tie/loss values and the two subject perspectives encode the same preference, not multiple underlying checks or independent model calls. Group shared query/answer presentations while retaining native labels."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Each source row is a physician preference on one clinical dimension. Win/tie/loss values and the two subject perspectives encode the same preference, not multiple underlying checks or independent model calls. Group shared query/answer presentations while retaining native labels.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "real_webagents",
@@ -5492,10 +5654,11 @@
         "imported_items": 539,
         "source_observed_testlets": 233
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "review_note": "Full provider-record, answer, task and recorded configuration reconciliation passed for all 4,449 executions and 5,307 observations. The 121 unavailable task definitions remain explicit; released check identifiers are never guessed to map to an unavailable rule.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "realtimeqa",
@@ -5516,7 +5679,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "reasoning_gym",
@@ -5544,11 +5708,12 @@
         "imported_items": 617736,
         "source_observed_testlets": 12131
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "component_review_remaining": "All 10 pinned evaluator revisions are now captured (4,073 verified source files). Native scoring reveals recoverable grid-cell, word-position, character-position and letter-mapping comparisons; implement and independently reconcile these. Numerical-distance, tree-edit-distance, format bonuses and whole-answer checks remain separate native scalar metrics. Review polynomial-root matching and metadata-dependent scorers before closure.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Ten native task families now expose finer outcomes. Full original question, generator configuration, completion and pinned scorer reconciliation passed for all 186,250 completions, yielding 1,091,023 observations over 617,736 items and 12,131 testlets. Polynomial roots retain native exponential-distance rewards and the extra-root count; the other nine families retain their binary comparisons. Formatting gates, bonuses, missing-root and extra-root penalties remain original aggregate evidence. Boxnet and Word Ladder keep whole-answer scores because historical generator metadata is unavailable; exceptions retain unknown observations.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "refgrader",
@@ -5569,7 +5734,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "reliancescope",
@@ -5592,7 +5758,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "researchclawbench",
@@ -5624,10 +5791,11 @@
         "imported_items": 194,
         "source_observed_testlets": 40
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full native reconciliation preserves all 1,432 runs, 7,610 assets and original instructions, rubric weights and output lines. Released criterion grades become items; 572 summary-only runs keep their aggregate judgment.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "researchcodebench",
@@ -5649,7 +5817,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "revolve",
@@ -5687,7 +5856,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "risebench",
@@ -5718,10 +5888,11 @@
         "imported_items": 3240,
         "source_observed_testlets": 360
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "All three named rating dimensions are represented for each execution, including missing or inapplicable ratings. Full task, original image, generated output, judge-text and configuration checks passed for 8,280 attempts and 24,840 observations over 360 testlets. Ratings retain their native 1-5 scale.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "robust_reasoning_benchmark",
@@ -5742,7 +5913,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "safeagentbench",
@@ -5801,8 +5973,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/scale_mrt-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "All 53,678 captured files match the pinned source snapshot. Full original monitor-request and trace reconciliation plus exact canonical cache parity passed for 51,491 observations. Shared original agent conversations form 6,684 testlets; ambiguous associations stay null. Native rating scales and all 34,698 item identities remain unchanged."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "All 53,678 captured files match the pinned source snapshot. Full original monitor-request and trace reconciliation plus exact canonical cache parity passed for 51,491 observations. Shared original agent conversations form 6,684 testlets; ambiguous associations stay null. Native rating scales and all 34,698 item identities remain unchanged.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "scbench_long",
@@ -5884,10 +6057,11 @@
         "imported_items": 1951,
         "source_observed_testlets": 137
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full independent XML and source reconciliation preserves 822 physical executions in 137 biomodel testlets, with 11,706 observations and 1,951 items. Missing reference reactions become binary checks under both native structural rules; added nonreference reactions retain their count scale. All six original metrics and complete final models remain on the execution; simulation error stays unknown.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "scivisagentbench",
@@ -5960,8 +6134,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/sgrades-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Group student answers and grading granularities by the complete original question and dataset family. Unresolved historical requests stay ungrouped. Full native audit and exact canonical cache parity passed for all 1,444,320 observations."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Group student answers and grading granularities by the complete original question and dataset family. Unresolved historical requests stay ungrouped. Full native audit and exact canonical cache parity passed for all 1,444,320 observations.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "sib200",
@@ -5982,7 +6157,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "situat3dchange",
@@ -6064,8 +6240,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/sketchjudge-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Group grading variants only when the original question, student diagram and applicable input diagram agree. Duplicate source answer identifiers are aliases; conflicting image associations remain unknown. Full native audit and cache parity passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Group grading variants only when the original question, student diagram and applicable input diagram agree. Duplicate source answer identifiers are aliases; conflicting image associations remain unknown. Full native audit and cache parity passed.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "software_world_models",
@@ -6086,7 +6263,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "stanford_orb",
@@ -6109,8 +6287,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The import contract retains capture-level numerical metrics. Individual renders lack an established historical association with the per-view target order, so new per-view scores cannot be attributed faithfully from this release. Keep capture testlets, metric units, complete evaluation records and original input/reference assets."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The import contract retains capture-level numerical metrics. Individual renders lack an established historical association with the per-view target order, so new per-view scores cannot be attributed faithfully from this release. Keep capture testlets, metric units, complete evaluation records and original input/reference assets.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "statqa",
@@ -6141,9 +6320,10 @@
         "imported_items": 2366,
         "source_observed_testlets": 1183
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "subjective_qa",
@@ -6166,7 +6346,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "sugarcrepe",
@@ -6187,7 +6368,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "summeval",
@@ -6210,7 +6392,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "sustainable_food",
@@ -6250,8 +6433,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "All 32 released route exports contain only routes, locations, customer/depot identifiers and five scalar metrics. The pinned vrp_base.py checker samples stochastic travel times while testing feasibility; the release does not record those realizations, per-constraint verdicts or the per-realization costs used for robustness. Preserve the native metrics and eight instance testlets rather than rerunning random simulations or inferring historical failures."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "All 32 released route exports contain only routes, locations, customer/depot identifiers and five scalar metrics. The pinned vrp_base.py checker samples stochastic travel times while testing feasibility; the release does not record those realizations, per-constraint verdicts or the per-realization costs used for robustness. Preserve the native metrics and eight instance testlets rather than rerunning random simulations or inferring historical failures.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "swe_rebench",
@@ -6284,7 +6468,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "swe_together",
@@ -6308,7 +6493,7 @@
         "benchmarks/swebench_live/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_summary_observations": 7903,
         "source_summary_files": 49,
@@ -6333,7 +6518,8 @@
       },
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full original task, prediction, configuration, test-report and complete trajectory reconciliation passed for 14,613 attempts and 3,912,066 observations. All 5,957 originally ungraded attempts remain attributed, with explicit unknown observations when no finer results exist. The 1,473,701 imported items form 2,166 source issue testlets. Existing documented model/harness aliases preserve every original submission label.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "swepolybench",
@@ -6365,10 +6551,11 @@
         "imported_items": 137381,
         "source_observed_testlets": 478
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full original task, prediction, configuration and complete trajectory reconciliation passed for 1,871 recorded attempts and 508,885 observations. The single ungraded attempt stays observed. Subject audits use the already documented model/harness aliases while preserving original submission labels.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "synthpai",
@@ -6391,7 +6578,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "tabarena",
@@ -6438,10 +6626,11 @@
         "imported_items": 18229,
         "source_observed_testlets": 392
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "All 23,342 simulations remain linked, including 132 ungraded simulations with an explicit unknown task outcome. The full audit validates all original criteria, policy, tools, messages and trial ordering. A checker does not become a separate agent execution.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "taubench",
@@ -6453,7 +6642,7 @@
         "benchmarks/taubench/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "sierra_attempts": 1980,
         "source_failures": 2143,
@@ -6471,7 +6660,8 @@
       },
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "Full source reconciliation preserves all 4,330 native attempts, including 16 ungraded HAL errors. The 4,672 observations retain original task definitions, full logs, model settings and original trial numbering across 201 testlets.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "tengu",
@@ -6494,7 +6684,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "tensortrust",
@@ -6531,8 +6722,9 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/tensortrust-full"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed.",
-      "review_note": "Attack and access-code variants share a testlet only when both complete defense strings agree. Missing defenses remain ungrouped. The full audit and cache parity preserve all 681,726 original flags and complete recorded outputs without relabeling flag semantics."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Attack and access-code variants share a testlet only when both complete defense strings agree. Missing defenses remain ungrouped. The full audit and cache parity preserve all 681,726 original flags and complete recorded outputs without relabeling flag semantics.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "theagentcompany",
@@ -6555,10 +6747,11 @@
         "imported_items": 556,
         "source_observed_testlets": 175
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
       "review_note": "The complete checkpoint and original trajectory audit passes for all 3,057 executions. The single ungraded trajectory now has an explicit unknown observation and item link. The conversion retains 9,701 observations, 556 items and 175 task testlets; checkpoint fractions retain their native partial-credit meaning.",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "threeeed",
@@ -6618,7 +6811,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "tumlu",
@@ -6654,7 +6848,8 @@
         },
         "output_directory": "artifacts/testlet-audit/rebuilt/tumlu"
       },
-      "remaining": "Publish the reviewed preview; full source, trace and canonical cache parity checks passed."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "txbench_pp",
@@ -6702,7 +6897,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "vhelm",
@@ -6725,8 +6921,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The import preserves the headline per-instance metric declared by each native run group and its complete generation evidence. Multiple completions or repeated judges are trials, not component tasks. Metric means do not identify which unassociated historical draws passed; historical evaluator revisions are not established for recomputing a finer breakdown."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The import preserves the headline per-instance metric declared by each native run group and its complete generation evidence. Multiple completions or repeated judges are trials, not component tasks. Metric means do not identify which unassociated historical draws passed; historical evaluator revisions are not established for recomputing a finer breakdown.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "visit_bench",
@@ -6749,8 +6946,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Human correctness, preference and reference-free comparison protocols are already separated. The released comparison outcome is atomic under its protocol; component image regions or human-caption phrases are not independently graded tests."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Human correctness, preference and reference-free comparison protocols are already separated. The released comparison outcome is atomic under its protocol; component image regions or human-caption phrases are not independently graded tests.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "visual_memory",
@@ -6788,7 +6986,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "visualwebarena",
@@ -6809,7 +7008,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "vl_rewardbench",
@@ -6830,7 +7030,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "weavebench",
@@ -6858,9 +7059,10 @@
         "imported_items": 912,
         "source_observed_testlets": 114
       },
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "wikihow_agent",
@@ -6872,7 +7074,7 @@
         "benchmarks/wikihow_agent/metadata.yaml"
       ],
       "metadata_screened": true,
-      "remaining": "Publish the reviewed preview after release checks.",
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
       "verification": {
         "source_files": 12,
         "source_items": 14287,
@@ -6889,7 +7091,8 @@
         "source_observed_testlets": 14287
       },
       "verification_scope": "full_native_provenance_and_components",
-      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results"
+      "source_audit": "scripts/curate_benchmarks/native_result_audits.py::verify_native_results",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "wildvision",
@@ -6929,7 +7132,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "wonderbread",
@@ -6950,8 +7154,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "The native tables already separate rubric axes, validation checks and screenshot labels. All 1,453 SOP-generation rows retain only whole-SOP precision, recall and ordering, not the underlying judge alignment decisions. Ranking correlations remain whole-ranking metrics; do not invent per-step alignments or equate disagreement with binary task failure."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "The native tables already separate rubric axes, validation checks and screenshot labels. All 1,453 SOP-generation rows retain only whole-SOP precision, recall and ordering, not the underlying judge alignment decisions. Ranking correlations remain whole-ranking metrics; do not invent per-step alignments or equate disagreement with binary task failure.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "workarena",
@@ -7001,7 +7206,8 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     },
     {
       "benchmark": "xstest",
@@ -7022,8 +7228,9 @@
         "previous_item_ids_preserved": true,
         "grades_and_other_tables_unchanged": true
       },
-      "remaining": "Publish the reviewed preview. Complete canonical item parity and membership were checked; a fresh upstream rebuild was not required for this additive link change.",
-      "review_note": "Five recorded judgments already share each completion as distinct grading protocols. Numeric refusal categories remain unordered and do not imply continuous correctness."
+      "remaining": "Verify the deployed website against this immutable data snapshot.",
+      "review_note": "Five recorded judgments already share each completion as distinct grading protocols. Numeric refusal categories remain unordered and do not imply continuous correctness.",
+      "preview_revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6"
     }
   ],
   "status_counts": {
@@ -7034,5 +7241,12 @@
     "grouping_tables_verified": 165,
     "previously_converted": 1,
     "source_integrity_blocked": 2
+  },
+  "release": {
+    "branch": "preview/testlet-schema",
+    "revision": "b6a371ea5121bea3639154baafbf2a7c09d865c6",
+    "code_revision": "25521b794ee4930fc498dc38a614ab8aac2f2730",
+    "benchmarks": 207,
+    "objects": 3479
   }
 }
