@@ -54,6 +54,7 @@ class ERBench(BenchmarkBuild):
         items = records.drop_duplicates(['content', 'gold_answer']).copy()
         items['item_key'] = range(len(items))
         items['raw_item_id'] = items.domain + ':' + items.entity_idx + ':' + items.question_idx
+        items['testlet_id'] = items.raw_item_id
         items['features'] = [dict(domain=row.domain) for row in items.itertuples(index=False)]
         items['grading_criterion'] = [dict(reference_answer=row.gold_answer, rule=self.grading['rule'])
                                      for row in items.itertuples(index=False)]
@@ -76,7 +77,7 @@ class ERBench(BenchmarkBuild):
             csv_record=row.csv_record, log_file=row.log_file, log_entry=row.log_entry), ensure_ascii=False)
             for row in records.itertuples(index=False)]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=records[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

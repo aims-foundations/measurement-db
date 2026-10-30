@@ -74,6 +74,7 @@ class FinanceBenchBuild(BenchmarkBuild):
         items = questions.assign(
             item_key=questions.financebench_id,
             raw_item_id=questions.financebench_id,
+            testlet_id=questions.doc_name,
             content=questions.question,
             grading_criterion=questions.answer.map(lambda answer: {
                 "reference_answer": answer, "rule": self.grading["rule"]
@@ -93,7 +94,7 @@ class FinanceBenchBuild(BenchmarkBuild):
         traces["trace"] = traces.trace.astype(str)
         return {
             "subjects": subjects[["subject_key", "raw_label", "features", "access_date"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }

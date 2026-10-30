@@ -2,6 +2,7 @@
 """Curate native ClashEval answers and the inputs for each answering condition."""
 
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -44,6 +45,8 @@ class ClashEval(BenchmarkBuild):
         items = observations.drop_duplicates(identity).copy()
         items["item_key"] = range(len(items))
         items["raw_item_id"] = items.condition + ":" + items.source_row.astype(str)
+        items['testlet_id'] = [hashlib.sha256(json.dumps([row.dataset, row.question],
+            ensure_ascii=True).encode()).hexdigest() for row in items.itertuples()]
         templates = pd.concat([
             pd.Series(parameters[f"{condition}_prompts"], name="system").rename_axis("dataset").reset_index().assign(
                 condition=condition, template=parameters["user_templates"][condition])
@@ -78,7 +81,7 @@ class ClashEval(BenchmarkBuild):
         ]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

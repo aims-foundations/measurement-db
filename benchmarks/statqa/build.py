@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class StatQA(BenchmarkBuild):
@@ -81,7 +82,9 @@ class StatQA(BenchmarkBuild):
                     valid_answer &= valid
                 else:
                     valid_reference &= valid
-            exact &= attempts.answer_set.eq(attempts.reference_set) & attempts.reference_set.map(bool)
+            matched = attempts.answer_set.eq(attempts.reference_set) & attempts.reference_set.map(bool)
+            attempts[target + '_score'] = matched.astype(float).where(general)
+            exact &= matched
         attempts['response'] = (exact & valid_answer & valid_reference).astype(float).where(general)
         attempts['grade_status'] = labels['valid_grade']
         attempts.loc[~valid_answer, 'grade_status'] = labels['invalid_answer']
@@ -101,6 +104,7 @@ class StatQA(BenchmarkBuild):
         attempts['item_key'] = attempts.dataset + '::' + attempts.refined_question
         items = attempts.drop_duplicates('item_key')[['item_key', 'dataset', 'prompt', 'task', 'difficulty', 'ground_truth']].copy()
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.item_key
         items['content'] = items.prompt
         items['features'] = [dict(dataset=row.dataset, task=row.task, difficulty=row.difficulty,
             input_scope=labels['input_scope']) for row in items.itertuples()]
@@ -113,9 +117,22 @@ class StatQA(BenchmarkBuild):
             source_member=row.source_member, source_row=int(row.source_row), source_record=row.source_record,
             source_task=row.source_task, grade_status=row.grade_status, grade_scope=labels['grade_scope']),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        # The upstream scorer exposes two named accuracies before their conjunction.
+        # Invalid parses score zero under that scorer; qualitative-only runs stay null.
+        definitions, outcomes = [], []
+        for target in ['columns', 'methods']:
+            for row in items.itertuples():
+                definitions.append(dict(parent_item_key=row.item_key, component_id=target,
+                    grading_criterion=dict(reference_answer=row.ground_truth, rule=json.dumps(dict(
+                        target=target, rule=self.grading['verifiers']['selection']['component_rule']))),
+                    verifier=ExactMatcher(spec=json.dumps(dict(self.grading['verifiers']['selection'],
+                        selected_target=target), sort_keys=True))))
+            outcomes.extend(dict(parent_response_key=row.response_key, component_id=target,
+                response=getattr(row, target + '_score')) for row in attempts.itertuples())
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

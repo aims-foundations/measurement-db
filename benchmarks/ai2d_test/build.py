@@ -57,6 +57,7 @@ class AI2DTest(BenchmarkBuild):
                          + parameters["prompt"]["suffix"])
         items["image_bytes"] = items.image.map(lambda value: base64.b64decode(value, validate=True))
         items["asset_path"] = items.image_bytes.map(lambda value: "images/" + hashlib.sha256(value).hexdigest() + ".jpg")
+        items['testlet_id'] = items.asset_path
         items["content"] = [json.dumps({"multimedia_elements": [
             {"content_type": "image/jpeg", "location": row.asset_path},
             {"content_type": "text/plain", "text": row.text}]}, ensure_ascii=False) for row in items.itertuples()]
@@ -117,7 +118,7 @@ class AI2DTest(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

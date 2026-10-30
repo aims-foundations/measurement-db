@@ -1,6 +1,7 @@
 """Tabulate original SWE-bench-Live attempts, verdicts and complete rollouts."""
 
 import json
+import hashlib
 from pathlib import Path
 import re
 import sys
@@ -10,6 +11,8 @@ import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.swebench_live.test_reports import named_checks
 
 
 class SWEbenchLive(BenchmarkBuild):
@@ -64,6 +67,9 @@ class SWEbenchLive(BenchmarkBuild):
         files['role'] = files.pattern.map(parameters['artifact_roles'])
         if files.role.isna().any():
             raise ValueError('An unreviewed source artifact layout needs classification')
+        test_reports = files.loc[files.role.eq('evaluation_artifact') &
+            files.relative_file.str.endswith(('/report.json', '.report.json', '.results.json'))].copy()
+        test_reports['payload'] = test_reports.source_file.map(lambda name: json.loads((release / name).read_text()))
         files = files.loc[files.role.ne('evaluation_artifact')].copy()
         files['content'] = files.source_file.map(lambda name: (release / name).read_bytes().decode('utf-8'))
         files['source_file'] = parameters['layout']['release'] + '/' + files.source_file
@@ -140,6 +146,7 @@ class SWEbenchLive(BenchmarkBuild):
             ['track', 'instance_id', 'evaluator_fix']).reset_index(drop=True)
         items['item_key'] = items.index
         items['raw_item_id'] = items.track + '/' + items.instance_id
+        items['testlet_id'] = items.raw_item_id
         items['content'] = items.task_record.map(lambda row: row['problem_statement'])
         items['features'] = [dict(track=row.track, source_instance_id=row.instance_id, repo=row.task_record['repo'],
             base_commit=row.task_record['base_commit'], task_definition_file=row.task_source_file,
@@ -151,21 +158,51 @@ class SWEbenchLive(BenchmarkBuild):
             for record in items.task_record]
         items['verifier'] = [ExactMatcher(spec=json.dumps(dict(self.grading['verifiers']['published_report'],
             recorded_evaluator_fix=value or None), sort_keys=True)) for value in items.evaluator_fix]
+        items['attachments'] = [[dict(path='test-environment.json', role='grading_reference',
+            media_type='application/json', data=json.dumps({field: record[field]
+                for field in self.grading['verifiers']['published_report']['task_fields'] if field in record},
+                sort_keys=True).encode())] for record in items.task_record]
         attempts = attempts.merge(items[['track', 'instance_id', 'evaluator_fix', 'item_key']],
             on=['track', 'instance_id', 'evaluator_fix'], validate='many_to_one')
 
         # 8. Preserve original predictions and rollout text with explicit source associations.
         attempts = attempts.astype(object).where(attempts.notna(), None)
+        # Attach reports only to independently established attempts. Multiple files
+        # can be aliases; contradictory named verdicts remain explicitly ungraded.
+        by_run, report_evidence = {}, {}
+        for report in test_reports.itertuples():
+            key = report.run, report.instance_id
+            combined = by_run.setdefault(key, {})
+            for check, grade in named_checks(report.payload, report.instance_id).items():
+                combined[check] = None if check in combined and combined[check] != grade else grade
+            report_evidence.setdefault(key, []).append(dict(source_file=report.source_file, record=report.payload))
+        definitions, outcomes, seen = [], [], set()
+        item_bank = items.set_index('item_key').to_dict('index')
+        for row in attempts.itertuples():
+            for (group, name), grade in sorted(by_run.get((row.run, row.instance_id), {}).items()):
+                component = hashlib.sha256(json.dumps([group, name]).encode()).hexdigest()
+                if (row.item_key, component) not in seen:
+                    seen.add((row.item_key, component))
+                    original = item_bank[row.item_key]
+                    definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion=dict(rule=json.dumps(dict(test_name=name, test_group=group,
+                            rule='Released named test verdict; missing checks are not inferred',
+                            test_environment_asset='test-environment.json', repo=original['task_record']['repo'],
+                            base_commit=original['task_record']['base_commit']), sort_keys=True)),
+                        verifier=original['verifier']))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=grade))
         traces = attempts[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(kind='published_attempt_record', source_run=row.run, instance_id=row.instance_id,
             summary_file=row.report_file, summary_context=row.report_context, summary_flags=row.summary_flags,
             prediction_file=row.prediction_file, prediction_source_key=row.prediction_source_key,
             prediction=row.prediction, website_entries=row.website_entries,
-            artifacts=row.artifacts, task_source=dict(file=row.task_source_file, row=int(row.task_source_row)),
+            artifacts=row.artifacts, test_reports=report_evidence.get((row.run, row.instance_id), []),
+            task_source=dict(file=row.task_source_file, row=int(row.task_source_row)),
             log_scope=labels['log_scope']), ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

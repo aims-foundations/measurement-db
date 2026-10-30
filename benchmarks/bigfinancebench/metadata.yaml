@@ -3,7 +3,11 @@ benchmark:
   name: BigFinanceBench
   description: Financial-research agent runs with independent model judgments of final answers and analyst rubrics.
     Evaluation-only data; do not use for training.
-  testing_condition: The public 50-question release contains 1,500 scheduled agent runs and 4,500 assessments by
+  testing_condition: Individual rubric earned flags and final-answer correctness are binary items grouped by question.
+    Judge protocols remain distinct; each actual agent execution is recorded once across its assessments.
+    Three assessments with ambiguous retry matches keep an unknown attempt link and all candidate traces.
+    Original weighted totals and complete judge records are retained.
+    The public 50-question release contains 1,500 scheduled agent runs and 4,500 assessments by
     three recorded judges. Two additional API-error trace records share trial keys with subsequent runs. Preserve
     all trace candidates and mark the three assessments whose null final answers do not identify one trace uniquely.
     Import both final-answer correctness and earned/possible rubric points as distinct item grading protocols. Items
@@ -29,10 +33,12 @@ benchmark:
   domain:
   - finance
   - agents_and_tool_use
-  response_type: mixed
+  response_type: binary
   response_scale:
-    kind: mixed
-  categorical: false
+    kind: discrete
+    values: [0, 1]
+    direction: higher_is_better
+  categorical: true
   release_date: '2026-06-02'
   multi_single_turn: multi_turn
 build:

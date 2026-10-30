@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
-    rows: 1020
-    logical_sha256: 1519b9d2be8d576c01aad64c9842305ff18a597ec8d6904d8f3e7d322ac3cee8
+  attempts:
+    rows: 690
+    logical_sha256: eae3a200a05bb65963173702a2b60770b6f9c765f475cd25e1c53f7784ec39b7
+  benchmarks:
+    rows: 1
+    logical_sha256: 73f3d8268a2b4f2a7988341f736369f9e28342fa62833ffec7ba1f6a7525ee39
+  items:
+    rows: 316
+    logical_sha256: c93a30b12a20c8d349338c3162582635928b576e86a2b8faeb2d9ca2d42a7d01
+  responses:
+    rows: 2108
+    logical_sha256: 1013826e4020bf40b5b26c39485f22a85f3347851845d681de7759e8d9d7c180
   subjects:
     rows: 11
     logical_sha256: d6d339b0e8c9e7b2af4400743f7ce59e855c209610bc55702f38d9a025cb4ecb
-  responses:
-    rows: 1021
-    logical_sha256: 5604faabb85b890a7479879cf7c58fdf62317383c854eaf4b08f75b0e0080d9e
-  items:
-    rows: 157
-    logical_sha256: bc5e40eb3574ca4381de32fdfb6a610b1e135c39e9e4f864f59954e49704e935
-  benchmarks:
-    rows: 1
-    logical_sha256: dfdb632497e7d2f98f462410e9ac34e8225225fdb12527456f48221703cbfe90
 source_claims:
   source_logs:
     kind: count
@@ -104,3 +104,35 @@ source_claims:
     scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
       source grading rule and complete trace. Record the single unavailable log explicitly.
     expected: 10
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/andyzorigin/cybench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 690
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/andyzorigin/cybench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 2108
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/andyzorigin/cybench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 316
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/andyzorigin/cybench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 40

@@ -122,9 +122,10 @@ class BEDD(BenchmarkBuild):
             model_output_video=dict(archive=paths["videos"], member=row.member,
                 byte_size=row.byte_size, crc32=row.crc32)), ensure_ascii=False, allow_nan=False)
             for row in observations.itertuples()]
+        items["testlet_id"] = items.task + ':' + items.seed.astype(str)
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

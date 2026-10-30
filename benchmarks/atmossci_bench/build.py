@@ -2,6 +2,7 @@
 """Curate AtmosSci-Bench's recorded questions, model attempts and original judgments."""
 
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class AtmosSciBench(BenchmarkBuild):
@@ -86,6 +88,8 @@ class AtmosSciBench(BenchmarkBuild):
             + ("\n\nOptions:\n" + "\n".join(f"{chr(65 + i)}. {option}" for i, option in enumerate(task["options"])) if task.get("options") else "")
             + ("\n\nKnowledge:\n" + task["knowledge"] if task.get("knowledge") else ""))
         items["content"] = items.content.str.normalize("NFC").str.strip()
+        items['testlet_id'] = items.content.map(lambda value: hashlib.sha256(value.encode()).hexdigest())
+        items['raw_item_id'] = items.testlet_id
         items["features"] = items.question_type.map(lambda kind: {"question_type": kind})
 
         # 5. Describe the grading that was actually recorded, without recomputing any outcome.
@@ -103,6 +107,10 @@ class AtmosSciBench(BenchmarkBuild):
 
         # 6. Keep complete native JSON, including upstream NaN tokens, inside a valid JSON trace.
         observations["item_key"] = observations.response_key
+        identities = {row.item_key: json.dumps([row.content, json.loads(row.grading_criterion['reference_answer']),
+            json.loads(row.verifier_spec), row.question_type], ensure_ascii=False, sort_keys=True) for row in items.itertuples()}
+        observations['trial'] = observations.groupby([observations.subject_key,
+            observations.item_key.map(identities)], sort=False).cumcount() + 1
         traces = observations[["response_key"]].copy()
         traces["trace"] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
             generation_json=row.native_json, evaluation_file=row.source_file_evaluation if isinstance(row.record_evaluation, dict) else None,
@@ -110,12 +118,30 @@ class AtmosSciBench(BenchmarkBuild):
             evaluation_json=row.native_json_evaluation if isinstance(row.record_evaluation, dict) else None,
             metadata_file=row.metadata_file, metadata=row.metadata, question_file=row.question_file,
             question_bank_record=row.bank_record), ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
-        return {
+        definitions, outcomes = [], []
+        for row in items.itertuples():
+            if not isinstance(row.record_evaluation, dict):
+                definitions.append(dict(parent_item_key=row.item_key, component_id='ungraded_task_outcome',
+                    grading_criterion=row.grading_criterion, verifier=row.verifier))
+                outcomes.append(dict(parent_response_key=row.response_key,
+                    component_id='ungraded_task_outcome', response=None))
+                continue
+            for check in row.record_evaluation['evaluation']:
+                if check['is_correct'] is not None and type(check['is_correct']) is not bool:
+                    raise ValueError('A subanswer judgment is neither binary nor unavailable')
+                definitions.append(dict(parent_item_key=row.item_key, component_id=check['id'],
+                    grading_criterion=dict(reference_answer=json.dumps(check['expected_answer'], ensure_ascii=False),
+                        rule=json.dumps(dict(subquestion_id=check['id'], rule='Released subanswer judgment'), sort_keys=True)),
+                    verifier=row.verifier))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=check['id'],
+                    response=None if check['is_correct'] is None else float(check['is_correct'])))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
-            "responses": observations[["response_key", "subject_key", "item_key", "response"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
+            "responses": observations[["response_key", "subject_key", "item_key", "trial", "response"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

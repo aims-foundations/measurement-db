@@ -3,6 +3,8 @@
 
 import ast
 from fnmatch import fnmatch
+import hashlib
+import unicodedata
 import json
 from pathlib import Path
 import sys
@@ -12,6 +14,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.benchmarks.qatch.components import convert
 
 
 class QATCH(BenchmarkBuild):
@@ -134,12 +137,14 @@ class QATCH(BenchmarkBuild):
             for row in items.itertuples()]
         items['attachments'] = items.attachment.map(lambda attachment: [attachment])
         items['grading_criterion'] = [dict(reference_answer=row.reference,
-            rule=self.grading['verifiers'][row.metric]['rule']) for row in items.itertuples()]
+            rule=self.grading['verifiers'][row.metric]['rule'], response_scale=self.grading['verifiers'][row.metric]['response_scale']) for row in items.itertuples()]
         items['verifier'] = items.metric.map(lambda metric: ExactMatcher(spec=json.dumps(self.grading['verifiers'][metric], sort_keys=True)))
-        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.content.map(lambda value: hashlib.sha256(unicodedata.normalize("NFC", value).encode()).hexdigest())
+        tables = dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             traces=responses[['response_key', 'trace']])
+        return convert(tables, responses, attempts, self.grading['verifiers'])
 
 
 if __name__ == '__main__':

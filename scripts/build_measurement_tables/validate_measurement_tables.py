@@ -342,17 +342,23 @@ def validate_response_grades(
             raise ValueError("mixed response_scale requires the items table")
         if items["item_id"].duplicated().any():
             raise ValueError("duplicate item IDs in response_scale lookup")
-        domains = {
-            row.item_id: item_response_scale(domain, row.grading_criterion)
-            for row in items[["item_id", "grading_criterion"]].itertuples(index=False)
-        }
+        # Millions of component items usually share just a few grade domains.
+        # Validate every declaration, then check observed values by domain rather
+        # than creating a separate pandas group for each item.
+        domains, domain_codes, scales = {}, {}, []
+        for row in items[["item_id", "grading_criterion"]].itertuples(index=False):
+            item_domain = item_response_scale(domain, row.grading_criterion)
+            key = json.dumps(item_domain, sort_keys=True, separators=(",", ":"))
+            if key not in domain_codes:
+                domain_codes[key] = len(scales)
+                scales.append(item_domain)
+            domains[row.item_id] = domain_codes[key]
         unknown = set(responses["item_id"]) - set(domains)
         if unknown:
             raise ValueError(f"response_scale missing for response item IDs: {sorted(unknown)}")
-        groups = (
-            (domains[item_id], rows["response"])
-            for item_id, rows in responses.groupby("item_id", sort=False)
-        )
+        codes = responses["item_id"].map(domains)
+        groups = ((scales[code], values) for code, values in
+                  responses["response"].groupby(codes, sort=False))
     for item_domain, values in groups:
         for grade in values.dropna().unique():
             validate_grade(grade, item_domain)

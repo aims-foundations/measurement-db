@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 346
-    logical_sha256: d980f367ff3b9e17a5c53b54eb66c26d9259998afe1e8a0037704924658b512a
-  subjects:
-    rows: 29
-    logical_sha256: c02b31a5481fad576ebb9dbbe11e93d10f53048824cdd2af4dc078713595ecf1
-  responses:
-    rows: 346
-    logical_sha256: b4931336f567b5070cbe2242a8de22979281ae56b2f5607c4072b8612bd17f8c
   assets:
     rows: 4
     logical_sha256: b008cf8b7b8d9c64fa7d4b45c83624ccaf64e61dfdba69050790e90ac9854ac9
-  items:
-    rows: 4
-    logical_sha256: 52ddca77e3da58dd1ea3f636d725761f7ae2c7ec2d47cf45e9850e3ccc4f39ea
+  attempts:
+    rows: 346
+    logical_sha256: bc1719baa0b250dc7a82f3fd5264cbd33303e63cdaac836b6a8bc22abe4939cb
   benchmarks:
     rows: 1
-    logical_sha256: 5fb1613afdb05c7d3d1a8a0c3e36fb0c4deff9a335a2dcd557dad60466a101ed
+    logical_sha256: b00ba5026fccd8948b1e99595cada1ab95736e1fae44176b3f8475183354e3ac
+  items:
+    rows: 72
+    logical_sha256: 124c3745d6735dff41dac9e0bc742b0d9a60a06de92ef93b4bf6aea62f207f5d
+  responses:
+    rows: 3577
+    logical_sha256: bc083cb55666da950489bbc07e3323d85e52834172a31a2d4a838ee046137748
+  subjects:
+    rows: 29
+    logical_sha256: c02b31a5481fad576ebb9dbbe11e93d10f53048824cdd2af4dc078713595ecf1
 source_claims:
   source_index_observations:
     kind: count
@@ -135,4 +135,36 @@ source_claims:
       definitions.
     scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
       truncation and unavailable data-node contents remain explicit.
+    expected: 4
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/latchbio/scbench-long
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 346
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/latchbio/scbench-long
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3577
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/latchbio/scbench-long
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 72
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/latchbio/scbench-long
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
     expected: 4

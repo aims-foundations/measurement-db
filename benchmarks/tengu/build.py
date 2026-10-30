@@ -72,7 +72,8 @@ class Tengu(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
             grade_status=row.grade_status, record=row.record), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.source_question_id.astype(str)
+        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], 'traces': traces}
 
 

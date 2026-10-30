@@ -87,8 +87,9 @@ class SynthPAI(BenchmarkBuild):
             prediction_file=row.prediction_file, prediction_row=int(row.prediction_row), input_username=row.input_username,
             log_file=row.log_file, log_configuration=row.log_configuration, log_block=row.log_block), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
+        items["testlet_id"] = items.username
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

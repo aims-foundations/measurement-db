@@ -120,6 +120,7 @@ class AdaptiveStep(BenchmarkBuild):
 
         # 5. Project linked measurement tables with explicit grading provenance.
         items = pd.concat(items, ignore_index=True)
+        items['testlet_id'] = items.raw_item_id
         items["grading_criterion"] = [{"reference_answer": reference, "rule": protocols[dataset]["rule"]}
                                      for reference, dataset in zip(items.reference, items.dataset, strict=True)]
         items["verifier"] = items.dataset.map(lambda name: ExactMatcher(spec=json.dumps(protocols[name], sort_keys=True)))
@@ -131,7 +132,7 @@ class AdaptiveStep(BenchmarkBuild):
         subjects["features"] = subjects.raw_label.map(lambda label: {"model_identifier": label, "harness": "ASPRM"})
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             # The shared builder numbers trials after identical items resolve.
             # Original candidate positions remain in the trace's trial field.
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],

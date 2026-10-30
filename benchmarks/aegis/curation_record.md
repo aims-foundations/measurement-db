@@ -1,3 +1,4 @@
 - Replace the legacy prompt-as-subject hazard matrix with recorded Mistral outputs and native response safety labels; keep human and LLM-jury grading distinct.
 - Preserve every imported source record, its original split, empty completions and the recorded empty prompt. Native labels are copied without regrading.
 - Retain prompt-only examples and assigned-label refusal augmentation in raw; neither supplies an additional independently graded model attempt. Source revision and paper document the scope.
+- Testlet membership migration (2026-10-29): 11,500 existing item identities link to 11,482 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. Membership was checked against the complete, previously reviewed canonical item table; this grouping-only change did not rerun the upstream import. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

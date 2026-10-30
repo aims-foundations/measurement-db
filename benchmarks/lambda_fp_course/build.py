@@ -1,6 +1,8 @@
 """Tabulate released Lambda FP Course assessments without guessing run identity."""
 
 import json
+import unicodedata
+import hashlib
 import sys
 import zipfile
 from pathlib import Path
@@ -106,6 +108,7 @@ class LambdaFPCourse(BenchmarkBuild):
         subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=name) for name in subjects.subject_key]
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         items["features"] = [dict(subtask=row.subtask, source_task=row.source_task,
             input_scope=parameters["labels"]["input_scope"]) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=row.reference_answer or None,
@@ -126,7 +129,7 @@ class LambdaFPCourse(BenchmarkBuild):
             output=None if pd.isna(row.output) else row.output, attempt_identity="not_recorded" if row.attempt == "" else "source_attempt"),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces}
 

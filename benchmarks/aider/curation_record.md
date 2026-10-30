@@ -6,3 +6,4 @@
 - **Scope:** This is the released MISRA prompting study, not the aggregate Aider leaderboard. Each observation includes up to two test-feedback cycles. Unreported model settings remain unknown; no evaluations were rerun.
 
 [Sources](metadata.yaml) · [Characterization](characterization.yaml) · [Builder](build.py)
+- Testlet migration (2026-10-29): 5,356 recorded attempts, 66,810 component or retained aggregate observations, and 484 canonical items. Every component and its full original input, recorded configuration and trace passed source reconciliation. Characterization records the independently checked counts and complete table fingerprints. Validated locally against the reviewed source and table contracts.

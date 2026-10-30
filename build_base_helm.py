@@ -7,10 +7,13 @@ the release declarations; original requests and complete outputs remain in trace
 """
 
 import gzip
+from dataclasses import asdict
+import hashlib
 import json
 import pandas as pd
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -110,8 +113,8 @@ class HelmTabularBuild(BenchmarkBuild):
             instances, on=["run_key", "instance_id"], how="left", validate="many_to_one", indicator=True)
         if not attempts._merge.eq("both").all():
             raise ValueError("A HELM prediction lacks its item definition")
-        run_columns = ["run_key", "name", "adapter_spec"]
-        if settings.get("item_features"):
+        run_columns = ["run_key", "name", "adapter_spec", "scenario_spec"]
+        if settings.get("item_features") and settings['item_features'] not in run_columns:
             run_columns.append(settings["item_features"])
         attempts = attempts.drop(columns="_merge").merge(
             runs[run_columns], on="run_key", how="left", validate="many_to_one")
@@ -192,6 +195,11 @@ class HelmTabularBuild(BenchmarkBuild):
         items = attempts.assign(
             item_key=lambda frame: frame.response_key,
             raw_item_id=lambda frame: frame.instance_id,
+            # Native inputs identify the shared stimulus across rendered prompts.
+            # Scope them to their source scenario; id0 alone is not a question ID.
+            testlet_id=[hashlib.sha256(unicodedata.normalize('NFC', json.dumps(
+                dict(scenario=row.scenario_spec, input=row.input), ensure_ascii=False,
+                sort_keys=True)).encode()).hexdigest() for row in attempts.itertuples()],
             grading_criterion=lambda frame: frame.apply(lambda row: {
                 "reference_answer": row.reference_answer or None,
                 "rule": json.dumps({"description": profiles[row.metric].get("criterion", self.grading["rule"]),
@@ -199,7 +207,7 @@ class HelmTabularBuild(BenchmarkBuild):
                 **({"response_scale": profiles[row.metric]["response_scale"]}
                    if "response_scale" in profiles[row.metric] else {}),
             }, axis=1),
-        )[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]]
+        )[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]]
 
         if profile.get("reference_kind") == "metadata":
             items["features"] = attempts.references.map(lambda references: {"upstream_reference_metadata": references})
@@ -214,6 +222,16 @@ class HelmTabularBuild(BenchmarkBuild):
                 items["features"] = [{}] * len(items)
             items["features"] = pd.DataFrame({"features": items.features, "scenario": attempts[settings["item_features"]]}).apply(
                 lambda row: {**row.features, "scenario": row.scenario}, axis=1)
+
+        # A context-window truncation can make different source questions the
+        # same canonical item. Such an item has no unique parent: retain its
+        # native definitions in the traces, and leave its testlet unknown.
+        signatures = items.apply(lambda row: json.dumps(dict(
+            content=unicodedata.normalize('NFC', row.content).strip(),
+            criterion=row.grading_criterion, verifier=asdict(row.verifier),
+            features=row.get('features')), sort_keys=True, ensure_ascii=False), axis=1)
+        parent_counts = items.testlet_id.groupby(signatures).transform('nunique')
+        items.loc[parent_counts.gt(1), 'testlet_id'] = None
 
         # 6. Link observations to complete native traces. Number repeated attempts
         # only after canonical item identity is resolved by the shared writer.

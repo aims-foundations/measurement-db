@@ -58,12 +58,19 @@ def _equal(actual, expected, label):
         )
 
 
-def verify_batch2(directory, tables_directory=None):
+def verify_batch2(directory, tables_directory=None, *, tables=None):
     directory = Path(directory)
     raw, slug = directory / "raw", directory.name
     tables_directory = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
-    cells = _cells(tables_directory)
-    items = pd.read_parquet(tables_directory / "items.parquet")
+    if tables is None and slug in {"theagentcompany", "corebench"} and (tables_directory / "attempts.parquet").exists():
+        from .testlet_audits import verify_component_results
+        return verify_component_results(directory, tables_directory)
+    def read(name):
+        return tables[name] if tables is not None else pd.read_parquet(tables_directory / (name + '.parquet'))
+
+    items = read('items')
+    cells = (read('responses').merge(read('subjects'), on='subject_id', validate='many_to_one')
+        .merge(items, on='item_id', validate='many_to_one', suffixes=('', '_item')))
     if slug == "hcast":
         instructions = {}
         for p in raw.glob("task_info_*.json"):
@@ -270,9 +277,7 @@ def verify_batch2(directory, tables_directory=None):
             for r in cells.itertuples()
         )
         _equal(actual, expected, slug)
-        traces = cells.merge(
-            pd.read_parquet(tables_directory / "traces.parquet"), on="response_id"
-        )
+        traces = cells.merge(read('traces'), on="response_id")
         actual_traces = Counter(
             (
                 r.display_name,
@@ -351,7 +356,7 @@ def verify_batch2(directory, tables_directory=None):
             assert verifier["grading_code"] == (raw / "tasks" / item.raw_item_id / "evaluator.py").read_text()
             assert verifier["source_revision"] == "98b68ef82a47690c316f42fddb05baafaab56851"
             assert verifier["kind"] == "provider_result_mapping"
-        traces = cells.merge(pd.read_parquet(tables_directory / "traces.parquet"), on="response_id", validate="one_to_one")
+        traces = cells.merge(read('traces'), on="response_id", validate="one_to_one")
         actual_traces = Counter((r.display_name, r.harness, r.raw_item_id, None if pd.isna(r.response) else r.response,
                                  hashlib.sha256(r.trace.encode()).hexdigest()) for r in traces.itertuples())
         _equal(actual_traces, native_traces, "TheAgentCompany complete native trajectories")

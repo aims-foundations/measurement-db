@@ -1,20 +1,23 @@
 format_version: 1
 tables:
-  traces:
+  assets:
+    rows: 547
+    logical_sha256: 43af46f3ed6f35cb4d08a80b275ad9940ad57661f6355236c35f6bae54f49dc9
+  attempts:
     rows: 1871
-    logical_sha256: 25d319ae1274753fd6fbdec1df88dea3ac91e6e32e85bf14d77b4fabe1835e99
+    logical_sha256: 5e68dc0ba75f2dd13f2104ee901c503cd3709e183f6ae0927886350d296535b7
+  benchmarks:
+    rows: 1
+    logical_sha256: 7ef83c9b8721b12bb379c4345cc1907c0449fba1703836689dbf079121604c9d
+  items:
+    rows: 137381
+    logical_sha256: 471786b9ea012eb67dcb52b8b1ab4ceca63bdfc79254ce4c02857a953c9a27e4
+  responses:
+    rows: 508885
+    logical_sha256: 859ac6ea9df6b5c3c2af4c9a18fa77c6070098f450f271d51d26ed750121e04f
   subjects:
     rows: 7
     logical_sha256: b76b5da6107893b29cfdf1328a93bf0dba7745c3aa5c1f9decaf63cf6e87388b
-  responses:
-    rows: 1871
-    logical_sha256: 8745ae76055782eed34bc019359c80375afe07ff43255b62d87f145123542516
-  items:
-    rows: 547
-    logical_sha256: b9418733e21c8a662cc01df756e54fe767e3f612103d70ffb76d3c96f1aec86d
-  benchmarks:
-    rows: 1
-    logical_sha256: 2ecc74ba8a95a07040921b5d362cc09aaba0c19ed20f02af2367aee9e1ef36f4
 source_claims:
   source_prediction_records:
     kind: count
@@ -156,3 +159,35 @@ source_claims:
       trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
       Missing results remain null.
     expected: 1871
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1871
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 508885
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 137381
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 478

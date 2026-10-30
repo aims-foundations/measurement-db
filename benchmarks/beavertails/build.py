@@ -47,6 +47,7 @@ class BeaverTails(BenchmarkBuild):
                                 for model in subjects.subject_key]
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items["index"].astype(str)
         items["content"] = items.prompt
         items["features"] = [dict(category_id=row.category_id, grading_judge=row.judge_key)
                              for row in items.itertuples()]
@@ -66,7 +67,7 @@ class BeaverTails(BenchmarkBuild):
             for row in observations.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

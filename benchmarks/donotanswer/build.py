@@ -58,9 +58,10 @@ class DoNotAnswer(BenchmarkBuild):
         ).rename(columns={"model": "subject_key"})
         responses = responses.assign(response_key=responses.index, test_condition="label=" + responses.label_kind)
         traces = responses.loc[responses.trace.map(lambda text: isinstance(text, str)), ["response_key", "trace"]]
+        items["testlet_id"] = items.raw_item_id
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

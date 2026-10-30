@@ -115,6 +115,19 @@ class DatasetRunnerTests(unittest.TestCase):
         self.assertEqual(sum(t._testMethodName == "test_complete_dataset" for t in tests), 1)
         self.assertEqual(sum(t._testMethodName == "test_source" for t in tests), 1)
 
+    def test_component_counts_do_not_replace_original_source_claims(self):
+        observed = dict(source_responses=2, source_successes=1, source_component_observations=4)
+        case = next(t for t in runner.benchmark_suite(self.root, 'example', source_audit=lambda directory: observed)
+            if t._testMethodName == 'test_independent_provider_claims')
+        case.expected = expectations()
+        prototype = case.expected['source_claims']['source_responses']
+        case.expected['source_claims'] = {name: dict(prototype, expected=value) for name, value in observed.items()}
+        case.tables = {'responses': pd.DataFrame({'response': [1., 1., 0., 1.]})}
+        case.test_independent_provider_claims()
+        case.tables = {'responses': pd.DataFrame({'response': [1., 0.]})}
+        with self.assertRaises(AssertionError):
+            case.test_independent_provider_claims()
+
     def test_characterization_alone_does_not_count_as_a_source_audit(self):
         suite = runner.benchmark_suite(self.root, "example")
         case = next(t for t in suite if t._testMethodName == "test_independent_provider_claims")

@@ -1,13 +1,13 @@
 benchmark:
   release: public
-  description: Iterative scientific-discovery trajectories on 137 systems-biology tasks. Agents receive
-    a partial SBML model, design simulated experiments, and submit a reconstructed model. The curated
-    release includes six reaction-recovery metrics derived from final models and explicitly unavailable
-    trajectory-error grades.
+  description: Agents reconstruct missing reactions in systems-biology models by designing simulated
+    experiments. Individual reaction checks share a testlet for each original model.
   testing_condition: 'The export has 2,466 rows but only 822 distinct complete records: six models on
     137 tasks, each copied three times without separate trial IDs. Preserve one observation per distinct
-    trajectory and metric and retain every source-row position. The seven metric observations for a trajectory
-    are dependent measurements, not seven agent runs. Initial user prompts and the recorded 20-action
+    trajectory and retain every source-row position. Each missing reference reaction is a binary item
+    under each native structural comparison; extra nonreference reactions retain a numeric count.
+    All checks share one execution. Its six original precision, recall and F1 values remain in the trace,
+    while simulation trajectory error is an explicitly unknown item. Initial user prompts and the recorded 20-action
     allowance come from the transcripts. System prompts, complete structured API requests and original
     numeric grading records are not exported; current harness defaults do not establish historical settings.
     Reaction scores describe the released final model under the native structural rule, without replaying

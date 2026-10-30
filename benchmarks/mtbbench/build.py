@@ -91,7 +91,8 @@ class MTBBench(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=int(row.source_row),
             native_record=row.native_record, conversation=row.conversation), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
-        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']], items=items[['item_key', 'raw_item_id', 'content', 'features',
+        items["testlet_id"] = items.cohort + ':' + items.case_id
+        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']], items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features',
             'attachments', 'grading_criterion', 'verifier']], responses=responses[['response_key', 'subject_key',
             'item_key', 'response', 'test_condition']], traces=traces)
 

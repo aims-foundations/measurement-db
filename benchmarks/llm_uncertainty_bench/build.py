@@ -1,6 +1,8 @@
 """Tabulate the released option logits and their documented input configurations."""
 
 import json
+import hashlib
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -60,6 +62,8 @@ class LLMUncertaintyBench(BenchmarkBuild):
         items["content"] = items.prefix + items.example
         items["item_key"] = items.dataset + ":" + items.id.astype(str) + ":" + items.method
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = [hashlib.sha256(unicodedata.normalize('NFC', json.dumps(
+            [row.dataset, row.example], ensure_ascii=False)).encode()).hexdigest() for row in items.itertuples()]
         items["features"] = [dict(dataset=row.dataset, prompt_method=row.method,
             demonstration_ids=list(map(int, parameters["demonstrations"][row.dataset].split(","))), input_scope=parameters["labels"]["input_scope"])
             for row in items.itertuples()]
@@ -97,7 +101,7 @@ class LLMUncertaintyBench(BenchmarkBuild):
             source_item_id=row.id, logits_options=row.logits_options.tolist(), logits_dtype=str(row.logits_options.dtype),
             predicted_option=row.predicted_option), allow_nan=False) for row in attempts.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces}
 

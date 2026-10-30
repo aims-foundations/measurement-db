@@ -90,8 +90,9 @@ class MTBench(BenchmarkBuild):
             **{name: dict(file=getattr(row, name + "_file"), row=int(getattr(row, name + "_row")), record=getattr(row, name + "_record"))
                if isinstance(getattr(row, name + "_record"), dict) else None for name in ["question", "answer", "prompt", "reference"]}),
             ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
+        items["testlet_id"] = items.question_id.astype(str)
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-                "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+                "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
                 "responses": responses, "traces": traces}
 
 

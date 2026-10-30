@@ -79,6 +79,7 @@ class ElicitationGame(BenchmarkBuild):
         items["verifier"] = [Judge(spec=json.dumps(self.grading["verifiers"][technique], sort_keys=True),
             judge=self.grading["verifiers"][technique]["judge"], judged_by=self.grading["verifiers"][technique]["judged_by"])
             if technique == "anti_refusal" else ExactMatcher(spec=json.dumps(self.grading["verifiers"][technique], sort_keys=True)) for technique in items.technique]
+        items['testlet_id'] = items.raw_item_id
         items["features"] = items[["subject", "technique", "shots"]].rename(columns={"subject": "domain"}).assign(**parameters["item_features"]).to_dict("records")
 
         # 5. Preserve every native record with its file and zero-based source position.
@@ -89,7 +90,7 @@ class ElicitationGame(BenchmarkBuild):
             for path, row, record in zip(attempts.source_file, attempts.source_row, attempts.native_record)]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": attempts[["response_key", "trace"]],
         }

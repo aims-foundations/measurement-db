@@ -10,12 +10,9 @@ benchmark:
   domain:
   - tabular
   - code
-  response_type: continuous
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   paper_url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/62a24b69b820d30e9e5ad4f15ff7bf72-Abstract-Datasets_and_Benchmarks.html
   release_date: '2023-06-15'
@@ -40,7 +37,12 @@ benchmark:
     Eight merged QA source rows have count-query targets inconsistent with the official Spider databases; four SP
     rows contain source text-decoding differences. Other reference differences reflect exported numeric precision
     or small floating-point differences. Preserve the published references and scores, and document these source
-    issues rather than silently correcting them.
+    issues rather than silently correcting them. Cell-recall membership and row-multiplicity predicates become
+    binary items only when the released literal returned table reproduces the recorded metric exactly.
+    Repeated target values share one membership item with their original aggregation weight. Empty tables,
+    unavailable grades, unverified export markers such as EQUAL, and replay discrepancies retain their
+    aggregate observations. Every original metric and complete record remains on its publication-row attempt;
+    this association does not assert independently recorded physical API calls. No SQL or model code is executed.
 build:
   contract_version: 2
   parameters:
@@ -72,44 +74,69 @@ grading:
   verifiers:
     cell_precision:
       kind: released_deterministic_metric
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
       metric: cell_precision
       source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/cell_precision_tag.py
       normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
       rule: Fraction of predicted cells matching target cells after the original source normalization.
       scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
-        model inference or graders are rerun.
+        model inference or external graders are rerun. Finer literal-table predicates must reproduce this recorded score.
     cell_recall:
       kind: released_deterministic_metric
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
       metric: cell_recall
       source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/cell_recall_tag.py
       normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
       rule: Fraction of target cells found among predicted cells after the original source normalization.
       scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
-        model inference or graders are rerun.
+        model inference or external graders are rerun. Finer literal-table predicates must reproduce this recorded score.
     tuple_cardinality:
       kind: released_deterministic_metric
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
       metric: tuple_cardinality
       source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/tuple_cardinality_tag.py
       normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
       rule: Ratio of the smaller row count to the larger row count, with the source empty-output handling.
       scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
-        model inference or graders are rerun.
+        model inference or external graders are rerun. Finer literal-table predicates must reproduce this recorded score.
     tuple_constraint:
       kind: released_deterministic_metric
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
       metric: tuple_constraint
       source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/tuple_constraint_tag.py
       normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
       rule: Original row-wise overlap measure preserving tuple associations and source multiplicity handling.
       scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
-        model inference or graders are rerun.
+        model inference or external graders are rerun. Finer literal-table predicates must reproduce this recorded score.
     tuple_order:
       kind: released_deterministic_metric
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
       metric: tuple_order
       source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/tuple_order_tag.py
       normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
       rule: Original normalized rank-order score, applicable only to the released ORDERBY tasks.
       scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
-        model inference or graders are rerun.
+        model inference or external graders are rerun. Finer literal-table predicates must reproduce this recorded score.
 sources:
   upstream:
   - name: results

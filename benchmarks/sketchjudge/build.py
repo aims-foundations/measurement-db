@@ -1,8 +1,10 @@
 """Tabulate recorded diagram-grading attempts and their original image inputs."""
 
+import hashlib
 import json
 from pathlib import Path
 import sys
+import unicodedata
 from zipfile import ZipFile
 
 import pandas as pd
@@ -103,6 +105,12 @@ class SketchJudge(BenchmarkBuild):
         items['features'] = [dict(category=row.category, input_association=row.input_status,
             input_scope=labels['input_scope']) for row in items.itertuples()]
         items['attachments'] = items.item_key.map(attachments)
+        items['testlet_id'] = [hashlib.sha256(json.dumps([
+            unicodedata.normalize('NFC', row.source_question['query_en']),
+            hashlib.sha256(attachments[row.item_key][-1]['data']).hexdigest(),
+            hashlib.sha256(attachments[row.item_key][0]['data']).hexdigest()
+                if row.requires_input_image else None], ensure_ascii=False).encode()).hexdigest()
+            if row.input_matches else None for row in attempts.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=json.dumps(row.is_correct) if row.input_matches else None,
             rule=self.grading['rule']) for row in items.itertuples()]
         items['verifier'] = ExactMatcher(spec=json.dumps(self.grading['verifiers']['verdict'], sort_keys=True))
@@ -116,7 +124,7 @@ class SketchJudge(BenchmarkBuild):
             grade_status=row.grade_status, grade_scope=labels['grade_scope']), ensure_ascii=False, allow_nan=False)
             for row in attempts.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

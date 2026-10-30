@@ -99,8 +99,9 @@ class MORQA(BenchmarkBuild):
         traces = observations[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
             evaluator=row.subject_key, native_record=row.native_record), ensure_ascii=False) for row in observations.itertuples(index=False)]
+        items["testlet_id"] = items.lang + ':' + items.dataset + ':' + items.split + ':' + items.query_id
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=observations[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

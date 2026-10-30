@@ -10,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class PhyBlock(BenchmarkBuild):
@@ -49,7 +50,8 @@ class PhyBlock(BenchmarkBuild):
             scenes["block_count"] = scenes.goal.map(lambda goal: len(goal["blocks"]))
             # Recorded open-model inputs identify these exact two task-bank images.
             for scene, paths in zip(observations.scene, native.image):
-                if isinstance(paths, list) and paths != [p.format(scene=scene) for p in self.build_parameters["native_images"].values()]:
+                expected_images = [self.build_parameters['native_images'][role].format(scene=scene) for role in ('goal', 'candidates')]
+                if isinstance(paths, list) and paths != expected_images:
                     raise ValueError("Native image references disagree with the scene join")
             observations = observations.merge(scenes[["scene", "goal", "candidates", "level", "block_count"]],
                                               on="scene", validate="many_to_one")
@@ -85,7 +87,8 @@ class PhyBlock(BenchmarkBuild):
                 tp, fp, fn = len(placed), len(row.indices) - len(placed), len(blocks) - len(placed)
                 precision, recall = tp / (tp + fp) if tp + fp else 0, tp / (tp + fn) if tp + fn else 0
                 f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0
-                grades.append({"TP": tp, "FP": fp, "FN": fn, "response": round(f1, spec["decimal_places"])})
+                grades.append({"TP": tp, "FP": fp, "FN": fn, "placed_blocks": sorted(placed),
+                    "response": round(f1, spec["decimal_places"])})
             responses = responses.join(pd.DataFrame(grades))
             responses["response_key"] = responses.index
             responses["trial"] = 1
@@ -97,6 +100,7 @@ class PhyBlock(BenchmarkBuild):
             items = responses.drop_duplicates(keys).reset_index(drop=True)
             items["item_key"] = items.index
             items["raw_item_id"] = items.scene
+            items['testlet_id'] = items.scene
             items["features"] = [{"scene": row.scene, "source_level": row.level, "grading_condition": row.condition,
                                   "prompt_source": row.prompt_source} for row in items.itertuples()]
             items["grading_criterion"] = [{"reference_answer": json.dumps({"goal": row.goal, "candidates": row.candidates}),
@@ -121,12 +125,49 @@ class PhyBlock(BenchmarkBuild):
                                           "derived_grade": {"condition": row.condition, "TP": row.TP, "FP": row.FP,
                                                             "FN": row.FN, "F1": row.response}}, ensure_ascii=False)
                                for row in responses.itertuples()]
-        return {
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }
+        definitions, outcomes = [], []
+        for row in items.itertuples():
+            checks = [('block:' + str(block['order']), 'block') for block in row.goal['blocks']]
+            checks.append(('extra_placement_count', 'extra_placement_count'))
+            for name, kind in checks:
+                component = self.grading['verifiers']['components'][kind]
+                criterion = dict(row.grading_criterion, rule=json.dumps(dict(
+                    interpretation=component['rule'], selected_check=name), sort_keys=True),
+                    response_scale=component['response_scale'])
+                definitions.append(dict(parent_item_key=row.item_key, component_id=row.condition + ':' + name,
+                    grading_criterion=criterion, verifier=ExactMatcher(spec=json.dumps(dict(
+                        specifications[row.condition], selected_check=name), sort_keys=True))))
+        for row in responses.itertuples():
+            for position, block in enumerate(row.goal['blocks']):
+                outcomes.append(dict(parent_response_key=row.response_key,
+                    component_id=row.condition + ':block:' + str(block['order']), response=int(position in row.placed_blocks)))
+            outcomes.append(dict(parent_response_key=row.response_key,
+                component_id=row.condition + ':extra_placement_count', response=row.FP))
+        converted = component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
+
+        # Two grading conditions reuse one recorded plan. Link their checks to
+        # one execution and preserve both original F1 assessments on that run.
+        executions = []
+        for source_file, group in responses.groupby('source_file', sort=False):
+            row = group.iloc[0]
+            if group.subject_key.nunique() != 1 or group.native_record.nunique() != 1:
+                raise ValueError('PhyBlock grading conditions disagree about the original execution')
+            derived = {r.condition: dict(condition=r.condition, TP=r.TP, FP=r.FP, FN=r.FN, F1=r.response)
+                for r in group.itertuples()}
+            executions.append(dict(attempt_key=source_file, raw_attempt_id=source_file, subject_key=row.subject_key,
+                trace=json.dumps(dict(recorded_task_score=derived['pose_constrained']['F1'], source_trace=json.dumps(dict(
+                    source_file=source_file, native_record=row.native_record, derived_grades=derived), ensure_ascii=False)),
+                    ensure_ascii=False)))
+        execution_keys = responses.set_index('response_key').source_file
+        converted['responses']['attempt_key'] = converted['responses'].attempt_key.map(execution_keys)
+        converted['attempts'] = pd.DataFrame(executions)
+        return converted
 
 
 if __name__ == "__main__":

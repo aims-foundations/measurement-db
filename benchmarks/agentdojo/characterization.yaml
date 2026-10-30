@@ -11,7 +11,7 @@ tables:
     logical_sha256: 8abc0e8005c5003aa5256c8aa6e17b4859517dfdd28f0eca3f186f7df8cff9cb
   items:
     rows: 1081
-    logical_sha256: 017a04e7059782cfd5fe3d162a308c9e4bd93a2989bf9fe4e9806f733869d74f
+    logical_sha256: 1afd5b196b832c397cfe523dfbb69701368ac2244fd9187956f77d0fd5cc8d12
   benchmarks:
     rows: 1
     logical_sha256: eb9ce440c564102a9792d3052a78d4e10b0a04c87a1458dccd674c4bd5458353
@@ -21,8 +21,8 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/ethz-spylab/agentdojo/tree/089ed468cf3ed0322acc66b0211f26d9d90dbf60
     locator: 'Pinned upstream archive: runs/*/*/*/*/*.json and src/agentdojo/default_suites'
-    scope: All recorded utility and, under attack, attacker-success observations, including two null grades
-      from one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
+    scope: All recorded utility and, under attack, attacker-success observations, including two null grades from
+      one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
       measure. Full message histories are compared without clipping.
     expected: 69798
   source_successes:
@@ -30,8 +30,8 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/ethz-spylab/agentdojo/tree/089ed468cf3ed0322acc66b0211f26d9d90dbf60
     locator: 'Pinned upstream archive: runs/*/*/*/*/*.json and src/agentdojo/default_suites'
-    scope: All recorded utility and, under attack, attacker-success observations, including two null grades
-      from one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
+    scope: All recorded utility and, under attack, attacker-success observations, including two null grades from
+      one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
       measure. Full message histories are compared without clipping.
     expected: 25207
   source_traces:
@@ -39,8 +39,8 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/ethz-spylab/agentdojo/tree/089ed468cf3ed0322acc66b0211f26d9d90dbf60
     locator: 'Pinned upstream archive: runs/*/*/*/*/*.json and src/agentdojo/default_suites'
-    scope: All recorded utility and, under attack, attacker-success observations, including two null grades
-      from one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
+    scope: All recorded utility and, under attack, attacker-success observations, including two null grades from
+      one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
       measure. Full message histories are compared without clipping.
     expected: 69384
   source_utility_observations:
@@ -48,8 +48,8 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/ethz-spylab/agentdojo/tree/089ed468cf3ed0322acc66b0211f26d9d90dbf60
     locator: 'Pinned upstream archive: runs/*/*/*/*/*.json and src/agentdojo/default_suites'
-    scope: All recorded utility and, under attack, attacker-success observations, including two null grades
-      from one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
+    scope: All recorded utility and, under attack, attacker-success observations, including two null grades from
+      one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
       measure. Full message histories are compared without clipping.
     expected: 36679
   source_attacker_success_observations:
@@ -57,8 +57,8 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/ethz-spylab/agentdojo/tree/089ed468cf3ed0322acc66b0211f26d9d90dbf60
     locator: 'Pinned upstream archive: runs/*/*/*/*/*.json and src/agentdojo/default_suites'
-    scope: All recorded utility and, under attack, attacker-success observations, including two null grades
-      from one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
+    scope: All recorded utility and, under attack, attacker-success observations, including two null grades from
+      one interrupted attempt. Positive booleans across these two meanings are not an aggregate agent-performance
       measure. Full message histories are compared without clipping.
     expected: 33119
   source_ungraded_observations:
@@ -66,6 +66,6 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/ethz-spylab/agentdojo/tree/089ed468cf3ed0322acc66b0211f26d9d90dbf60
     locator: 'Pinned upstream archive: runs/*/*/*/*/*.json and src/agentdojo/default_suites'
-    scope: One recorded interrupted attempt has a complete 17-message history but neither utility nor
-      security grade; both grades remain null.
+    scope: One recorded interrupted attempt has a complete 17-message history but neither utility nor security grade;
+      both grades remain null.
     expected: 2

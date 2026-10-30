@@ -59,8 +59,9 @@ class Rakuda(BenchmarkBuild):
         traces = responses[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
             record=row.record), ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+        items["testlet_id"] = items.question_id.astype(str)
         return dict(subjects=subjects,
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

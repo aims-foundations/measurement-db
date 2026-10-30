@@ -107,6 +107,9 @@ class BenchmarkBuild(ABC):
         self._asset_rows: dict[str, dict[str, object]] = {}
         self._attempt_rows: dict[str, dict[str, object]] = {}
         self._asset_id_by_source_path: dict[Path, str] = {}
+        # Component items often share the same immutable, large input bytes.
+        # Retain the object with its ID so Python cannot reuse its identity.
+        self._asset_id_by_data: dict[int, tuple[bytes, str]] = {}
         self._item_asset_ids: dict[str, set[str]] = {}
         self._item_response_scales: dict[str, dict] = {}
 
@@ -561,6 +564,10 @@ class BenchmarkBuild(ABC):
                 )
 
             asset_id = self._asset_id_by_source_path.get(resolved_source)
+            if resolved_source is None:
+                cached = self._asset_id_by_data.get(id(payload))
+                if cached is not None and cached[0] is payload:
+                    asset_id = cached[1]
             if asset_id is None:
                 if resolved_source is not None:
                     payload = resolved_source.read_bytes()
@@ -581,6 +588,8 @@ class BenchmarkBuild(ABC):
                 )
                 if resolved_source is not None:
                     self._asset_id_by_source_path[resolved_source] = asset_id
+                else:
+                    self._asset_id_by_data[id(payload)] = (payload, asset_id)
 
             seen_logical_paths.add(logical_path)
             manifest_entries.append(
@@ -1255,11 +1264,11 @@ class BenchmarkBuild(ABC):
                     response_scale=self.INFO["response_scale"], items=registered_items,
                 )
             if not traces.empty:
-                _tables.write_parquet(traces, staging_dir / "traces.parquet")
+                _tables.write_parquet(traces, staging_dir / "traces.parquet", row_group_bytes=2 * 1024 * 1024)
             if not attempts.empty:
-                # Shared executions can be large; selecting one must not require
-                # decompressing unrelated trajectories in the browser.
-                _tables.write_parquet(attempts, staging_dir / "attempts.parquet", row_group_size=1)
+                # Bound decoded groups without creating millions of one-row
+                # groups for short answers. Large trajectories stay isolated.
+                _tables.write_parquet(attempts, staging_dir / "attempts.parquet", row_group_bytes=2 * 1024 * 1024)
             if not assets.empty:
                 # One file payload per row group permits readers to retrieve a
                 # selected asset without decoding unrelated byte blobs.
@@ -1372,6 +1381,7 @@ class BenchmarkBuild(ABC):
         self._asset_rows = {}
         self._attempt_rows = {}
         self._asset_id_by_source_path = {}
+        self._asset_id_by_data = {}
         self._item_asset_ids = {}
         self._item_response_scales = {}
         self._active_benchmark_id = self.slug
@@ -1460,6 +1470,7 @@ class BenchmarkBuild(ABC):
         self._asset_rows = {}
         self._attempt_rows = {}
         self._asset_id_by_source_path = {}
+        self._asset_id_by_data = {}
         self._item_asset_ids = {}
         self._item_response_scales = {}
         try:

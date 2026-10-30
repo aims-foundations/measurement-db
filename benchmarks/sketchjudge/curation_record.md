@@ -1,3 +1,4 @@
 - **Sources:** Pinned author JSONL predictions, the original diagram archive and paper. Preserve source bytes in `raw/`.
 - **Conversion:** Keep full recorded queries, ordered diagram bytes and replies. Import all attempts and reproduce the released binary-verdict parser. Empty replies remain null.
 - **Limits:** One answer-ID/image conflict remains ungraded with both source claims retained. Historical model snapshots are unknown. Code is Apache-2.0; external dataset redistribution terms need clarification.
+- Testlet membership migration (2026-10-29): 4,053 existing item identities link to 1,013 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

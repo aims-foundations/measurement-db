@@ -60,6 +60,7 @@ class SugarCrepe(BenchmarkBuild):
             for row in items.itertuples()]
         items['item_key'] = items.response_key
         items['raw_item_id'] = items.caption_order + ':' + items.category + ':' + items.source_key
+        items['testlet_id'] = items.filename
         items['features'] = items[['category', 'caption_order', 'filename']].to_dict('records')
         items['grading_criterion'] = [dict(reference_answer=caption, rule=self.grading['rule']) for caption in items.caption]
         items['verifier'] = ExactMatcher(spec=json.dumps(self.grading['verifiers']['published'], sort_keys=True))
@@ -80,7 +81,7 @@ class SugarCrepe(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_key=row.source_key,
             native_record=row.native_record, coco_image=row.coco_image, coco_license=row.coco_license),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'features',
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features',
             'grading_criterion', 'verifier', 'attachments']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 

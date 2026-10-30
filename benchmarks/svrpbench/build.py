@@ -71,9 +71,10 @@ class SVRPBench(BenchmarkBuild):
                                      on=["problem", "instance", "metric"], how="left", sort=False, validate="many_to_one")
         responses = responses.assign(response_key=responses.index, subject_key=responses.solver,
                                      test_condition="released individual route;metric=" + responses.metric)
+        items["testlet_id"] = items.problem + ':' + items.instance.astype(str)
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": responses[["response_key", "trace"]],
         }

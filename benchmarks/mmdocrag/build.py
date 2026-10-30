@@ -2,12 +2,14 @@
 """Join MMDocRAG's question, judgment and answer tables without filling missing grades."""
 
 import sys
+import json
 from pathlib import Path
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class MMDocRAG(BenchmarkBuild):
@@ -30,6 +32,7 @@ class MMDocRAG(BenchmarkBuild):
         frames = []
         for filename in files.source_file:
             frame = pd.read_json(self.raw_dir / filename, lines=True, dtype=False, convert_dates=False)
+            frame['native_record'] = frame.astype(object).where(frame.notna(), None).to_dict('records')
             frames.append(frame.rename(columns={"model": "judge_model", "response": "dimensions"}).assign(source_file=filename))
         observations = pd.concat(frames, ignore_index=True)
         observations = observations.loc[observations.q_id.notna() & observations.dimensions.map(lambda value: isinstance(value, dict))]
@@ -89,13 +92,28 @@ class MMDocRAG(BenchmarkBuild):
         # Compatibility input only: the old response-ID payload had a null reference slot.
         # The shared writer keeps the answer exclusively in items.parquet.
         responses["reference_answer"] = None
-        has_trace = responses.trace.map(lambda value: isinstance(value, str) and bool(value))
-        return {
+        items['testlet_id'] = items.raw_item_id
+        definitions = [dict(parent_item_key=row.item_key, component_id=dimension,
+            grading_criterion=dict(reference_answer=row.answer_short, rule='Recorded judge rating for ' + dimension),
+            verifier=Judge(spec=verifier['spec'], judged_by=verifier['judged_by']))
+            for row in items.itertuples() for dimension in expected]
+        outcomes = dimensions.rename(columns={'response_key': 'parent_response_key',
+            'dimension': 'component_id', 'value': 'response'})
+        outcomes = observations[['response_key']].rename(columns={'response_key': 'parent_response_key'}).merge(
+            pd.DataFrame({'component_id': expected}), how='cross').merge(
+                outcomes[['parent_response_key', 'component_id', 'response']],
+                on=['parent_response_key', 'component_id'], how='left', validate='one_to_one')
+        traces = responses[['response_key']].copy()
+        traces['trace'] = [json.dumps(dict(evaluation=row.native_record,
+            answer=row.trace if isinstance(row.trace, str) else None, source_file=row.source_file),
+            ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "trial", "test_condition", "response", "reference_answer"]],
-            "traces": responses.loc[has_trace, ["response_key", "trace"]],
+            "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), outcomes[['parent_response_key', 'component_id', 'response']])
 
 
 if __name__ == "__main__":

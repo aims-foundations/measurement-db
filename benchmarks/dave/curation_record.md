@@ -5,3 +5,4 @@
 - **Scope.** Pipeline models, random baselines, auxiliary tasks, and modality ablations are captured in raw inputs but are outside this import. Recorded model names are retained; unreleased checkpoint or inference settings are not inferred.
 
 Sources and grading are in [metadata.yaml](metadata.yaml); counts and source checks are in [characterization.yaml](characterization.yaml) and the [shared dataset checks](../../tests/test_benchmark_datasets.py).
+- Testlet membership migration (2026-10-29): 3,922 existing item identities link to 2,406 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. Membership was checked against the complete, previously reviewed canonical item table; this grouping-only change did not rerun the upstream import. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

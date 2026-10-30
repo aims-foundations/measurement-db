@@ -1,3 +1,4 @@
 - **Sources:** Pinned author answer archive, task/prompt tables and grading code; source bytes stay unchanged in `raw/`.
 - **Conversion:** Keep every AI attempt, original extracted answer or full explanation, complete task context and distinct model/strategy configurations. Qualitative replies have no released binary grade.
 - **Limits:** Exact historical few-shot prompts and model revisions are unknown. Flag the original scorer’s apostrophe-related reference failures while preserving its results; do not impute missing outputs or repair source grades.
+- Testlet migration (2026-10-29): 53,498 recorded attempts, 106,996 component or retained aggregate observations, and 2,366 canonical items. Every component and its full original input, recorded configuration and trace passed source reconciliation. Characterization records the independently checked counts and complete table fingerprints. Validated locally against the reviewed source and table contracts.

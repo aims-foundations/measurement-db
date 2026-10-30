@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 4330
-    logical_sha256: 53eeec5c1e254eb1a5f0ecc8c3eeceb6d278dd12108322d4c5bde1a43602e78f
+    logical_sha256: 90929aea90e807df5886ae24d409f832ec25e6972f7ab940a3f9b69a05cf324d
+  benchmarks:
+    rows: 1
+    logical_sha256: 94d59e7cd3929c8762e9e299252c0c52d738801600dba574ef556759b9894753
+  items:
+    rows: 249
+    logical_sha256: c45a829c770bf6dcb73282071798cdaee87d13554aaf46140da483f3526eac2b
+  responses:
+    rows: 4672
+    logical_sha256: 8208b108251502155ce23ad7365142aa9043488a52cf659dcf015d399eeef935
   subjects:
     rows: 49
     logical_sha256: 8f9142c9e2bee94ecf761e860d5b5630208405403cbdc1e997c2e161016073f6
-  responses:
-    rows: 4330
-    logical_sha256: 55c493d10e651a973b0db8d3266cc1dffc8dccc6f53a6eb75bfdb0424aecd74d
-  items:
-    rows: 201
-    logical_sha256: dd4a5a9c8b3f5ae8376b0db45d18f6ccc9a2d6cb4b7802496170758f3402cd98
-  benchmarks:
-    rows: 1
-    logical_sha256: 9b27e644737fced025be88dadd1ecaedb9b81e9f07bf27fa5df08136b5087b5d
 source_claims:
   sierra_attempts:
     kind: count
@@ -97,3 +97,35 @@ source_claims:
     scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
       few-shot runs are flagged. tau2-bench is not included.
     expected: 51
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 4330
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 4672
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 249
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 201

@@ -1,14 +1,14 @@
 benchmark:
   name: CORE-Bench
   description: 'CORE-Bench: computational reproducibility agent benchmark (capsule x difficulty).'
-  testing_condition: Each response is the released fraction of capsule subquestions answered correctly.
+  testing_condition: Individual capsule subquestions become items when the pinned deterministic evaluator reproduces every released correct/total count. Prefix evaluation preserves original answer order and early-abort behavior. Unanswered questions receive the exact native failure grade, while unreconciled runs retain only their released aggregate score. Full reports and original task scores are retained on shared attempts.
     Difficulty belongs to the item. Agent architecture and cost limit belong to subject identity. Train/test
     membership remains in the source dataset; it does not define a different agent. Historical trace text
     is preserved. Full task prompts replace the former capsule-title summaries.
   paper_url: https://arxiv.org/abs/2409.11363
   data_source_url: https://github.com/siegelz/core-bench
   subject_type: agent
-  item_type: research_task
+  item_type: subquestion_within_research_capsule_testlet
   license: MIT
   citation: "@misc{siegel2024corebenchfosteringcredibilitypublished,\n      title={CORE-Bench: Fostering\
     \ the Credibility of Published Research Through a Computational Reproducibility Agent Benchmark},\n\
@@ -21,12 +21,9 @@ benchmark:
   - text
   domain:
   - science
-  response_type: fraction
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   release_date: 2024-09
   release: public

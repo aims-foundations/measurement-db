@@ -83,7 +83,8 @@ class RealPOCQi(BenchmarkBuild):
             answer_row=int(row.answers_row), native_answer=row.native_answers,
             opponent_answer_row=int(row.opponent_answer_row), opponent_answer=row.opponent_answer),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.question_id
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition', 'interactors']], traces=traces)
 
 

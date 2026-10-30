@@ -59,18 +59,20 @@ def test_run_scoped_joins_preserve_grades_full_patches_and_trials(builder, monke
     assert tables["responses"].response.tolist() == [1.0, 0.0]
     assert tables["responses"].subject_key.tolist() == runs
     assert tables["subjects"].access_date.tolist() == ["2025-01-01"] * 2
-    assert tables["traces"].to_dict("records") == [{"response_key": 0, "trace": patch}]
+    assert [json.loads(json.loads(t)["source_trace"])["model_patch"] for t in tables["attempts"].trace] == [patch, None]
 
-    subjects, items, responses = [], [], []
+    subjects, items, responses, attempts = [], [], [], []
     monkeypatch.setattr(builder, "add_subject", lambda raw_label, **kw:
                         subjects.append((raw_label, kw)) or "subject")
     monkeypatch.setattr(builder, "add_item", lambda **kw: items.append(kw) or "item")
     monkeypatch.setattr(builder, "add_response", lambda **kw: responses.append(kw))
+    monkeypatch.setattr(builder, "add_attempt", lambda **kw: attempts.append(kw) or kw["raw_attempt_id"])
     builder.build_subject_item_response_rows()
     assert len(items) == 1
     assert [r["trial"] for r in responses] == [1, 2]
     assert [r["response"] for r in responses] == [1.0, 0.0]
-    assert [r["trace"] for r in responses] == [patch, None]
+    assert [r["attempt_id"] for r in responses] == [run + "::00123" for run in runs]
+    assert [json.loads(json.loads(r["trace"])["source_trace"])["model_patch"] for r in attempts] == [patch, None]
 
 
 @pytest.mark.parametrize("second", [task(), task(title="Different", fix_patch="different patch")])
@@ -94,11 +96,11 @@ def test_duplicate_nonempty_patches_are_rejected(builder, second_patch):
         {"instance_id": "00123", "model_patch": second_patch},
     ])
     select_sources(builder)
-    with pytest.raises(ValueError, match="Duplicate nonempty prediction patches.*00123"):
+    with pytest.raises(ValueError, match="Duplicate prediction patches.*00123"):
         builder.build_tables()
 
 
-def test_empty_patches_do_not_override_the_released_patch(builder):
+def test_duplicate_empty_and_nonempty_predictions_are_ambiguous(builder):
     root = builder.raw_dir
     write_jsonl(root / "tasks.jsonl", [task()])
     run = "go__undated-model"
@@ -109,12 +111,7 @@ def test_empty_patches_do_not_override_the_released_patch(builder):
         {"instance_id": "00123", "model_patch": " "},
     ])
     select_sources(builder)
-    tables = builder.build_tables()
-    assert tables["traces"].trace.tolist() == ["released patch"]
-    assert tables["subjects"].iloc[0].features is None
-    assert tables["subjects"].iloc[0].access_date is None
-    builder.source_files += (f"results/{run}.json",)
-    with pytest.raises(ValueError, match="Duplicate result runs.*undated-model"):
+    with pytest.raises(ValueError, match="Duplicate prediction patches"):
         builder.build_tables()
 
 
@@ -131,8 +128,8 @@ def test_pr_number_fallback_and_supplementary_prompt(builder):
     (root / "results/python__model.json").write_text('{"resolved": ["python-task", "org__repo-7"]}')
     select_sources(builder)
     items = builder.build_tables()["items"].set_index("raw_item_id")
-    assert items.loc["org__repo-7", "content"] == "Fix the issue\nTask body"
-    assert items.loc["python-task", "content"] == "Supplementary prompt"
+    assert json.loads(items.loc["org__repo-7", "content"])["issue"] == "Fix the issue\nTask body"
+    assert json.loads(items.loc["python-task", "content"])["issue"] == "Supplementary prompt"
 
 
 def test_lfs_pointer_has_no_patch_but_invalid_jsonl_raises(builder):
@@ -174,7 +171,7 @@ def test_native_ids_and_escaped_run_names(builder):
     assert tables["subjects"].raw_label.tolist() == ["Model+Name"]
     assert tables["subjects"].subject_key.tolist() == [run]
     assert tables["subjects"].features.tolist() == [{"harness": "Agent"}]
-    assert tables["traces"].trace.tolist() == ["recorded patch"]
+    assert [json.loads(json.loads(t)["source_trace"])["model_patch"] for t in tables["attempts"].trace] == ["recorded patch", None]
 
 
 def test_run_names_allow_dates_without_agents_and_undated_agents(builder):
@@ -212,9 +209,9 @@ def test_full_item_text_patches_and_test_lists_are_preserved(builder):
     (root / "results/go__model.json").write_text('{"resolved": ["task-000", "task-064"]}')
     select_sources(builder)
     items = builder.build_tables()["items"].set_index("raw_item_id")
-    assert items.loc["task-000", "content"] == "Fix the issue\nTask body"
+    assert json.loads(items.loc["task-000", "content"])["issue"] == "Fix the issue\nTask body"
     last = items.loc["task-064"]
-    assert last.content == "First\n" + long_body + "\n\nSecond"
+    assert json.loads(last.content)["issue"] == "First\n" + long_body + "\n\nSecond"
     assert last.grading_criterion["reference_answer"] == reference_patch
     verifier = json.loads(last.verifier.spec)
     assert verifier["test_patch"] == test_patch
@@ -225,7 +222,7 @@ def test_full_item_text_patches_and_test_lists_are_preserved(builder):
 
 def test_empty_sources_return_empty_tables(builder):
     tables = builder.build_tables()
-    assert set(tables) == {"subjects", "items", "responses", "traces"}
+    assert set(tables) == {"subjects", "items", "responses", "attempts"}
     assert all(frame.empty for frame in tables.values())
 
 
@@ -256,7 +253,46 @@ def test_supplementary_prompts_are_complete_and_unique(builder):
     (root / "results").mkdir()
     (root / "results/go__model.json").write_text('{"resolved": ["00123"]}')
     select_sources(builder)
-    assert builder.build_tables()["items"].iloc[0].content == prompt.strip()
+    assert json.loads(builder.build_tables()["items"].iloc[0].content)["issue"] == prompt.strip()
     pd.concat([bank, bank]).to_parquet(root / "swebench_verified.parquet")
     with pytest.raises(ValueError, match="Duplicate supplementary prompts.*00123"):
         builder.build_tables()
+
+
+def test_named_tests_link_to_the_exact_submitted_patch(builder):
+    root = builder.raw_dir
+    identity, run = 'org__repo-7', 'c__Agent_fixture-model'
+    write_jsonl(root / 'tasks.jsonl', [task(identity, org='org', repo='repo', number=7, base={'sha': 'revision'})])
+    (root / 'results').mkdir()
+    (root / 'results' / (run + '.json')).write_text(json.dumps({'resolved': [identity]}))
+    write_jsonl(root / 'preds' / (run + '.jsonl'), [{'instance_id': identity, 'model_patch': ''}])
+    folder = root / 'checks' / run / identity
+    folder.mkdir(parents=True)
+    (folder / 'fix.patch').write_text('')
+    (folder / 'report.json').write_text(json.dumps(dict(org='org', repo='repo', number=7,
+        fix_patch_result=dict(passed_tests=['ok', 'conflict'], failed_tests=['bad', 'conflict'], skipped_tests=['skip']))))
+    select_sources(builder)
+    tables = builder.build_tables()
+    grades = tables['responses'].set_index('item_key').response
+    values = {row.raw_item_id.rsplit('::', 1)[1]: grades[row.item_key] for row in tables['items'].itertuples()}
+    assert values['ok'] == 1 and values['bad'] == 0
+    assert pd.isna(values['skip']) and pd.isna(values['conflict'])
+    assert tables['items'].testlet_id.unique().tolist() == [identity]
+    assert len(tables['attempts']) == 1
+    evidence = json.loads(tables['attempts'].iloc[0].trace)
+    assert evidence['recorded_task_score'] == 1
+    assert json.loads(evidence['source_trace'])['model_patch'] == ''
+    (folder / 'fix.patch').write_text('a different patch')
+    with pytest.raises(ValueError, match='differs from the submitted'):
+        builder.build_tables()
+
+
+def test_backport_repository_revisions_are_distinct_task_inputs(builder):
+    root = builder.raw_dir
+    write_jsonl(root / 'tasks.jsonl', [task('first', base={'sha': 'main-revision'}), task('backport', base={'sha': 'release-revision'})])
+    (root / 'results').mkdir()
+    (root / 'results/go__model.json').write_text('{"resolved": ["first", "backport"]}')
+    select_sources(builder)
+    rows = builder.build_tables()['items']
+    assert rows.content.nunique() == 2
+    assert {json.loads(x)['repository_context']['base']['sha'] for x in rows.content} == {'main-revision', 'release-revision'}

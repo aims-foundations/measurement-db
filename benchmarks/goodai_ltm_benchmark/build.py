@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tabulate GoodAI's original memory tests, conversation records and published grades."""
 
+import hashlib
+import unicodedata
 import json
 from pathlib import Path
 import sys
@@ -11,6 +13,8 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.goodai_ltm_benchmark.component_grades import component_grades
 
 
 class GoodAILTM(BenchmarkBuild):
@@ -105,6 +109,8 @@ class GoodAILTM(BenchmarkBuild):
             verifiers.append(ExactMatcher(spec=spec) if protocol['kind'] == 'deterministic' and not revised else Judge(spec=spec))
         items = attempts.assign(item_key=attempts.response_key, raw_item_id=attempts.definition_file,
             content=content, grading_criterion=criteria, verifier=verifiers, attachments=attachments)
+        items['testlet_id'] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize('NFC', text).encode()).hexdigest())
+        items['raw_item_id'] = items.testlet_id
         items['features'] = [dict(task=row.task_type, subset=row.release_group) for row in items.itertuples()]
 
         # 5. Preserve native score units, source occasions and complete original traces.
@@ -114,10 +120,23 @@ class GoodAILTM(BenchmarkBuild):
         attempts['test_condition'] = attempts.source_file
         attempts['trace'] = [json.dumps(dict(source_file=row.source_file, record=row.record),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
-        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'grading_criterion', 'verifier', 'features', 'attachments']],
+        definitions, outcomes = [], []
+        for row in attempts.itertuples():
+            for component, reference, grade in component_grades(row.task_type, row.record):
+                definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion=dict(reference_answer=json.dumps(reference, ensure_ascii=False),
+                        rule=json.dumps(dict(task=row.task_type, native_check=component,
+                            rule='Explicit released check explanation, reconciled with the published task score')),
+                        response_scale=dict(kind='discrete', values=[0, 1], direction='higher_is_better')),
+                    verifier=Judge(spec=json.dumps(dict(kind='published_check_explanation',
+                        source_program=parameters['task_programs'][row.task_type],
+                        program_revision=parameters['labels']['program_revision'])))))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=grade))
+        tables = dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'grading_criterion', 'verifier', 'features', 'attachments']],
             responses=attempts[['response_key', 'subject_key', 'item_key', 'response', 'trial', 'test_condition']],
             traces=attempts[['response_key', 'trace']])
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

@@ -78,6 +78,7 @@ class EngineMTQA(BenchmarkBuild):
         items["verifier"] = [ExactMatcher(spec=json.dumps(self.grading["verifiers"]["exact_match"], sort_keys=True)) for _ in items.index]
         features = items[["source_line", "pair", "id", "name", "stage"]].rename(columns={"id": "sensor_ids", "name": "sensor_files"})
         features["stage"] = features.stage.astype(str).map(parameters["stage_names"])
+        items['testlet_id'] = "test_qa.jsonl:" + items.source_line.astype(str)
         items["features"] = features.assign(**parameters["input_features"]).to_dict("records")
         subjects = pd.DataFrame([dict(subject_key="released_run", raw_label=parameters["subject"]["label"],
             features=parameters["subject_features"])])
@@ -92,7 +93,7 @@ class EngineMTQA(BenchmarkBuild):
         attempts["trace"] = attempts.native_record.map(lambda record: json.dumps(record, ensure_ascii=False, allow_nan=False))
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": attempts[["response_key", "trace"]],
         }

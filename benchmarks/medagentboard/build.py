@@ -1,5 +1,6 @@
 """Tabulate released MedAgentBoard attempts and their available native assessments."""
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -140,6 +141,9 @@ class MedAgentBoard(BenchmarkBuild):
             raise ValueError('Conflicting task definitions share a source key')
         items = items.drop_duplicates('item_key')
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = [hashlib.sha256(json.dumps([row.family, row.dataset, row.source_item,
+            row.stimulus, hashlib.sha256(images[row.image_file]).hexdigest() if row.image_file else None],
+            ensure_ascii=False).encode()).hexdigest() for row in items.itertuples()]
         items['content'] = [json.dumps(dict(multimedia_elements=[dict(content_type='text/plain', text=row.stimulus)]
             + ([dict(content_type='application/json', text=json.dumps(row.options, ensure_ascii=False))] if row.options else [])
             + ([dict(content_type='image/jpeg', location=row.image_file)] if row.image_file else [])), ensure_ascii=False)
@@ -162,7 +166,7 @@ class MedAgentBoard(BenchmarkBuild):
         subjects['features'] = [dict(**parameters['subject_features'], source_configuration=row.subject_key,
             recorded_configuration=row.configuration) for row in subjects.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': observations[['response_key', 'subject_key', 'item_key', 'response']],
             'traces': observations[['response_key', 'trace']]}
 

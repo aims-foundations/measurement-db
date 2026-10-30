@@ -11,6 +11,8 @@ import zstandard
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.build_base import ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ChiBench(BenchmarkBuild):
@@ -86,6 +88,7 @@ class ChiBench(BenchmarkBuild):
         # missing grades null instead of copying the leaderboard's zero imputation.
         items = trials.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.task_key
+        items['testlet_id'] = items.task_key
         items["content"] = items.path.map(lambda path: (self.raw_dir / paths["tasks_root"] / path / "instruction.md").read_bytes().decode("utf-8"))
         items["features"] = [dict(family=row.family, task_kind=row.task_kind, task_actor=row.task_actor) for row in items.itertuples()]
         items["grading_criterion"] = [dict(rule=self.grading["rule"] +
@@ -98,10 +101,11 @@ class ChiBench(BenchmarkBuild):
         responses = trials[["subject_key", "item_key"]].assign(response_key=trials.id, response=rewards)
 
         # 5. Retain the original result and all released evidence for every alias.
-        evidence = []
+        evidence, definitions, outcomes, seen = [], [], [], set()
         decompressor = zstandard.ZstdDecompressor()
         for row in trials.itertuples():
             artifacts = {}
+            scorecard = None
             for source in row.source_files:
                 for relative in parameters["artifacts"].values():
                     path = self.raw_dir / Path(source).parent / relative
@@ -112,15 +116,42 @@ class ChiBench(BenchmarkBuild):
                         else:
                             value = path.read_bytes().decode("utf-8")
                         artifacts[str(path.relative_to(self.raw_dir))] = value
+                        if relative == parameters['artifacts']['scorecard']:
+                            current = json.loads(value)
+                            if scorecard is not None and current != scorecard:
+                                raise ValueError('Source aliases have conflicting scorecards')
+                            scorecard = current
+            if scorecard is not None:
+                if set(scorecard['checks']) != set(scorecard['check_scores']):
+                    raise ValueError('A scorecard omits a recorded check')
+                for name, verdict in scorecard['checks'].items():
+                    if type(verdict) is bool:
+                        grade = float(verdict)
+                    elif verdict == 'not_applicable':
+                        grade = None
+                    else:
+                        raise ValueError('Unknown native checkpoint verdict')
+                    if scorecard['check_scores'][name] != grade:
+                        raise ValueError('Native check score disagrees with its verdict')
+                    if (row.item_key, name) not in seen:
+                        seen.add((row.item_key, name))
+                        verifier = (Judge(spec=row.protocol_json, judge=row.protocol['judge_model'], judged_by='llm')
+                            if name.startswith('judge.') else ExactMatcher(spec=row.protocol_json))
+                        definitions.append(dict(parent_item_key=row.item_key, component_id=name,
+                            grading_criterion=dict(rule=json.dumps(dict(check=name,
+                                expected_terminal_status=row.expected_target_status, verifier_contract=row.verifier_contract,
+                                rule='Released named checkpoint verdict; not-applicable checks remain ungraded'))), verifier=verifier))
+                    outcomes.append(dict(parent_response_key=row.id, component_id=name, response=grade))
             evidence.append(json.dumps(dict(source_files=row.source_files, result=row.record, artifacts=artifacts),
                                        ensure_ascii=False, allow_nan=False))
         traces = pd.DataFrame(dict(response_key=trials.id, trace=evidence))
-        return {
+        tables = {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

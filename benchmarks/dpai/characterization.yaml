@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 4590
-    logical_sha256: 3639b8c356cea488d0082c27b470e87e0937baff642a4d2cf08e005401cbdde4
+    logical_sha256: ee5b886bd8e723af41be54909dde291f3b120e8697773e65df11c8d73ee53401
+  benchmarks:
+    rows: 1
+    logical_sha256: 32e0b08cc582eae72b7d7f62be3e4f8b24a6d8c1e9a67385586ec9bdc26c099f
+  items:
+    rows: 20010
+    logical_sha256: 7ebaebe691d6ce1f7c02ca77c2e14fcb9638123b02a883e58e1507abf907a193
+  responses:
+    rows: 207663
+    logical_sha256: 10ac27ba7146dcabf66dfff2f961e4939ab7b2f688d56c3798f2de1e4b7b6084
   subjects:
     rows: 26
     logical_sha256: 604e0659230c68415e8dcd94455dfcf3df0dc8353171775141bd46fab7b1d198
-  responses:
-    rows: 4590
-    logical_sha256: 3c70dbfaa1d7d0b8dd8287a3680f1b24f0a87809f29553b4320fb0d3bee12f8f
-  items:
-    rows: 306
-    logical_sha256: b82d75d5599b06b30e7cb3a9e3afe3d2a511d22c99faf04e48fbf0cdfdcff8a7
-  benchmarks:
-    rows: 1
-    logical_sha256: efc88b1a1acfa9bd3dda42436eaa90670f3601fd9d8e5a569fa994da658cfcfd
 source_claims:
   source_reports:
     kind: count
@@ -115,3 +115,35 @@ source_claims:
     scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
       empty-patch attempts. Unknown CLI versions remain unknown.
     expected: 411
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 4590
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 207663
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 20010
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 153

@@ -2,3 +2,4 @@
 - Preserves all attempts, full outputs, structured references and original JPEG bytes. Repeated stimuli share an item but retain their separate source observations.
 - Replaces the legacy custom binary score with null: the release contains predictions, not task-specific grades. Restores 32 previously dropped source records; no model or grader runs.
 - Historical inference settings are unavailable. The upstream GitHub research-only terms conflict with the HF card's MIT declaration; both are recorded in metadata.
+- Testlet membership migration (2026-10-29): 9,868 existing item identities link to 8,957 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

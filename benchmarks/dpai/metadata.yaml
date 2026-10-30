@@ -2,7 +2,7 @@ benchmark:
   release: public
   name: DPAI Arena
   description: Published blind and test-informed software-agent evaluations on enterprise Java/Spring tasks.
-  testing_condition: 'Import the fifteen public leaderboard reports captured in September 2026. Each contains 153
+  testing_condition: 'Named post-patch test verdicts are individual items grouped by source task. Targeted-test and complete-suite stages remain distinct grading protocols because the release records both executions. Baseline tests precede the patch and stay in the trace. Skipped tests have null grades; no missing test is inferred. Original weighted phase scores remain in the shared attempt trace, with aggregate-only observations retained when no tests are released. Import the fifteen public leaderboard reports captured in September 2026. Each contains 153
     tasks evaluated in blind and test-informed conditions. Preserve the published normalized score on its original
     phase-specific scale, including partial credit, timeout results, empty-patch attempts and pipeline failures.
     A skipped patch collector does not imply an unattempted task: the native records include completed agent executions.

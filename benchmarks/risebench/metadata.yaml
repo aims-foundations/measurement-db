@@ -4,7 +4,9 @@ benchmark:
   description: Reasoning-informed visual editing on 360 temporal, causal, spatial and logical tasks. This
     import contains 21 author-released model exports and two historical BAGEL configurations, with individual
     image-completion judgments and separate grading protocols.
-  testing_condition: The model receives an instruction and input image. LLM judges assess generated images
+  testing_condition: Native 1-5 reasoning, appearance-consistency, and visual-plausibility ratings are items grouped by source task.
+    Original completion flags and full judge records stay on the shared attempt. Unrecorded dimensions are not inferred.
+    The model receives an instruction and input image. LLM judges assess generated images
     using task references and category-specific rubrics. Historical BAGEL results and the later author
     release retain distinct grading protocols. Native component scores, completion flags, judge explanations
     and available generated images are preserved; failed judge parses remain ungraded. Seven author-marked
@@ -31,16 +33,11 @@ benchmark:
   domain:
   - reasoning
   - general
-  response_type: binary
+  response_type: ordinal
   response_scale:
     kind: discrete
-    values:
-    - 0
-    - 1
+    values: [1, 2, 3, 4, 5]
     direction: higher_is_better
-    meanings:
-      '0': Does not meet the released completion rule.
-      '1': Meets the released completion rule.
   categorical: true
   release_date: 2025-05
   multi_single_turn: single_turn

@@ -3,6 +3,7 @@ benchmark:
   description: Released long-term-memory tests for conversational agents, preserving task definitions, scheduling
     conditions and complete recorded conversations.
   testing_condition: 'Import 3,507 scored records from ten released experiment groups and 37 session configurations.
+    Import recoverable native subchecks as items grouped by the full original stimulus. Keep task scores without recoverable check verdicts as aggregate observations. Shared attempts retain original scores, references and full conversations.
     Exclude runstats cost/runtime summaries. Preserve native score units and each published reference, including
     author revisions. Keep folder identities even when the original configuration run_name differs. Restaurant is
     adaptive: retain initial recorded instructions and menu as item context and the subsequent interaction in traces.

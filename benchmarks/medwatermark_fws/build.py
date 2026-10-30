@@ -125,8 +125,9 @@ class MedWatermarkFWS(BenchmarkBuild):
             judgment_file=row.judgment_file, judgment_row=None if row.judgment_row is None else int(row.judgment_row),
             source_judgment=row.source_judgment, dimension=row.dimension), ensure_ascii=False, allow_nan=False)
             for row in observations.itertuples()]
+        items["testlet_id"] = items.raw_item_id
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]], "traces": traces}
 
 

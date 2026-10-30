@@ -5,3 +5,4 @@
 - **Limitations.** Some labels do not establish exact model checkpoints or inference settings. The captured release also contains short-answer and consumer-query results requiring separate metric review; MedQA-USMLE runs belong to another benchmark. Source files remain unchanged.
 
 [Upstream release](https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52) · [Builder](build.py)
+- Testlet membership migration (2026-10-29): 42,494 existing item identities link to 7,039 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. Membership was checked against the complete, previously reviewed canonical item table; this grouping-only change did not rerun the upstream import. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

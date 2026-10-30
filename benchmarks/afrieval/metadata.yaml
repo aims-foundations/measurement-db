@@ -2,20 +2,23 @@ benchmark:
   name: 'MasakhaNER 1.0 and 2.0: released NER predictions'
   description: Complete published named-entity tag predictions for African-language test sentences and their historical
     reference annotations.
-  testing_condition: 'Import all 948 identified prediction exports: five v1 model families over ten languages and
-    seven v2 families over nineteen released language directories, preserving all available run labels. Each model/language/run
-    export identifies a separate recorded configuration; the release does not establish exact checkpoint identity,
-    all training settings, or independent executions for identical outputs. Align to the gold versions released
-    alongside the predictions, before later Amharic and Fon changes. The v1 BiLSTM files contain digit-to-zero input
-    normalization and embedded gold tags; preserve their actual tokens and verify every embedded tag against the
-    historical annotation. No sentence, reference or output is clipped. The unqualified XLM-R/test_predictions.txt
-    export is kept raw-only: 68 sentences contain shortened token sequences, and its exact run configuration is
-    not documented. The afrieval slug is retained for repository continuity; these are MasakhaNER releases, not
-    a separate AfriEval task suite. No model training, inference, or external judge runs during curation.'
+  testing_condition: 'Each source token is an item grouped by its original sentence. Grade the exact BIO-tag comparison
+    at that position, preserving digit-normalized input variants and complete output sequences. Shared attempts
+    retain the original strict sentence-level grade. Token accuracy is not the entity-level F1 used in the papers.
+    Import all 948 identified prediction exports: five v1 model families over ten languages and seven v2 families
+    over nineteen released language directories, preserving all available run labels. Each model/language/run export
+    identifies a separate recorded configuration; the release does not establish exact checkpoint identity, all
+    training settings, or independent executions for identical outputs. Align to the gold versions released alongside
+    the predictions, before later Amharic and Fon changes. The v1 BiLSTM files contain digit-to-zero input normalization
+    and embedded gold tags; preserve their actual tokens and verify every embedded tag against the historical annotation.
+    No sentence, reference or output is clipped. The unqualified XLM-R/test_predictions.txt export is kept raw-only:
+    68 sentences contain shortened token sequences, and its exact run configuration is not documented. The afrieval
+    slug is retained for repository continuity; these are MasakhaNER releases, not a separate AfriEval task suite.
+    No model training, inference, or external judge runs during curation.'
   paper_url: https://doi.org/10.1162/tacl_a_00416
   data_source_url: https://github.com/masakhane-io/masakhane-ner
   subject_type: model
-  item_type: sentence
+  item_type: token_within_sentence_testlet
   license: CC-BY-NC-4.0 for the NER dataset; underlying news text retains its source terms. Author code is Apache-2.0.
   citation: 'Adelani, David Ifeoluwa et al. (2021). MasakhaNER: Named Entity Recognition for African Languages.
     TACL 9:1116–1131, doi:10.1162/tacl_a_00416. Adelani et al. (2022). MasakhaNER 2.0: Africa-centric Transfer Learning
@@ -38,8 +41,8 @@ benchmark:
     - 1
     direction: higher_is_better
     meanings:
-      '0': At least one predicted BIO tag differs from the original reference.
-      '1': All predicted BIO tags exactly match the original reference.
+      '0': The predicted BIO tag differs from the historical tag at this position.
+      '1': The predicted BIO tag matches the historical tag at this position.
   categorical: true
   release_date: 2021-03
   release: public

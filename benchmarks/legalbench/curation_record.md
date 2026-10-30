@@ -1,3 +1,4 @@
 - Source: 155 pinned HELM Lite v1.0.0 runs across five LegalBench tasks; keep every original request, prediction, per-instance grade and complete generation result.
 - Transformation: use the shared six-stage HELM table pipeline, preserving demonstrations, all accepted references, task definitions and recorded generation settings. No new inference or regrading.
 - Limits: this is the released five-task subset, not the whole LegalBench collection. Historical harness revision is unrecorded; inspected reference code and original task documentation are archived separately.
+- Testlet membership migration (2026-10-29): 9,393 existing item identities link to 2,047 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

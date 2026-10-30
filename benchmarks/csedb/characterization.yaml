@@ -1,108 +1,140 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 41922
-    logical_sha256: 3d7ac87a6a74ced564e11ff091394ef044388443c1fb9a1af8636ae2f2f0713d
+    logical_sha256: 937cd55d1559c11182f930f4c78cdf7241d80c807b24aba9a7b5954ee4bd58a6
+  benchmarks:
+    rows: 1
+    logical_sha256: 626e0c57abe5cfa87006d96cf42073e458b76ce24ab2e57d396a753dc7a2f2fd
+  items:
+    rows: 4303
+    logical_sha256: 5d5ca25277a07df168bb1e4258609810c396c705290b5d8c70277873c9cdefdf
+  responses:
+    rows: 88068
+    logical_sha256: 6108322326decad5bf8520d5aa1724049ce8ed8a72e9d37b1e15f0f206a0953a
   subjects:
     rows: 7
     logical_sha256: f3870722349c96f031ab384e58282beb333cc722f7df534d7a3435ab8215c6c0
-  responses:
-    rows: 41922
-    logical_sha256: ccde6c365676679c52c1e1897a04039b688ab5072d6ee01af123a641426fbb6d
-  items:
-    rows: 2069
-    logical_sha256: 7401029b9e317509fd32934c4f08361f3bcd7486a9c6caa823be4c00ad304913
-  benchmarks:
-    rows: 1
-    logical_sha256: 610e1201d9a481e38bd62c578eb6475d734904895be931325715c90bdadda13d
 source_claims:
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 41922
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 2069
   source_subjects:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 7
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 41922
   source_partial_credit:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 9515
   source_invalid_rubric_alignment:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 6
   source_missing_judgment:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 5
   source_main_assessments:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 37242
   source_prompt_optimization_assessments:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 1080
   source_repeated_generation_assessments:
     kind: count
     origin: derived_from_data
     source: https://github.com/Medlinker-MG/CSEDB/tree/221b34bbfe661d0e47105784abe5a37e1d400f7c
-    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the
-      prompt-optimization plotting script.
-    scope: Independently reconcile each native answer and assessment, including partial credit and invalid
-      judge outputs; no new inference or judging.
+    locator: All sixteen eN_wp.json files in the three eval_data panels, get_score_with_tables.py, and the prompt-optimization
+      plotting script.
+    scope: Independently reconcile each native answer and assessment, including partial credit and invalid judge
+      outputs; no new inference or judging.
     expected: 3600
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Medlinker-MG/CSEDB
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 41922
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Medlinker-MG/CSEDB
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 88068
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Medlinker-MG/CSEDB
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 4303
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Medlinker-MG/CSEDB
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 2069

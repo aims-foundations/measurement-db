@@ -5,7 +5,7 @@ tables:
     logical_sha256: 67dbcdadc03380c256069d185c76f222d035fbb36ad460f9ee9820d4cbf27be3
   items:
     rows: 207090
-    logical_sha256: 00233af7a53ef83c213df23e2f0e7a122971dcae3c3823c01a93ef41ac0113ac
+    logical_sha256: 6180d74b9583d155f77bd1e7521216f7bde3472ed6e4c35879be92a3f8eddb52
   responses:
     rows: 4879368
     logical_sha256: f79bc0cf6ce2f20bfc7b449cb2e4b121aefeefc06d1a46cf14e251de93ab5c86
@@ -20,7 +20,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -29,7 +29,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -38,7 +38,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -47,7 +47,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -56,7 +56,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -65,7 +65,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -74,7 +74,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -83,7 +83,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -92,7 +92,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -101,7 +101,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -110,7 +110,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -119,7 +119,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -128,7 +128,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.
@@ -137,7 +137,7 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
-    locator: "Eight original 2020\u20132022 MQM annotation TSVs and the two author-corrected 2020 target-text copies."
+    locator: Eight original 2020–2022 MQM annotation TSVs and the two author-corrected 2020 target-text copies.
     scope: Every reviewed rating unit, source text, source-scoped translation system, category/severity indicator,
       complete annotation and original rater. This preserves the existing derived binary readout, not the upstream
       scalar MQM score. Ambiguous source units and ignored-only annotation units remain in raw and are counted separately.

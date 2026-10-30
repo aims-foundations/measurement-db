@@ -13,6 +13,8 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.scivisagentbench.report_checks import scored_checks
 
 
 class SciVisAgentBench(BenchmarkBuild):
@@ -114,6 +116,7 @@ class SciVisAgentBench(BenchmarkBuild):
         items = observations[['item_key', 'case_id', 'suite', 'content', 'resources', 'rubrics',
             'answer_keys', 'rule_checks', 'reference_images', 'report_directory']].copy()
         items['raw_item_id'] = items.suite + '/' + items.case_id
+        items['testlet_id'] = items.raw_item_id
         items['attachments'] = [[dict(source_path=entry['source_path'], path=entry['logical_path'],
             role='input', media_type=parameters['resources']['media_type']) for entry in row.resources
             if entry['size'] <= int(parameters['resources']['maximum_inline_bytes'])] for row in items.itertuples()]
@@ -123,11 +126,18 @@ class SciVisAgentBench(BenchmarkBuild):
             for row in items.itertuples()]
         items['grading_criterion'] = [dict(rule=json.dumps(dict(rule=self.grading['rule'],
             vision_rubrics=row.rubrics, deterministic_checks=row.rule_checks), ensure_ascii=False),
+            response_scale=dict(kind='discrete', values=[0, 1], direction='higher_is_better'),
             reference_answer=json.dumps(dict(text_answers=row.answer_keys, images=[
                 dict(path=value, sha256=(hashlib.sha256((self.raw_dir / row.report_directory / value).read_bytes()).hexdigest()
                      if (self.raw_dir / row.report_directory / value).is_file() else None))
                 for value in row.reference_images]), ensure_ascii=False)) for row in items.itertuples()]
         items['verifier'] = Judge(spec=json.dumps(self.grading['verifiers']['reported_case'], sort_keys=True))
+        # Reports for the same case can use different rubrics. Number repeats
+        # within the complete original task definition before expanding checks.
+        identities = {row.item_key: json.dumps([row.content, row.grading_criterion, row.features, row.resources],
+            ensure_ascii=False, sort_keys=True) for row in items.itertuples()}
+        observations['trial'] = observations.groupby([observations.subject_key,
+            observations.item_key.map(identities)], sort=False).cumcount() + 1
 
         # 5. Retain model/harness attribution and complete report evidence for every outcome.
         subjects = observations[['subject_key', 'model', 'harness']].drop_duplicates().rename(columns={'model': 'raw_label'})
@@ -138,10 +148,23 @@ class SciVisAgentBench(BenchmarkBuild):
             generated=row.generated, native_agent=row.agent, model=row.model, score=row.score,
             maximum=row.maximum, displayed_percent=row.percent, case_html=row.native_html),
             ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier', 'attachments']],
-            'responses': observations[['response_key', 'subject_key', 'item_key', 'response']],
+        definitions, outcomes = [], []
+        bank = items.set_index('item_key').to_dict('index')
+        for row in observations.itertuples():
+            for check in scored_checks(row.native_html):
+                original = bank[row.item_key]
+                criterion = dict(reference_answer=original['grading_criterion']['reference_answer'],
+                    rule=json.dumps(dict(criterion=check['criterion'], source_component=check['component_id'],
+                        rule='Released component points on the original scale'), ensure_ascii=False),
+                    response_scale=dict(kind='interval', min=0, max=check['maximum'], direction='higher_is_better'))
+                definitions.append(dict(parent_item_key=row.item_key, component_id=check['component_id'],
+                    grading_criterion=criterion, verifier=original['verifier']))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=check['component_id'], response=check['score']))
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier', 'attachments']],
+            'responses': observations[['response_key', 'subject_key', 'item_key', 'trial', 'response']],
             'traces': traces[['response_key', 'trace']]}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
     @staticmethod
     def _text(value):

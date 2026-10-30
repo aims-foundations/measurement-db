@@ -60,6 +60,7 @@ class EgoSchema(BenchmarkBuild):
         items["raw_item_id"] = items.uid
         items["grading_criterion"] = [dict(reference_answer=str(int(value)), rule=self.grading["rule"]) for value in items.truth]
         items["verifier"] = [ExactMatcher(spec=json.dumps(self.grading["verifiers"]["choice"], sort_keys=True)) for _ in items.index]
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [dict(input_scope=parameters["input_scope"]["description"]) for _ in items.index]
         subjects = configurations.reset_index().rename(columns={"source_file": "subject_key"})
         subjects["features"] = [dict(harness=row.harness, configuration=row.configuration, model_identifier=row.model,
@@ -72,7 +73,7 @@ class EgoSchema(BenchmarkBuild):
             for record in traces.drop(columns="response_key").to_dict("records")]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces[["response_key", "trace"]],
         }

@@ -42,6 +42,7 @@ class IneqMath(BenchmarkBuild):
 
         # 3. Retain actual prompts and references; missing judgments stay missing.
         items = records[["item_key", "raw_item_id", "prompt"]].rename(columns={"prompt": "content"})
+        items["testlet_id"] = items.raw_item_id
         items["features"] = [dict(split=row.data_split, problem_type=row.type, prompt_condition=row.setting,
             **parameters["observation"]) for row in records.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=answer or None, rule=self.grading["rule"]) for answer in records.answer]

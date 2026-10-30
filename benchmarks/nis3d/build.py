@@ -11,6 +11,7 @@ import pymupdf
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.benchmarks.nis3d.components import convert
 
 
 class NIS3D(BenchmarkBuild):
@@ -20,6 +21,7 @@ class NIS3D(BenchmarkBuild):
     def build_tables(self) -> dict[str, pd.DataFrame]:
         parameters, grading = self.build_parameters, self.grading
         layout, labels = parameters['layout'], parameters['labels']
+        protocols = {key: value for key, value in grading['verifiers'].items() if key.startswith('W_')}
 
         # 1. Read the published table into columns; preserve its literal score strings.
         with pymupdf.open(self.raw_dir / layout['paper']) as document:
@@ -77,9 +79,9 @@ class NIS3D(BenchmarkBuild):
         matrix['prediction_artifact'] = matrix.prediction_artifact.where(matrix.prediction_artifact.notna(), None)
 
         # 4. Unpivot quality metrics; runtime remains in the original record, not the grade column.
-        metrics = pd.DataFrame.from_dict(grading['verifiers'], orient='index').rename_axis('metric').reset_index()
+        metrics = pd.DataFrame.from_dict(protocols, orient='index').rename_axis('metric').reset_index()
         responses = matrix.melt(id_vars=['folder', 'subject_key', 'published_record', 'source_info', 'prediction_artifact'],
-                                value_vars=list(grading['verifiers']), var_name='metric', value_name='response')
+                                value_vars=list(protocols), var_name='metric', value_name='response')
         responses['response'] = pd.to_numeric(responses.response, errors='raise')
         responses = responses.merge(metrics, on='metric', how='left', validate='many_to_one')
         responses['item_key'] = responses.folder + ':' + responses.name
@@ -92,7 +94,8 @@ class NIS3D(BenchmarkBuild):
         items['attachments'] = [[dict(data=row.input_bytes, path=row.folder + '/data.tif',
             media_type=labels['media_type'], role=labels['input_role'])] for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=json.dumps(row.reference, sort_keys=True),
-            rule=grading['rule'] + ' ' + row.rule) for row in items.itertuples()]
+            rule=grading['rule'] + ' ' + row.rule,
+            response_scale=dict(kind='interval', min=0, max=1, direction='higher_is_better')) for row in items.itertuples()]
         items['verifier'] = [ExactMatcher(spec=json.dumps(dict(**grading['verifiers'][row.metric], implementation=implementation), sort_keys=True)) for row in items.itertuples()]
 
         # 5. Retain every published record and link binary outputs without turning them into inputs.
@@ -104,10 +107,12 @@ class NIS3D(BenchmarkBuild):
             published_record=row.published_record, source_info=row.source_info, metric=row.name,
             prediction_artifact=row.prediction_artifact, prediction_scope=labels['prediction_scope'],
             grade_status=labels['grade_status']), allow_nan=False) for row in responses.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-                'items': items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.folder
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+                'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
                 'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
                 'traces': traces}
+        return convert(tables, matrix, parameters, grading['verifiers'], self.raw_dir)
 
 
 if __name__ == '__main__':

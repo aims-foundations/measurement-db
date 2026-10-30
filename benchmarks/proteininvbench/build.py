@@ -13,6 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
 from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle, native_json_value
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ProteinInvBench(BenchmarkBuild):
@@ -83,9 +84,11 @@ class ProteinInvBench(BenchmarkBuild):
 
         # 4. Keep backbone inputs separate from reference sequences and target layouts.
         items = responses.drop_duplicates('item_key').copy()
-        items['raw_item_id'] = items.dataset + '/' + items.title
-        items['content'] = [json.dumps(dict(task=labels['task'], backbone=native_json_value(coords)), allow_nan=False)
-                            for coords in items.coords]
+        items['raw_item_id'] = items.title
+        items['testlet_id'] = items.title
+        items['content'] = json.dumps(dict(task=labels['task'], backbone_asset='backbone.json'))
+        items['attachments'] = [[dict(path='backbone.json', role='input', media_type='application/json',
+            data=json.dumps(native_json_value(coords), allow_nan=False).encode())] for coords in items.coords]
         positions = []
         for row in items.itertuples():
             coordinates = np.stack([np.asarray(row.coords[atom], dtype=float) for atom in ['N', 'CA', 'C', 'O']], axis=1)
@@ -110,9 +113,24 @@ class ProteinInvBench(BenchmarkBuild):
             input_archive=paths['inputs'], input_member=row.input_member, configuration_member=row.run + '/model_param.json',
             record=dict(title=row.title, true_seq=row.true_seq.tolist(), pred_probs=row.pred_probs.tolist()),
             vocabulary=row.vocabulary), allow_nan=False) for row in responses.itertuples()]
-        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        definitions = []
+        for row, position in zip(items.itertuples(), positions):
+            if len(position) != len(row.true_seq):
+                raise ValueError('Native residue positions and targets disagree')
+            for index, target in enumerate(row.true_seq):
+                definitions.append(dict(parent_item_key=row.item_key, component_id=str(index),
+                    grading_criterion=dict(reference_answer=json.dumps(dict(token_id=int(target), token=row.vocabulary[int(target)])),
+                        rule=json.dumps(dict(prediction_position=index, coordinate_position=position[index],
+                            preprocessing=row.preprocessing, vocabulary=row.vocabulary,
+                            rule='Exact argmax token match at this native position; coordinate -1 denotes retained padding'))),
+                    verifier=row.verifier))
+        outcomes = [dict(parent_response_key=row.response_key, component_id=str(index), response=float(predicted == target))
+            for row in responses.itertuples() for index, (predicted, target) in enumerate(
+                zip(np.asarray(row.pred_probs).argmax(axis=1), row.true_seq, strict=True))]
+        tables = dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

@@ -248,3 +248,26 @@ def test_input_table_contract_is_checked(fixture, change, message):
     with pytest.raises(BuildContractError, match=message):
         builder.main_from_args(["--source", str(source), "--output", str(output)])
     assert not list(output.glob("*.parquet"))
+
+
+def test_shared_immutable_asset_is_hashed_once(fixture, monkeypatch):
+    import build_base
+    builder, source, output = fixture
+    payload = b'Large shared stimulus' * 1024
+    attachment = dict(data=payload, path='stimulus.bin', media_type='application/octet-stream', role='context')
+    builder.inputs['items']['attachments'] = [[attachment], [attachment]]
+    original = build_base._measurement_ids.asset_id_from_bytes
+    hashed = []
+    def record(data):
+        hashed.append(data)
+        return original(data)
+    monkeypatch.setattr(build_base._measurement_ids, 'asset_id_from_bytes', record)
+    builder.main_from_args(['--source', str(source), '--output', str(output)])
+    assert len(hashed) == 1
+    assert pd.read_parquet(output/'assets.parquet').iloc[0].data == payload
+    reload()
+    second = output.parent / 'repeated-embedded-build'
+    builder.main_from_args(['--source', str(source), '--output', str(second)])
+    assert len(hashed) == 2
+    pd.testing.assert_frame_equal(pd.read_parquet(output/'assets.parquet'),
+        pd.read_parquet(second/'assets.parquet'))

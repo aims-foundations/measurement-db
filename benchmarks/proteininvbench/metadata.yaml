@@ -1,12 +1,7 @@
 benchmark:
   description: Original ProteinInvBench CATH4.2 and CATH4.3 inverse-folding predictions, matched to the released
     backbone coordinates and recorded model configurations.
-  testing_condition: 'Import all saved unperturbed CATH predictions. Compute the author notebook''s per-protein
-    recovery: mean equality between every stored true_seq token and argmax(pred_probs), including any recorded padding
-    positions. Keep full native probability matrices, tokenizer vocabulary and input preprocessing. Confidence is
-    retained in the native probabilities, not counted as a second observation. PDB predictions remain raw-only because
-    the exact sampled assemblies are unavailable; coordinate-noise predictions remain raw-only because the actual
-    perturbed coordinates were not recorded. No model execution.'
+  testing_condition: "Each released token-position prediction is a binary item grouped by protein. Coordinate mappings and native padding are retained. Original float32 mean recovery and complete tensors remain on the shared attempt; each backbone is a referenced input asset. Import all saved unperturbed CATH predictions. Compute the author notebook's per-protein recovery: mean equality between every stored true_seq token and argmax(pred_probs), including any recorded padding positions. Keep full native probability matrices, tokenizer vocabulary and input preprocessing. Confidence is retained in the native probabilities, not counted as a second observation. PDB predictions remain raw-only because the exact sampled assemblies are unavailable; coordinate-noise predictions remain raw-only because the actual perturbed coordinates were not recorded. No model execution."
   paper_url: https://openreview.net/forum?id=bqXduvuW5E
   data_source_url: https://zenodo.org/records/8031783
   subject_type: model
@@ -28,13 +23,12 @@ benchmark:
   - text
   domain:
   - biology
-  response_type: continuous_bounded
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values: [0, 1]
     direction: higher_is_better
-  categorical: false
+  categorical: true
   release_date: '2023-06-13'
   release: public
   name: ProteinInvBench

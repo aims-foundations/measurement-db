@@ -104,6 +104,7 @@ class HallusionBench(BenchmarkBuild):
             [dict(content_type="image/png", location=row.image_path)] if row.visual_input != "0" else [])
             + [dict(content_type="text/plain", text=row.question)]), ensure_ascii=False) for row in items.itertuples()]
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.scope + ":" + items.category + ":" + items.subcategory + ":" + items.set_id
         items["features"] = items[["category", "subcategory", "visual_input", "set_id", "figure_id", "question_id"]].to_dict("records")
         items["grading_criterion"] = [dict(reference_answer=answer, rule=self.grading["rule"]) for answer in items.answer]
         items["verifier"] = [ExactMatcher(spec=json.dumps(self.grading["verifiers"]["exact_matching"], sort_keys=True)) if scope == "primary"
@@ -118,7 +119,7 @@ class HallusionBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(record, ensure_ascii=False, allow_nan=False)
             for record in traces.drop(columns="response_key").to_dict("records")]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces[["response_key", "trace"]]}
 

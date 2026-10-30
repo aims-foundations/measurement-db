@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tabulate original PRM800K candidates, human ratings and recorded solution prefixes."""
 
+import hashlib
+import unicodedata
 import json
 from pathlib import Path
 import sys
@@ -99,7 +101,8 @@ class PRM800K(BenchmarkBuild):
             native_candidate=row.native_candidate if isinstance(row.native_candidate, dict) else None,
             pregenerated_step=row.pregenerated_step if isinstance(row.pregenerated_step, str) else None),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.problem.map(lambda value: hashlib.sha256(unicodedata.normalize("NFC", value).encode()).hexdigest())
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

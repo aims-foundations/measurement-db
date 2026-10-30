@@ -1,6 +1,8 @@
 """Tabulate the published LiveAoPSBench 2024 questions and native scores."""
 
 import json
+import unicodedata
+import hashlib
 import sys
 from pathlib import Path
 
@@ -56,6 +58,7 @@ class LiveAoPSBench(BenchmarkBuild):
         items["item_key"] = items.question_id
         items["raw_item_id"] = items.idx.astype(str)
         items["content"] = items.question
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         items["grading_criterion"] = [dict(reference_answer=json.dumps(answer, ensure_ascii=False),
             rule=self.grading["rule"]) for answer in items.answer]
         items["verifier"] = [Judge(spec=json.dumps(self.grading["verifiers"]["reported"], sort_keys=True))
@@ -68,7 +71,7 @@ class LiveAoPSBench(BenchmarkBuild):
             question_record=row.question_record, source_question_record=row.source_question_record),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces}
 

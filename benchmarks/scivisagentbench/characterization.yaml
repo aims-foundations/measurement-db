@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 714
-    logical_sha256: dcb8a29c8a910b5d1f4acd560840694028358c2d86d29c8ee2f410271155ddb1
-  subjects:
-    rows: 7
-    logical_sha256: fb7acdb76c7dacc22289d40c046927a81940d0a39bf36bbe69d3b5a897a65be6
-  responses:
-    rows: 714
-    logical_sha256: 6735494fe9e58a3c046fa8abf44de6c008dad5c0eed7c0943780a24691492497
   assets:
     rows: 89
     logical_sha256: de1786c02a64a9955f0dc2a79877cd8e04e75f7d208c52c5b19f22fd8f2393ed
-  items:
-    rows: 205
-    logical_sha256: fec4f1465fbc468910f44ef386263c830f9589b529db8fb9323cecf0cdbd5a1e
+  attempts:
+    rows: 714
+    logical_sha256: bfbd99f55482727ae3947a2fe2d0a56b2763758448eb2e3bbdbdaf2758c61976
   benchmarks:
     rows: 1
-    logical_sha256: 470b6486cd3c57768f56828e008ba6607320113fd77f1fa4f82fd1a5a942447f
+    logical_sha256: 06637b9025f0e9b244b1c36d2918075a149e6b2871483f9351240ae952cbbaa6
+  items:
+    rows: 850
+    logical_sha256: 28762be46add4242296dd5d7d59bc11553c29c149f96e7c90d9f5e4b51a70988
+  responses:
+    rows: 3424
+    logical_sha256: 8c28a23bd6809747eaf56873d180be4060dbebefeaf6fcbf751c17a166ec9c31
+  subjects:
+    rows: 7
+    logical_sha256: fb7acdb76c7dacc22289d40c046927a81940d0a39bf36bbe69d3b5a897a65be6
 source_claims:
   source_reports:
     kind: count
@@ -109,3 +109,35 @@ source_claims:
     scope: Current 108-task roster, literal recorded model/harness labels, and additional recorded repeat runs;
       repeated exports are not new observations.
     expected: 2
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SciVisAgentBench/scivisagentbench.github.io/tree/cd0f81b8d27bbd669fe1405a5ec6658bd4ae6a1e/eval_reports
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 714
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SciVisAgentBench/scivisagentbench.github.io/tree/cd0f81b8d27bbd669fe1405a5ec6658bd4ae6a1e/eval_reports
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3424
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SciVisAgentBench/scivisagentbench.github.io/tree/cd0f81b8d27bbd669fe1405a5ec6658bd4ae6a1e/eval_reports
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 850
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SciVisAgentBench/scivisagentbench.github.io/tree/cd0f81b8d27bbd669fe1405a5ec6658bd4ae6a1e/eval_reports
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 108

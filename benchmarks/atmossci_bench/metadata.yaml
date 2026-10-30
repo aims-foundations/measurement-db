@@ -2,42 +2,46 @@ benchmark:
   release: public
   name: AtmosSci-Bench
   description: Recorded language-model attempts on multiple-choice and open-ended atmospheric-science problems.
-  testing_condition: >-
-    One observation is one recorded model attempt in the main MCQ, extra MCQ or OEQ set.
-    Use the problem, options and optional knowledge captured with each MCQ generation;
-    these often differ from the later question bank. OEQ generation text matches the bank.
-    Subject identity retains the native model alias, backend, model name, token limit and
-    recorded retry/fallback settings. Exact historical API requests, decoding settings
-    and harness revisions are not recorded. Import each original judgment, including
-    fractional OEQ credit, without running models or judges. Preserve unjudged attempts
-    with null grades and collapse only identical repeated judgment records. The applied
-    references and evaluator configuration belong to the item grading protocol; do not
-    replace them with a different answer key. Some applied MCQ keys differ from the keys
-    stored with the original questions. Full native generation/evaluation JSON is stored
-    as text inside valid JSON traces so upstream NaN tokens and numerical precision survive.
-    Metadata, question-bank records and all duplicate judgment row positions remain in traces.
+  testing_condition: Each released subanswer judgment becomes an item within the shared question input. Preserve
+    its applied reference, evaluator settings and nullable is_correct verdict without running a new judge. Original
+    question scores, generation records, full judgments and source aliases remain in shared attempts. A null subjudgment
+    is not converted to a failed subanswer, even where the original aggregate counted it in its denominator. One
+    observation is one recorded model attempt in the main MCQ, extra MCQ or OEQ set. Use the problem, options and
+    optional knowledge captured with each MCQ generation; these often differ from the later question bank. OEQ generation
+    text matches the bank. Subject identity retains the native model alias, backend, model name, token limit and
+    recorded retry/fallback settings. Exact historical API requests, decoding settings and harness revisions are
+    not recorded. Import each original judgment, including fractional OEQ credit, without running models or judges.
+    Preserve unjudged attempts with null grades and collapse only identical repeated judgment records. The applied
+    references and evaluator configuration belong to the item grading protocol; do not replace them with a different
+    answer key. Some applied MCQ keys differ from the keys stored with the original questions. Full native generation/evaluation
+    JSON is stored as text inside valid JSON traces so upstream NaN tokens and numerical precision survive. Metadata,
+    question-bank records and all duplicate judgment row positions remain in traces.
   paper_url: https://openreview.net/forum?id=vDm8VWYYuX
   data_source_url: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
   subject_type: model
-  item_type: task
-  license: >-
-    Dataset: CC-BY-NC-4.0, as declared in the upstream Croissant metadata.
-    Code: MIT. Model outputs remain subject to the providers' terms identified
-    in doc/sources_license.md.
-  citation: >-
-    Li, Chenyue, Wen Deng, Mengqian Lu, and Binhang Yuan (2025).
-    AtmosSci-Bench: Evaluating the Recent Advance of Large Language Model for
-    Atmospheric Science. NeurIPS Datasets and Benchmarks.
-  tags: [atmospheric_science, scientific_reasoning, mcq, open_ended]
-  modality: [text]
-  domain: [science, reasoning]
-  response_type: continuous
+  item_type: subanswer_within_science_question_testlet
+  license: 'Dataset: CC-BY-NC-4.0, as declared in the upstream Croissant metadata. Code: MIT. Model outputs remain
+    subject to the providers'' terms identified in doc/sources_license.md.'
+  citation: 'Li, Chenyue, Wen Deng, Mengqian Lu, and Binhang Yuan (2025). AtmosSci-Bench: Evaluating the Recent
+    Advance of Large Language Model for Atmospheric Science. NeurIPS Datasets and Benchmarks.'
+  tags:
+  - atmospheric_science
+  - scientific_reasoning
+  - mcq
+  - open_ended
+  modality:
+  - text
+  domain:
+  - science
+  - reasoning
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values:
+    - 0
+    - 1
     direction: higher_is_better
-  categorical: false
+  categorical: true
   release_date: null
   multi_single_turn: single_turn
 build:

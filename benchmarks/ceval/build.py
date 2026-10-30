@@ -102,6 +102,7 @@ class CEval(BenchmarkBuild):
         subjects = attempts[["subject_key"]].drop_duplicates()
         subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(parameters["protocol"]) for _ in range(len(subjects))]
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [dict(category=row.category, split=row.split) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=gold, rule=self.grading["rule"]) for gold in items.gold]
         items["verifier"] = ExactMatcher(spec=json.dumps(self.grading["verifiers"]["exact_matching"], sort_keys=True))
@@ -119,7 +120,7 @@ class CEval(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }

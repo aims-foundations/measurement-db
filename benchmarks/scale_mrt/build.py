@@ -1,9 +1,11 @@
 """Tabulate original monitor assessments, requests and complete recorded histories."""
 
+import hashlib
 import json
 from pathlib import Path
 import re
 import sys
+import unicodedata
 
 import pandas as pd
 
@@ -93,7 +95,16 @@ class ScaleMRT(BenchmarkBuild):
         rows['grading_criterion'] = rows.scale.map({name: json.dumps(dict(rule=grading['rule'], response_scale=spec['response_scale']), sort_keys=True)
                                                    for name, spec in grading['verifiers'].items()})
         definition = ['content', 'grading_criterion']
+        # Rating protocols may view the same original agent trajectory. A short
+        # monitor request can also collapse different trajectories; leave those
+        # ambiguous requests ungrouped instead of choosing a source parent.
+        rows['testlet_candidate'] = [hashlib.sha256(json.dumps([row.collection, row.task,
+            row.conversation], ensure_ascii=False, sort_keys=True).encode()).hexdigest() for row in rows.itertuples()]
+        rows['normalized_content'] = rows.content.map(lambda value: unicodedata.normalize('NFC', value).strip())
+        candidates = rows.groupby(['normalized_content', 'grading_criterion'], sort=False).testlet_candidate.agg(set)
         items = rows.drop_duplicates(definition)[definition + ['response_key', 'input_scope', 'scale']].rename(columns={'response_key': 'item_key'})
+        items['testlet_id'] = [next(iter(values)) if len(values) == 1 else None for values in (
+            candidates[unicodedata.normalize('NFC', row.content).strip(), row.grading_criterion] for row in items.itertuples())]
         items['raw_item_id'] = items.item_key.str.removeprefix('release/')
         items['features'] = [dict(input_scope=scope, rating_scale=scale) for scope, scale in zip(items.input_scope, items.scale)]
         items['verifier'] = items.scale.map({name: Judge(spec=json.dumps(spec, sort_keys=True)) for name, spec in grading['verifiers'].items()})
@@ -109,7 +120,7 @@ class ScaleMRT(BenchmarkBuild):
         traces = rows[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(source_file=row.response_key, native_record=row.native_record,
             input_scope=row.input_scope, rating_status=row.rating_status), ensure_ascii=False, allow_nan=False) for row in rows.itertuples()]
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'grading_criterion', 'features', 'verifier']],
+        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'grading_criterion', 'features', 'verifier']],
             'responses': rows[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

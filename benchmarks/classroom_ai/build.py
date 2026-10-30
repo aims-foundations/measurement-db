@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ClassroomAI(BenchmarkBuild):
@@ -87,13 +88,17 @@ class ClassroomAI(BenchmarkBuild):
         items = records[["source_row", "question"]].drop_duplicates().copy()
         if items.source_row.duplicated().any():
             raise ValueError("The same DGPT source position has conflicting text across models")
-        items["item_key"] = items.source_row
+        # Resolve repeated question aliases before assigning testlets and trials.
+        canonical = items.drop_duplicates('question').set_index('question').source_row
+        items['item_key'] = items.question.map(canonical)
+        items = items.drop_duplicates('item_key')
         items["raw_item_id"] = "dgpt::" + items.source_row.astype(str)
+        items['testlet_id'] = items.raw_item_id
         items["content"] = items.question
-        items["grading_criterion"] = [{"rule": self.grading["rule"]} for _ in range(len(items))]
+        items["grading_criterion"] = [{"rule": protocol['rule']} for _ in range(len(items))]
         items["verifier"] = [ExactMatcher(spec=json.dumps(protocol, sort_keys=True)) for _ in range(len(items))]
         # Identical text and grading share an item; the registrar retains repeated attempts as trials.
-        records["item_key"] = records.source_row
+        records["item_key"] = records.question.map(canonical)
         targets = records.subject_key.map(parameters["subject_targets"])
         records["test_condition"] = "target_grade=" + targets.map(parameters["target_labels"]).fillna("none")
 
@@ -105,12 +110,27 @@ class ClassroomAI(BenchmarkBuild):
             reference_configuration=dict(parameters["reference_settings"],
                 system_prompt=parameters["reference_system_prompts"][parameters["subject_targets"][row.subject_key]])),
             ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
-        return {
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": records[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }
+        # Raw scores exist even when the integrated classifier excludes a short
+        # answer. Preserve all eight without clipping or recomputation.
+        metric_protocol = self.grading['verifiers']['recorded_metric']
+        if set(measurements.metric) != set(metric_protocol['metrics']):
+            raise ValueError('Unreviewed readability metric')
+        components = []
+        for key in items.item_key:
+            for metric in metric_protocol['metrics']:
+                components.append(dict(parent_item_key=key, component_id=metric,
+                    grading_criterion=dict(rule=json.dumps(dict(metric=metric, rule=self.grading['rule']))),
+                    verifier=ExactMatcher(spec=json.dumps(dict(metric_protocol, selected_metric=metric), sort_keys=True))))
+        outcomes = measurements[['response_key', 'metric', 'score']].rename(columns={
+            'response_key': 'parent_response_key', 'metric': 'component_id', 'score': 'response'})
+        outcomes['response'] = outcomes.response.map(float)
+        return component_tables(tables, pd.DataFrame(components), outcomes)
 
 
 if __name__ == "__main__":

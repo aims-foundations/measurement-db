@@ -96,6 +96,7 @@ class BenGER(BenchmarkBuild):
         observations["item_key"] = observations.corpus + ":" + observations.task_id + ":" + observations.content
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.corpus + ":" + items.task_id
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [dict(corpus=row.corpus, source_task_id=row.task_id, input_scope=row.input_scope)
             for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=row.task_data[parameters["reference_fields"][row.corpus]],
@@ -111,7 +112,7 @@ class BenGER(BenchmarkBuild):
             for row in observations.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

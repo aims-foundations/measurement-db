@@ -8,7 +8,11 @@ benchmark:
     historical API metadata, precise checkpoint revision and random seed are not recorded. The task-specific rubric
     and documented grader define item identity. The old hand-transcribed 130 leaderboard cells are aggregates and
     are retired as individual responses. This cohort is not the benchmark authors' different GPT-4.1 leaderboard
-    protocol. No generation or external judging is rerun.
+    protocol. No generation or external judging is rerun. Each rubric dimension is now an item in the original editing-task
+    testlet. Explicit ratings with Markdown or adjacent explanations are recoverable even when the historical average
+    parser omitted the attempt; this does not create a historical aggregate grade or a new judgment. The full judge
+    reply, output-image identity and original saved mean remain on one execution record. A judge refusal without
+    ratings remains ungraded.
   paper_url: https://openreview.net/forum?id=uUCSrMlfD3
   data_source_url: https://huggingface.co/datasets/Andy1621/BAGEL_results
   subject_type: image_editing_model
@@ -27,13 +31,17 @@ benchmark:
   - text
   domain:
   - general
-  response_type: continuous
+  response_type: likert_5
   response_scale:
-    kind: interval
-    min: 1
-    max: 5
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
     direction: higher_is_better
-  categorical: false
+  categorical: true
   release_date: 2025-05
   release: public
   name: 'ImgEdit-Bench: released BAGEL single-turn evaluation'
@@ -71,8 +79,9 @@ build:
       configuration_scope: CFG values follow the named release and author documentation. Exact historical checkpoint
         revision and seed are unavailable.
 grading:
-  rule: Use the complete source edit-type rubric. Preserve the publisher's saved arithmetic mean of three integer
-    judge ratings, rounded to two decimals. An attempt without a saved native grade remains ungraded.
+  rule: Preserve the explicitly labeled 1–5 judge rating for this named rubric dimension. All three dimensions share
+    the original editing task and generated image. Missing judgments remain null. The original published mean and
+    its parser omissions remain execution evidence.
   verifiers:
     native_judge:
       kind: released_image_edit_judgment
@@ -84,6 +93,15 @@ grading:
         recognized integers.
       limitation: Original responses lack API metadata. The documented judge version is not independently attested
         by each saved result. Preserve parser omissions and original judge text without regrading.
+      aggregate_rule: Use the complete source edit-type rubric. Preserve the publisher's saved arithmetic mean of
+        three integer judge ratings, rounded to two decimals. An attempt without a saved native grade remains ungraded.
+      dimension_aliases:
+        Object Selection & Identity: Object Identity
+        Mask Precision & Background Purity: Mask Precision
+        Object Integrity & Visual Quality: Visual Quality
+      component_parser: Read each rubric-named integer rating, allowing Markdown, a following explanation, or a
+        rating on the next line. Use only the three explicit label aliases. Missing ratings remain null; never infer
+        them from the original mean. Preserve the original mean and its parser omissions separately.
 sources:
   upstream:
   - name: benchmark

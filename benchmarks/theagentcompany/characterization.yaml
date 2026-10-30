@@ -1,68 +1,100 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 3057
-    logical_sha256: 18836502244079f1c2c86efff1e5811aeb7de1c718401075ea2becdf296af1ae
+    logical_sha256: a313f618c2d1061a03c87e765855a32bba756c50b86ee1ff92e038227cb3a4b8
+  benchmarks:
+    rows: 1
+    logical_sha256: 6d2467b3110adbc288ba63d16b7de8d2fc57ae2a81e5c90bbaefa3a4812c4af4
+  items:
+    rows: 556
+    logical_sha256: a4c8474195efd4ac91e2441897eda1b016c28ae0edd60adf5222e001c5cd3d2c
+  responses:
+    rows: 9701
+    logical_sha256: 6daaf879d8bf5a00637989d3af345b9f9244fee52ef2b6ac3f0afd5c5636f5f7
   subjects:
     rows: 19
     logical_sha256: 2e04dfe649285045c21a259258e91b510530a5216384121fa4282aa7bcabd862
-  responses:
-    rows: 3057
-    logical_sha256: 03e77f59b08b312385b380c4ed112694068d10765d3d1a2485ff41e7125301f6
-  items:
-    rows: 175
-    logical_sha256: 1d040c2bd418d3fee1e4831ccf810c772dd637adcdd98ef8c475199fbf346d4e
-  benchmarks:
-    rows: 1
-    logical_sha256: 75ed8ffcb85122b74915d624abf1f6829af6eb4972aa377c193d019ecc505461
 source_claims:
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/TheAgentCompany/experiments/tree/f9b1e9411fcb554e76509a0e1bc8fe7f8b0e69d6/evaluation/1.0.0
-    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md
-      and evaluator.py at the pinned task release.
-    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file,
-      stored with a null grade. Complete native trajectories replace previously extracted and clipped
-      text. One identical compressed/uncompressed pair is counted once.
+    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md and evaluator.py
+      at the pinned task release.
+    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file, stored
+      with a null grade. Complete native trajectories replace previously extracted and clipped text. One identical
+      compressed/uncompressed pair is counted once.
     expected: 3057
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/TheAgentCompany/experiments/tree/f9b1e9411fcb554e76509a0e1bc8fe7f8b0e69d6/evaluation/1.0.0
-    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md
-      and evaluator.py at the pinned task release.
-    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file,
-      stored with a null grade. Complete native trajectories replace previously extracted and clipped
-      text. One identical compressed/uncompressed pair is counted once.
+    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md and evaluator.py
+      at the pinned task release.
+    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file, stored
+      with a null grade. Complete native trajectories replace previously extracted and clipped text. One identical
+      compressed/uncompressed pair is counted once.
     expected: 175
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/TheAgentCompany/experiments/tree/f9b1e9411fcb554e76509a0e1bc8fe7f8b0e69d6/evaluation/1.0.0
-    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md
-      and evaluator.py at the pinned task release.
-    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file,
-      stored with a null grade. Complete native trajectories replace previously extracted and clipped
-      text. One identical compressed/uncompressed pair is counted once.
+    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md and evaluator.py
+      at the pinned task release.
+    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file, stored
+      with a null grade. Complete native trajectories replace previously extracted and clipped text. One identical
+      compressed/uncompressed pair is counted once.
     expected: 3057
   source_trace_files:
     kind: count
     origin: derived_from_data
     source: https://github.com/TheAgentCompany/experiments/tree/f9b1e9411fcb554e76509a0e1bc8fe7f8b0e69d6/evaluation/1.0.0
-    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md
-      and evaluator.py at the pinned task release.
-    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file,
-      stored with a null grade. Complete native trajectories replace previously extracted and clipped
-      text. One identical compressed/uncompressed pair is counted once.
+    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md and evaluator.py
+      at the pinned task release.
+    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file, stored
+      with a null grade. Complete native trajectories replace previously extracted and clipped text. One identical
+      compressed/uncompressed pair is counted once.
     expected: 3058
   source_ungraded_observations:
     kind: count
     origin: derived_from_data
     source: https://github.com/TheAgentCompany/experiments/tree/f9b1e9411fcb554e76509a0e1bc8fe7f8b0e69d6/evaluation/1.0.0
-    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md
-      and evaluator.py at the pinned task release.
-    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file,
-      stored with a null grade. Complete native trajectories replace previously extracted and clipped
-      text. One identical compressed/uncompressed pair is counted once.
+    locator: Native results/eval_*.json and trajectories/traj_* files in the 19 run directories; task.md and evaluator.py
+      at the pinned task release.
+    scope: 3,056 released checkpoint fractions and one additional MUSE trajectory without a grading file, stored
+      with a null grade. Complete native trajectories replace previously extracted and clipped text. One identical
+      compressed/uncompressed pair is counted once.
     expected: 1
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/TheAgentCompany/experiments
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3057
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/TheAgentCompany/experiments
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 9701
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/TheAgentCompany/experiments
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 556
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/TheAgentCompany/experiments
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 175

@@ -51,6 +51,7 @@ class MyPCBench(BenchmarkBuild):
         # 3. Keep requirements and rubric weights in grading, separate from agent instructions.
         items = outcomes.copy()
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.task_id
         items['content'] = items.instruction
         items['features'] = [dict(task_id=row.task_id, legacy_task_id=row.legacy_id,
             rubric_id=row.id, task_category=row.category, task_apps=json.dumps(row.apps),
@@ -89,7 +90,7 @@ class MyPCBench(BenchmarkBuild):
         outcomes['test_condition'] = None
         outcomes.loc[outcomes.model_key.str.endswith(labels['cua_suffix']), 'test_condition'] = labels['cua_condition']
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-                'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+                'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
                 'responses': outcomes[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
                 'traces': traces}
 

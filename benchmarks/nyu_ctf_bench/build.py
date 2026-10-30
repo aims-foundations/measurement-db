@@ -141,6 +141,7 @@ class NYUCTFBench(BenchmarkBuild):
         observations["item_key"] = observations.task_id + ":" + observations.protocol
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"], items["content"], items["attachments"] = items.item_key, items.task_id.map(content), items.task_id.map(attachments)
+        items["testlet_id"] = items.task_id
         items["features"] = items[["task_id", "year", "event", "category", "path"]].rename(columns={"path": "source_path"}).to_dict("records")
         items["grading_criterion"] = [dict(reference_answer=row.task_record["flag"], rule=self.grading["rule"] + " Protocol: " + row.protocol) for row in items.itertuples()]
         items["verifier"] = items.protocol.map(lambda protocol: ExactMatcher(spec=json.dumps(self.grading["verifiers"][protocol], sort_keys=True)))
@@ -153,7 +154,7 @@ class NYUCTFBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(summary_member=row.source_member, summary=row.source_record, task_id=row.task_id,
             task_record=row.task_record, released_traces=row.released_traces), ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-                "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+                "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
                 "responses": responses, "traces": traces}
 
 

@@ -115,6 +115,7 @@ class BBQ(BenchmarkBuild):
                                      + ":" + observations.format)
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.category + ":" + items.example_id.astype(str)
+        items["testlet_id"] = items.category + ":pair:" + (items.example_id // 2).astype(str)
         items["content"] = [json.dumps(dict(question=row.question, options=[row.ans0, row.ans1, row.ans2],
             input_format=row.format, **({} if row.format == "question_only" else {"context": row.context})),
             ensure_ascii=False, sort_keys=True) for row in items.itertuples()]
@@ -139,7 +140,7 @@ class BBQ(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

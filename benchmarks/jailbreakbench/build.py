@@ -61,6 +61,7 @@ class JailbreakBench(BenchmarkBuild):
             evaluation_backend=row.evaluation_llm_provider, defense=row.defense or "none") for row in subjects.itertuples()]
         items = observations[["item_key", "prompt"]].rename(columns={"prompt": "content"})
         items["raw_item_id"] = observations.behavior_index.astype(str)
+        items["testlet_id"] = items.raw_item_id
         items["features"] = [dict(behavior=row.behavior, category=row.category,
             input_scope=parameters["observation"]["input_scope"]) for row in observations.itertuples()]
         items["grading_criterion"] = [dict(rule=json.dumps(dict(description=self.grading["rule"], behavior_goal=row.goal,

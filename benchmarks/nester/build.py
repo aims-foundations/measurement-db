@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Curate released NESTER human judgments, retaining every spreadsheet cell."""
 
+import hashlib
+import unicodedata
 import json
 import sys
 from pathlib import Path
@@ -46,6 +48,7 @@ class Nester(BenchmarkBuild):
         items = responses.drop_duplicates(["content", "criterion"]).copy()
         items["item_key"] = range(len(items))
         items["raw_item_id"] = items.id + ":" + items.criterion
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         rules = self.grading["verifiers"]["human"]["criteria"]
         items["grading_criterion"] = [{"rule": json.dumps({"criterion": criterion, "rule": rules[criterion]})}
                                       for criterion in items.criterion]
@@ -64,7 +67,7 @@ class Nester(BenchmarkBuild):
                            for row in responses.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

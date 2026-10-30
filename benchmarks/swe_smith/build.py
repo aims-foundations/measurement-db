@@ -59,6 +59,7 @@ class SweSmith(BenchmarkBuild):
         items['verifier'] = items.published_task.map(lambda task: ExactMatcher(spec=json.dumps(
             dict(**grading['spec'], published_task=task), sort_keys=True, allow_nan=False)))
         items = items.rename(columns={'instance_id': 'raw_item_id'})
+        items['testlet_id'] = items.raw_item_id
 
         # 4. A provider trajectory ID contributes one observation across its alternate renderings.
         responses = runs.drop_duplicates('traj_id')[['traj_id', 'model', 'item_key', 'resolved']].copy()
@@ -72,7 +73,7 @@ class SweSmith(BenchmarkBuild):
             ensure_ascii=True, allow_nan=False) for row in traces.itertuples()]
         traces = traces.rename(columns={'traj_id': 'response_key'})
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response']],
             traces=traces[['response_key', 'trace']])
 

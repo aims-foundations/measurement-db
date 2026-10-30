@@ -98,9 +98,10 @@ class FETV(BenchmarkBuild):
             metric=row.metric, rater=row.rater, native_record=row.native_record, task_record=row.task_record,
             generation_prompt=row.chinese_prompt if row.subject_key == "cogvideo" else row.prompt,
             output=row.output), ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+        items["testlet_id"] = items.raw_item_id
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

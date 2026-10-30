@@ -101,7 +101,8 @@ class FGBench(BenchmarkBuild):
 
         # 5. Attach grading protocols and link the local table keys.
         specs = self.grading["verifiers"]
-        items = bank.assign(raw_item_id=bank.dataset + ":" + bank.index.astype(str), content=bank.question)
+        items = bank.assign(raw_item_id=bank.dataset + ":" + bank.index.astype(str),
+            testlet_id=bank.dataset + ':' + bank.target_smiles, content=bank.question)
         kinds = bank.task.str.endswith("bool").map({True: "boolean", False: "numeric"})
         items["grading_criterion"] = pd.Series([
             {"reference_answer": answer, "rule": specs[kind]["rule"], "response_scale": specs[kind]["response_scale"]}
@@ -112,7 +113,7 @@ class FGBench(BenchmarkBuild):
         subjects["features"] = subjects.parser.map(lambda parser: {"harness": "FGBench", "answer_parser": parser})
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": responses[["response_key", "trace"]],
         }

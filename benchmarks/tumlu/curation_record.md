@@ -1,3 +1,4 @@
 - Preserve every original output and its exact system/user inputs; shuffled choices and their matching answer remain together rather than being joined by row position.
 - Use the original deterministic answer parser and keep the two prompting modes separate. Retain API-error attempts; Uyghur-Latin grades remain unavailable because the original parser lacks its keyword.
 - Capture the complete pinned upstream repository without modifying its files; full source records and locations remain in traces. No model or judge calls.
+- Testlet membership migration (2026-10-29): 133,944 existing item identities link to 7,533 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

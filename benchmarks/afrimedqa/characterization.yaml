@@ -11,7 +11,7 @@ tables:
     logical_sha256: 1bd2fceb092f6a51be6e5f84f44680719f014d92c948aaf695d205a4473da8c7
   items:
     rows: 42494
-    logical_sha256: d3c59552f332471c53c94b5a741df18f3e49e45ea9387c7ab1d534354bddf7dc
+    logical_sha256: 2e4ff51e852654d34747b64aff70b93a55936b86caa2e0ca66a5c41b0ad8648f
   benchmarks:
     rows: 1
     logical_sha256: 351c93b615737f09e0cf58db8c665223a384975fa9b4c2e1dcbc85f39c99c1f3
@@ -21,96 +21,96 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 190143
   source_ungraded:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 21000
   source_bare_cr_answers:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 1230
   source_foreign_runs_excluded:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 30
   source_recovered_ungraded:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 12000
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 302354
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 302354
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 42494
   source_subjects:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 34
   source_target_questions:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 7039
   source_result_files:
     kind: count
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected: 117
   source_run_responses:
     kind: aggregate
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected:
       results/BioMistral-7B/BioMistral-7B_mcq_base-prompt_0shot_score-0.0000_3000.csv: 3000
       results/BioMistral-7B/afrimed-qa-v1_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.5353_3000.csv: 3000
@@ -254,8 +254,8 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
     locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
-    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
-      untruncated source records; preserve unavailable grades as null.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and untruncated
+      source records; preserve unavailable grades as null.
     expected:
       results/BioMistral-7B/BioMistral-7B_mcq_base-prompt_0shot_score-0.0000_3000.csv: 0
       results/BioMistral-7B/afrimed-qa-v1_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.5353_3000.csv: 1606

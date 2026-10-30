@@ -104,8 +104,9 @@ class Image2Struct(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_run=row.name, source_directory=row.run_key,
             request=row.request_record, prediction=row.prediction_record, instance=row.instance_record),
             ensure_ascii=False, sort_keys=True, allow_nan=False) for row in responses.itertuples()]
+        items["testlet_id"] = items.name.str.split(',model=').str[0] + '/' + items.instance_id
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], 'traces': traces}
 
 

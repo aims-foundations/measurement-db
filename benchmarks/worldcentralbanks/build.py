@@ -1,10 +1,12 @@
 """Tabulate released WorldCentralBanks predictions and their original prompt inputs."""
 
 import ast
+import hashlib
 import json
 from pathlib import Path
 import re
 import sys
+import unicodedata
 
 import pandas as pd
 
@@ -137,6 +139,8 @@ class WorldCentralBanks(BenchmarkBuild):
             for row in subjects.itertuples()]
         items = responses[['item_key', 'source_file', 'source_row', 'bank', 'task', 'actual_labels']].copy()
         items['raw_item_id'] = items.source_file + '/row/' + items.source_row.astype(str)
+        items['testlet_id'] = [hashlib.sha256(unicodedata.normalize('NFC', json.dumps(
+            [row.bank, row.documents], ensure_ascii=False)).encode()).hexdigest() for row in responses.itertuples()]
         items['content'] = [json.dumps(value, ensure_ascii=True) for value in request_inputs]
         items['features'] = [dict(bank=row.bank, task=row.task) for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=label, rule=self.grading['rule']) for label in items.actual_labels]
@@ -148,7 +152,7 @@ class WorldCentralBanks(BenchmarkBuild):
             for row, label in zip(responses.itertuples(), labels)]
         return {
             'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             'traces': traces,
         }

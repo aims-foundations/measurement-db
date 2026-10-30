@@ -2,6 +2,7 @@
 
 import csv
 import json
+import hashlib
 from pathlib import Path
 import re
 import sys
@@ -10,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class Afrieval(BenchmarkBuild):
@@ -77,7 +79,8 @@ class Afrieval(BenchmarkBuild):
         responses['response'] = responses.predicted.eq(responses.gold_reference).astype(float)
         responses['response_key'] = responses.index
         responses['subject_key'] = responses.source_file
-        responses['item_key'] = responses.response_key
+        responses['item_key'] = [hashlib.sha256(json.dumps([row.version, row.language, row.token,
+            row.gold_reference], ensure_ascii=True).encode()).hexdigest() for row in responses.itertuples()]
 
         # 3. Keep each released model/language/run configuration and its actual tokenized input.
         subjects = responses[['subject_key', 'version', 'language', 'model', 'run']].drop_duplicates()
@@ -85,11 +88,14 @@ class Afrieval(BenchmarkBuild):
         subjects['features'] = [dict(source_model_label=row.model, dataset_version=row.version,
             evaluation_language=row.language, released_run=row.run, source_export=row.subject_key,
             harness=protocol['harness']) for row in subjects.itertuples()]
-        items = responses[['item_key', 'version', 'language', 'source_sentence', 'token', 'gold_reference']].copy()
-        items['raw_item_id'] = items.version + '/' + items.language + '/sentence/' + items.source_sentence.astype(str)
+        items = responses[['item_key', 'version', 'language', 'source_sentence', 'token', 'gold_reference']].drop_duplicates('item_key').copy()
         # Escapes preserve literal token code points through shared text normalization.
         items['content'] = [json.dumps(dict(task=protocol['instruction'], language=language, tokens=tokens),
             ensure_ascii=True) for language, tokens in zip(items.language, items.token)]
+        # Repeated source sentences, including digit-normalized aliases, must
+        # assign identical administered inputs to the same testlet.
+        items['testlet_id'] = items.content.map(lambda value: hashlib.sha256(value.encode()).hexdigest())
+        items['raw_item_id'] = items.testlet_id
         items['features'] = [dict(language=language, split='test') for language in items.language]
         items['grading_criterion'] = [dict(reference_answer=json.dumps(tags, ensure_ascii=False),
             rule=self.grading['rule']) for tags in items.gold_reference]
@@ -97,18 +103,27 @@ class Afrieval(BenchmarkBuild):
 
         # 4. Preserve all native output labels and original coordinates without clipping.
         responses['test_condition'] = 'source_export=' + responses.source_file
+        responses['testlet_id'] = responses.item_key.map(items.set_index('item_key').testlet_id)
+        responses['trial'] = responses.groupby(['subject_key', 'testlet_id', 'test_condition'], sort=False).cumcount() + 1
         traces = responses[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_sentence=int(row.source_sentence),
             reference_file=row.reference_file, tokens=row.token, predicted=row.predicted,
             embedded_gold=row.embedded_gold if isinstance(row.embedded_gold, list) else None,
             reference_tokens=row.reference_tokens, reference_tags=row.gold_reference), ensure_ascii=False)
             for row in responses.itertuples()]
-        return {
+        definitions = [dict(parent_item_key=row.item_key, component_id=str(index),
+            grading_criterion=dict(reference_answer=tag, rule=json.dumps(dict(token_index=index,
+                token=row.token[index], rule='Exact BIO tag match at this position in the original sentence'))),
+            verifier=row.verifier) for row in items.itertuples() for index, tag in enumerate(row.gold_reference)]
+        outcomes = [dict(parent_response_key=row.response_key, component_id=str(index), response=float(predicted == target))
+            for row in responses.itertuples() for index, (predicted, target) in enumerate(zip(row.predicted, row.gold_reference))]
+        tables = {
             'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
-            'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'responses': responses[['response_key', 'subject_key', 'item_key', 'trial', 'response', 'test_condition']],
             'traces': traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

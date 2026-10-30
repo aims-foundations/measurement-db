@@ -37,6 +37,7 @@ class SoftwareWorldModels(BenchmarkBuild):
         spec = json.dumps(self.grading["verifiers"]["outcome"], sort_keys=True)
         items = bank.assign(
             item_key=bank.sample_id, raw_item_id=bank.sample_id,
+            testlet_id=bank.instance_id + '@' + bank.base_commit,
             content=(bank.system_prompt.fillna("") + "\n\n" + bank.user_prompt.fillna("")).str.strip(),
             grading_criterion=bank.ground_truth_outcome.map(lambda value: {
                 "reference_answer": value, "rule": self.grading["rule"],
@@ -56,7 +57,7 @@ class SoftwareWorldModels(BenchmarkBuild):
         traces = responses[["response_key", "raw_response"]].rename(columns={"raw_response": "trace"})
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces.loc[traces.trace.map(lambda value: isinstance(value, str))],
         }

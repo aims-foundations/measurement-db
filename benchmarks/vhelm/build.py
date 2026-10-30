@@ -146,8 +146,9 @@ class VHELM(BenchmarkBuild):
             metric=row.metric, metric_records=row.metric_records if isinstance(row.metric_records, list) else [],
             source_aliases=row.source_aliases), sort_keys=True, ensure_ascii=False, allow_nan=False)
             for row in records.itertuples()]
+        items["testlet_id"] = items.raw_item_id
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             responses=responses, traces=traces)
 
 

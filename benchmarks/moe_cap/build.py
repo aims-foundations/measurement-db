@@ -1,8 +1,11 @@
 """Tabulate MoE-CAP's released requests, results and ungraded judgment inputs."""
 
+import hashlib
+from dataclasses import asdict
 import json
 from pathlib import Path
 import sys
+import unicodedata
 from urllib.parse import quote
 
 import pandas as pd
@@ -90,6 +93,10 @@ class MoECAP(BenchmarkBuild):
         items['content'] = items.content.map(lambda value: json.dumps(value, ensure_ascii=False, allow_nan=False))
         items['raw_item_id'] = items.source_task + '::' + items.native_record.map(
             lambda record: str(record['doc_id']) if 'doc_id' in record else record['question']['question_id'])
+        items['testlet_id'] = [hashlib.sha256(unicodedata.normalize('NFC', json.dumps([
+            row.family, {key: value for key, value in row.doc.items()
+                if key not in {'answer', 'model_answer', 'question_id'}}],
+            ensure_ascii=False, sort_keys=True)).encode()).hexdigest() for row in items.itertuples()]
         items['protocol'] = items.family.map(self.grading['verifiers'])
         items['rule'] = items.protocol.map(lambda protocol: protocol['rule'])
         arena = items.family.eq('arena')
@@ -104,6 +111,13 @@ class MoECAP(BenchmarkBuild):
             sort_keys=True, ensure_ascii=False, allow_nan=False))
             for family, protocol, config in zip(items.family, items.protocol, items.task_config)]
         items['features'] = [dict(task=task, input_scope=scope) for task, scope in zip(items.source_task, items.input_scope)]
+        # Some historical requests collapse distinct source documents. Their
+        # original documents stay in traces, but no unique testlet can be assigned.
+        signatures = items.apply(lambda row: json.dumps(dict(
+            content=unicodedata.normalize('NFC', row.content).strip(), criterion=row.grading_criterion,
+            verifier=asdict(row.verifier), features=row.features), ensure_ascii=False, sort_keys=True), axis=1)
+        counts = items.testlet_id.groupby(signatures).transform('nunique')
+        items.loc[counts.gt(1), 'testlet_id'] = None
 
         # 4. Keep full source records and distinguish exports without claiming independent executions.
         responses['item_key'] = responses.response_key
@@ -115,7 +129,7 @@ class MoECAP(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             'subjects': pd.DataFrame(configurations),
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             'traces': traces,
         }

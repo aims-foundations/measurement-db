@@ -335,7 +335,9 @@ sources:
     - match: ^(?:README\.md|src/agent\.py)$
       path: windows_exporter/{path}
 grading:
-  rule: 'Preserve the publisher''s explicit final issue-resolution verdict: resolved/success is 1 and unresolved/failure
+  rule: 'Import each released named test success/failure as a binary item in its issue testlet.
+    Contradictory reports remain ungraded. The original aggregate and full test reports stay on the shared attempt.
+    When named test results are absent, preserve the publisher''s explicit final issue-resolution verdict: resolved/success is 1 and unresolved/failure
     is 0. A prediction, partial-stage event, empty patch or infrastructure error without a final verdict remains
     ungraded. Historical grading uses the repository test protocol; captured task definitions describe the released
     checks but do not prove the exact revision used in every run.'

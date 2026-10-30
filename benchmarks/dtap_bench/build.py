@@ -84,9 +84,10 @@ class DtapBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(judge_file=row.source_file, judge=row.record,
             judge_files=row.judge_files, related_histories=row.entry, association=parameters["traces"]["association"]),
             ensure_ascii=False, allow_nan=False) for row in traces.itertuples()]
+        items["testlet_id"] = items.task_path
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces[["response_key", "trace"]],
         }

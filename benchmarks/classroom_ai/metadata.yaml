@@ -1,16 +1,21 @@
 benchmark:
   release: public
-  description: Readability of educational answers from base, grade-prompted and grade-finetuned GPT models. Preserve
-    the released DGPT answers and integrate their recorded readability estimates with the authors' classifier.
+  description: Eight recorded readability measurements for educational answers from base, grade-prompted and grade-finetuned
+    GPT models. Measurements from the same question share a testlet.
   testing_condition: All 14 released result files contain 740 question occurrences, representing 734 distinct questions.
     The GPT-4o file restarts its printed numbering after 140 records; use source position and question text for
     alignment. Retain repeated questions as separate trials, with the complete answer and all eight recorded readability
-    measurements in each trace. The response is the integrated six-category reading level, not correctness or target-alignment
+    measurements in each trace. Each item records one native numeric readability score, not correctness or target-alignment
     success. The classifier combines seven metrics; ARI is an independent held-out metric. Preserve the released
     classifier's label handling, including its college fallback for Gunning Fog grade 6. Exact historical model
     endpoints, fine-tuning IDs and run-time configurations are unavailable. Captured inference settings describe
     reference code, not verified historical requests. The separately linked training corpus and paper-wide aggregates
-    are not evaluation attempts. No model inference, readability recomputation or new judging is performed.
+    are not evaluation attempts. No model inference, readability recomputation or new judging is performed. The
+    original integrated grade, its short-answer exclusion, all metric labels and the complete answer remain on one
+    execution record. Native numeric measurements remain available even when the integrated grade is null. Repeated
+    question occurrences retain separate trials; the eight metrics do not create eight executions. Scores use their
+    original metric-specific units without clipping or normalization; negative scores and reading-ease values above
+    100 are preserved.
   paper_url: https://arxiv.org/abs/2601.06225
   data_source_url: https://github.com/harryoh99/ClassroomAI
   subject_type: model
@@ -31,19 +36,13 @@ benchmark:
   - text
   domain:
   - education
-  response_type: ordinal
+  response_type: continuous_unbounded
   response_scale:
-    kind: discrete
-    values: [1, 2, 3, 4, 5, 6]
-    meanings:
-      '1': Lower elementary (grades 1–2).
-      '2': Middle elementary (grades 3–4).
-      '3': Upper elementary (grades 5–6).
-      '4': Middle school (grades 7–9).
-      '5': High school (grades 10–12).
-      '6': College or adult (grade 13 and above).
+    kind: interval
+    min: null
+    max: null
     direction: unordered
-  categorical: true
+  categorical: false
   release_date: 2026-01
   name: Classroom AI
   multi_single_turn: single_turn
@@ -59,12 +58,12 @@ build:
       fields: '(?s)\AQ: (?P<question>.*?)\nModel Response: (?P<answer>.*?)\n\nMetric Analysis\n(?P<metrics>.*)\Z'
       measurements: '(?m)^(?P<metric>[^\n:]+): score: (?P<score>[^,\n]+), .*?grade_levels?: (?P<label>[^\n]+)$'
     subject_labels:
-      finetuned_gpt4o_mini_primary-low: 'Classroom AI GPT-4o-mini fine-tune (lower elementary)'
-      finetuned_gpt4o_mini_primary-middle: 'Classroom AI GPT-4o-mini fine-tune (middle elementary)'
-      finetuned_gpt4o_mini_primary-high: 'Classroom AI GPT-4o-mini fine-tune (upper elementary)'
-      finetuned_gpt4o_mini_middle: 'Classroom AI GPT-4o-mini fine-tune (middle school)'
-      finetuned_gpt4o_mini_high: 'Classroom AI GPT-4o-mini fine-tune (high school)'
-      finetuned_gpt4o_mini_adult: 'Classroom AI GPT-4o-mini fine-tune (college/adult)'
+      finetuned_gpt4o_mini_primary-low: Classroom AI GPT-4o-mini fine-tune (lower elementary)
+      finetuned_gpt4o_mini_primary-middle: Classroom AI GPT-4o-mini fine-tune (middle elementary)
+      finetuned_gpt4o_mini_primary-high: Classroom AI GPT-4o-mini fine-tune (upper elementary)
+      finetuned_gpt4o_mini_middle: Classroom AI GPT-4o-mini fine-tune (middle school)
+      finetuned_gpt4o_mini_high: Classroom AI GPT-4o-mini fine-tune (high school)
+      finetuned_gpt4o_mini_adult: Classroom AI GPT-4o-mini fine-tune (college/adult)
       gpt4o_mini: gpt-4o-mini
       gpt4o: gpt-4o
       gpt4o_mini_base_target_primary-low_prompt: gpt-4o-mini
@@ -142,11 +141,9 @@ sources:
     - match: src/(?:classify_results_dataset\.py|test_inference_gpt4omini\.py|utils\.py|compute_seven_dim_value\.py|compute_ari\.py|environment\.yaml|data_grade/link_to_data\.txt|metrics/readability/.*\.(?:py|txt))
       path: reference/a8993b5aaba4abaa4a34b1d515551b9b09a80c99/{path}
 grading:
-  rule: 'Integrate the seven recorded grade estimates: intersect the candidate US grades within each word-, length-
-    and syllable-based group; when an intersection is empty, choose the minimum of the union. Map the minimum candidate
-    to one of six reading levels, then take the median of the three group votes (equivalent to majority vote with
-    a middle-level tie break). Apply the original <20 space-delimited-token exclusion as null. This describes reading
-    level, not answer accuracy; ARI does not participate in the integrated grade.'
+  rule: Read the numeric score from the named released readability measurement. Preserve its original units and
+    value without clipping or recomputation. This measures text readability, not correctness; the integrated six-category
+    classifier and grade labels remain execution evidence.
   verifiers:
     integrated_readability:
       kind: rule_based
@@ -158,41 +155,150 @@ grading:
       - process_val_dale_chall
       - voting
       - majority_voting
-      native_numeric_domain: [1, 30]
+      native_numeric_domain:
+      - 1
+      - 30
       us_grade_bins:
-      - [1, 2]
-      - [3, 4]
-      - [5, 6]
-      - [7, 8, 9]
-      - [10, 11, 12]
-      - [13]
+      - - 1
+        - 2
+      - - 3
+        - 4
+      - - 5
+        - 6
+      - - 7
+        - 8
+        - 9
+      - - 10
+        - 11
+        - 12
+      - - 13
       categorical_candidates:
         flesch:
-          "['10', '11', '12']": [10, 11, 12]
-          "['5']": [1, 2, 3, 4, 5, 6]
-          "['6']": [5, 6]
-          "['7']": [7, 8, 9]
-          "['8', '9']": [7, 8, 9]
-          "['college']": [13]
-          "['college_graduate']": [13]
+          '[''10'', ''11'', ''12'']':
+          - 10
+          - 11
+          - 12
+          '[''5'']':
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          '[''6'']':
+          - 5
+          - 6
+          '[''7'']':
+          - 7
+          - 8
+          - 9
+          '[''8'', ''9'']':
+          - 7
+          - 8
+          - 9
+          '[''college'']':
+          - 13
+          '[''college_graduate'']':
+          - 13
         fog:
-          "'10'": [10, 11, 12]
-          "'11'": [10, 11, 12]
-          "'12'": [10, 11, 12]
-          "'6'": [13]
-          "'7'": [7, 8, 9]
-          "'8'": [7, 8, 9]
-          "'9'": [7, 8, 9]
-          "'na'": [1, 2, 3, 4, 5, 6]
-          "'college'": [13]
-          "'college_graduate'": [13]
+          '''10''':
+          - 10
+          - 11
+          - 12
+          '''11''':
+          - 10
+          - 11
+          - 12
+          '''12''':
+          - 10
+          - 11
+          - 12
+          '''6''':
+          - 13
+          '''7''':
+          - 7
+          - 8
+          - 9
+          '''8''':
+          - 7
+          - 8
+          - 9
+          '''9''':
+          - 7
+          - 8
+          - 9
+          '''na''':
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          '''college''':
+          - 13
+          '''college_graduate''':
+          - 13
         dale_chall:
-          "['1', '2', '3', '4']": [1, 2, 3, 4]
-          "['5', '6']": [5, 6]
-          "['7', '8']": [7, 8, 9]
-          "['9', '10']": [10, 11, 12]
-          "['11', '12']": [10, 11, 12]
-          "['college']": [13]
-          "['college_graduate']": [13]
+          '[''1'', ''2'', ''3'', ''4'']':
+          - 1
+          - 2
+          - 3
+          - 4
+          '[''5'', ''6'']':
+          - 5
+          - 6
+          '[''7'', ''8'']':
+          - 7
+          - 8
+          - 9
+          '[''9'', ''10'']':
+          - 10
+          - 11
+          - 12
+          '[''11'', ''12'']':
+          - 10
+          - 11
+          - 12
+          '[''college'']':
+          - 13
+          '[''college_graduate'']':
+          - 13
       ungraded_policy: Retain attempts with unavailable metric estimates or an answer shorter than 20 space-delimited
         tokens, with response null. Reject unrecognized metric labels instead of guessing.
+      rule: 'Integrate the seven recorded grade estimates: intersect the candidate US grades within each word-,
+        length- and syllable-based group; when an intersection is empty, choose the minimum of the union. Map the
+        minimum candidate to one of six reading levels, then take the median of the three group votes (equivalent
+        to majority vote with a middle-level tie break). Apply the original <20 space-delimited-token exclusion
+        as null. This describes reading level, not answer accuracy; ARI does not participate in the integrated grade.'
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        meanings:
+          '1': Lower elementary (grades 1–2).
+          '2': Middle elementary (grades 3–4).
+          '3': Upper elementary (grades 5–6).
+          '4': Middle school (grades 7–9).
+          '5': High school (grades 10–12).
+          '6': College or adult (grade 13 and above).
+        direction: unordered
+    recorded_metric:
+      kind: rule_based
+      metrics:
+      - Flesh_kincaid
+      - Flesch
+      - Gunning Fog
+      - Coleman
+      - Dale Chall
+      - Ari
+      - Linsear
+      - Spache
+      source_field: 'Metric Analysis / <metric>: score'
+      score_scope: Recorded raw readability index; metric names and units are not interchangeable.
+      short_answer_policy: Preserve released numeric scores even when the integrated classifier excludes the answer.
+        The exclusion applies to that aggregate only.

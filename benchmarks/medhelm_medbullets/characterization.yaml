@@ -11,7 +11,7 @@ tables:
     logical_sha256: b63a9dc232e6b783d0dd28c1b2317ec83123b2f6fcda2b0ddfcae6f636502805
   items:
     rows: 298
-    logical_sha256: 33817e682b68367a160f20ab50de443e7f4d9b77076eb1f0e1f3777c37644ffd
+    logical_sha256: 06edc7238723898bcc1ace061d1ff23968f274d83b9367a8a035f764aed3e54c
   benchmarks:
     rows: 1
     logical_sha256: 247ae2726834d617744a65a1dce45f2340d46070dcc73ac189e13cbf8f0fbf00

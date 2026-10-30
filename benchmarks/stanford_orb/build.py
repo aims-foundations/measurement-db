@@ -211,7 +211,8 @@ class StanfordORB(BenchmarkBuild):
             references=row.references, rendered_assets=row.rendered_assets if row.task == 'light' and isinstance(row.rendered_assets, list) else [],
             rendered_asset_scope=parameters['labels']['rendered_asset_scope'], evaluator_scope=parameters['labels']['evaluator_scope']),
             ensure_ascii=False, allow_nan=False) for row in scores.itertuples()]
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.capture
+        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             'responses': scores[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

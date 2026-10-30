@@ -1,10 +1,8 @@
 benchmark:
   release: public
   name: HealthAdminBench
-  description: Computer-use agent results on 135 synthetic healthcare-administration tasks, with original strict
-    and process-check-removed judgments.
-  testing_condition: Preserve 3510 published runs, with both pass_orig (all task checks) and pass_new (selected
-    process checks removed) as distinct grading protocols, not independent agent attempts. The old curation incorrectly
+  description: Individual evaluator verdicts for computer-use agents on 135 healthcare-administration tasks.
+  testing_condition: Preserve 3510 published runs as attempts. The 3240 runs with released evaluator records produce individual check items grouped by task testlet; the 270 runs without these records retain both aggregate judgments. Both pass_orig (all task checks) and pass_new (selected process checks removed) remain in each attempt trace. The old curation incorrectly
     described pass_new as strict success. Original task checks and the 473-row removal audit define the two criteria.
     Observation mode and prompting strategy remain response conditions; task-specific step-by-step guidance is included
     only for that strategy. Item inputs contain the released goal and start configuration, not task metadata containing
@@ -14,12 +12,11 @@ benchmark:
     trajectory. Keep all run-level grades and the complete available evaluator records, including original judge
     text. CSV seed is the parsed run-name suffix, while the website seed is 42; preserve both without equating them.
     Exact historical model snapshots, inference settings and complete system prompts are not established by the
-    current reference implementation. Native task pass remains binary; subtask counts, fractions, weighted point
-    totals and timings remain in source traces. No new evaluations or API calls.
+    current reference implementation. Individual evaluator success verdicts remain binary; weights, task totals, policy differences and timings remain in source traces. No new evaluations or API calls.
   paper_url: https://arxiv.org/abs/2604.09937
   data_source_url: https://github.com/som-shahlab/health-admin-bench
   subject_type: model
-  item_type: task
+  item_type: evaluator_check_within_task_testlet
   license: Apache-2.0
   citation: 'Bedi et al. (2026). HealthAdminBench: Evaluating Computer-Use Agents on Healthcare Administration Tasks.
     arXiv:2604.09937.'
@@ -44,8 +41,8 @@ benchmark:
     - 1
     direction: higher_is_better
     meanings:
-      '0': At least one check required by this scoring protocol did not pass
-      '1': All checks required by this scoring protocol passed
+      '0': The selected check failed (or the retained aggregate policy failed)
+      '1': The selected check passed (or the retained aggregate policy passed)
 build:
   contract_version: 2
   parameters:

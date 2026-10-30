@@ -1,16 +1,17 @@
 benchmark:
   release: public
   description: 'OpenBioRQ: 657-question core of unsolved biomedical research questions for tool-using
-    agents, graded by a frozen per-question checklist; solve = checklist score >= 0.5. Full per-(model
-    x item) matrix released for 11 agents (roster, held-out, frontier, no-tool ablations).'
+    agents. Each frozen checklist criterion is an item within its question testlet, retaining the
+    released met, partial and not-met judgments for eleven agent configurations.'
   testing_condition: Eleven released configurations cover 657 questions at T=0, with or without the ten-tool
-    harness. The GLM-5.1 checklist judge assigns weighted rubric scores; solve means score >= 0.5. Fourteen
-    recorded attempts have no checklist grade and remain null. Published predictions and tool trajectories
+    harness. The GLM-5.1 checklist judge assigns met=1, partial=0.5 or not_met=0 to individual criteria.
+    Criterion weights and original aggregate grades are retained. Fourteen recorded attempts have no
+    checklist grade and remain attempts without invented criterion outcomes. Published predictions and tool trajectories
     are retained in full; the authors have scrubbed private infrastructure details.
   paper_url: https://arxiv.org/abs/2606.21959
   data_source_url: https://huggingface.co/datasets/Minbyul/OpenBioRQ
   subject_type: model
-  item_type: task
+  item_type: checklist criterion within a question testlet
   license: CC-BY-4.0
   citation: 'Minbyul Jeong. OpenBioRQ: Unsolved Biomedical Research Questions for Agents. arXiv:2606.21959,
     2026.'
@@ -27,16 +28,18 @@ benchmark:
   - medicine
   - science
   - agents_and_tool_use
-  response_type: binary
+  response_type: ordinal
   response_scale:
     kind: discrete
     values:
     - 0
+    - 0.5
     - 1
     direction: higher_is_better
     meanings:
-      '0': unsuccessful
-      '1': successful
+      '0': not met
+      '0.5': partial
+      '1': met
   categorical: true
   release_date: 2026-06
   name: OpenBioRQ
@@ -88,6 +91,7 @@ grading:
   rule: Solve if the released checklist_score is at least 0.5. Unavailable checklist grades remain null.
   verifiers:
     checklist:
+      criterion_rule: The released judgment for this individual criterion; met=1, partial=0.5, not_met=0.
       kind: weighted_llm_checklist
       judge_model: GLM-5.1
       temperature: 0

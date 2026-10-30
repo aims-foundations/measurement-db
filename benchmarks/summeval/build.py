@@ -83,8 +83,9 @@ class SummEval(BenchmarkBuild):
             source_record=row.source_record, rater_group=row.rater_group, rater_index=int(row.trial) - 1,
             dimension=row.dimension, trial_scope=labels['trial_scope']), ensure_ascii=False, allow_nan=False)
             for row in ratings.itertuples()]
+        items["testlet_id"] = items.id
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': ratings[['response_key', 'subject_key', 'item_key', 'response', 'trial']], 'traces': traces}
 
 

@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
-    rows: 7020
-    logical_sha256: 021393dbe006e2ef8d0e8f02fe902f53ae108cfe110c9090fe20aa54f225418e
+  attempts:
+    rows: 3510
+    logical_sha256: 559ae4d604500e9a01061d72510bd81f69c63e6183ed1e1d3e56c0d3f449fdeb
+  benchmarks:
+    rows: 1
+    logical_sha256: 1474a1bdda8b59c8977ae9c9cca1745656ecd13ec710695cc99497f959d5903a
+  items:
+    rows: 3666
+    logical_sha256: a201bd79d292e1cfdeea58ce54f788caf4d1ff6451b54c516b15e4e92b1270bd
+  responses:
+    rows: 41292
+    logical_sha256: 8eef506ed87f1595344175979c4fcfb1af89d6ad8fca099aec0197be67cb7963
   subjects:
     rows: 7
     logical_sha256: 97af6991b2aebbb6f85b5dc1de52c034ecdf6ace8b3642be5ad51a7b9d903fdf
-  responses:
-    rows: 7020
-    logical_sha256: 90a30672d962948c0b43d3cc64bee560abb912e976196bc4c8e4e5b97e50ae25
-  items:
-    rows: 540
-    logical_sha256: ada5238157ef2275ccc15439814055b0cd5f31e6a54c6ef50064e3fb37fbb7fb
-  benchmarks:
-    rows: 1
-    logical_sha256: a724f8b5f4903a7d46d352df62f4097b97530757e8a1dc7a0b2c3f3e88f30fb7
 source_claims:
   source_runs:
     kind: count
@@ -124,3 +124,35 @@ source_claims:
     scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
       independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
     expected: 270
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3510
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 41292
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3666
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 135

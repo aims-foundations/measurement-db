@@ -54,6 +54,7 @@ class BertaQA(BenchmarkBuild):
         observations["item_key"] = observations.content + "\n" + observations.gold
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.language + "-" + items.id.astype(str)
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [{"language": row.language, "category": row.category, "group": row.group,
                                "difficulty": row.difficulty, "shot": parameters["prompt"]["shots"]}
                               for row in items.itertuples()]
@@ -71,7 +72,7 @@ class BertaQA(BenchmarkBuild):
                            for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

@@ -11,7 +11,7 @@ tables:
     logical_sha256: 05c1dd1ff302a7fd0a66ceb48498fc9e8d81181a2edb9cc345b6532e0843d8f5
   items:
     rows: 7146
-    logical_sha256: 3c973f85921bc36c28307386ccf557e97bf1cedb5b1952ff02e3c5103e92cdbd
+    logical_sha256: 7c75c96ee9611eb195eec78f924bf1fb6cb1530d67142496f47cbcd4e353fa20
   benchmarks:
     rows: 1
     logical_sha256: 86325f45f44d397399bcbc4fb1dbe5b61b49e92cac2b7d51e3104990f88e566b
@@ -21,22 +21,22 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/xuanliugit/FGBench/tree/fe67aded66bb08534da180ad6073cef42f422666/data
     locator: Eight well-formed model exports joined to the pinned HF test.jsonl bank
-    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded
-      numeric attempts remain present.
+    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded numeric attempts remain
+      present.
     expected: 8
   source_questions:
     kind: count
     origin: derived_from_data
     source: https://github.com/xuanliugit/FGBench/tree/fe67aded66bb08534da180ad6073cef42f422666/data
     locator: Eight well-formed model exports joined to the pinned HF test.jsonl bank
-    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded
-      numeric attempts remain present.
+    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded numeric attempts remain
+      present.
     expected: 7146
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/xuanliugit/FGBench/tree/fe67aded66bb08534da180ad6073cef42f422666/data
     locator: Eight well-formed model exports joined to the pinned HF test.jsonl bank
-    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded
-      numeric attempts remain present.
+    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded numeric attempts remain
+      present.
     expected: 57168

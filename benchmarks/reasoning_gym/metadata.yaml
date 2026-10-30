@@ -8,8 +8,9 @@ benchmark:
     and exception messages in traces. Normalize the one reward exactly one float64 ULP above 1 to 1, preserving
     its original value in the trace. The hard run named x-ai_grok-3-mini-beta_20250413_235101 is retained in raw
     only: its summary identifies openai/o3-mini with provider OpenAI, so model attribution is unresolved. Run/dataset
-    aggregate summaries are not observations and can differ from the completion scores. No model inference or grading
-    is rerun.'
+    aggregate summaries are not observations and can differ from the completion scores. Model inference is not rerun.
+    Named comparisons for nine position-scoring tasks are recovered from the original answers and pinned deterministic
+    parsers. Keep native format bonuses, penalties and combined rewards on each execution.'
   paper_url: https://openreview.net/forum?id=GqYSunGmp7
   data_source_url: https://github.com/open-thought/reasoning-gym-eval
   subject_type: model
@@ -30,12 +31,9 @@ benchmark:
   domain:
   - reasoning
   - mathematics
-  response_type: continuous_bounded
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   release_date: null
   release: public
@@ -65,6 +63,23 @@ grading:
     each question. Grade is unavailable when the runner records an exception while extracting or grading the completion.
     One positive float64 ULP of boundary roundoff is normalized to 1 and retains its native value in the trace.
   verifiers:
+    components:
+      root_rule: Native greedy nearest-root match after sorting numeric predictions and references. Each matched reference root keeps exp(distance * exp_distance_factor); an unmatched reference has zero reward. The separate extra_roots item counts unmatched predictions. The original combined reward, missing/extra penalties, source parser and configuration remain on the attempt. These root rewards are continuous, not binary correctness judgments.
+      extra_count_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+      rule: Native comparison for the selected reference coordinate. This is a binary component, not the combined reward with format bonuses or penalties. Invalid formats that skip comparisons retain only the original whole-answer reward; grader exceptions remain unknown.
+      binary_scale:
+        kind: discrete
+        values: [0, 1]
+        direction: higher_is_better
+      aggregate_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
     algorithmic:
       kind: released_algorithmic_reward
       source: https://github.com/open-thought/reasoning-gym
@@ -83,59 +98,59 @@ sources:
     url: https://github.com/open-thought/reasoning-gym
     revision: 27cdd25548fbe013934e1c4921debedf81cd85e9
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/27cdd25548fbe013934e1c4921debedf81cd85e9/{path}
   - name: protocol_2ad86a92
     url: https://github.com/open-thought/reasoning-gym
     revision: 2ad86a9237b1b9fa810985d00753f0ac0a6e3a5a
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/2ad86a9237b1b9fa810985d00753f0ac0a6e3a5a/{path}
   - name: protocol_71787c6a
     url: https://github.com/open-thought/reasoning-gym
     revision: 71787c6a0e2fc46b67fcb7c50af7ad0aa43b6439
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/71787c6a0e2fc46b67fcb7c50af7ad0aa43b6439/{path}
   - name: protocol_b69c3581
     url: https://github.com/open-thought/reasoning-gym
     revision: b69c35818ab551a0a3b150ca02de3e9b01e23a4a
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/b69c35818ab551a0a3b150ca02de3e9b01e23a4a/{path}
   - name: protocol_cd1a9ea5
     url: https://github.com/open-thought/reasoning-gym
     revision: cd1a9ea58b7104ce4c39cd0852a5134d72b5d199
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/cd1a9ea58b7104ce4c39cd0852a5134d72b5d199/{path}
   - name: protocol_dced3bfc
     url: https://github.com/open-thought/reasoning-gym
     revision: dced3bfc45c26fd956c1c95c33b7b349785ae3f8
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/dced3bfc45c26fd956c1c95c33b7b349785ae3f8/{path}
   - name: protocol_ea737491
     url: https://github.com/open-thought/reasoning-gym
     revision: ea737491d337d8b1e34bb638af13183aedc92d39
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/ea737491d337d8b1e34bb638af13183aedc92d39/{path}
   - name: protocol_eb69916c
     url: https://github.com/open-thought/reasoning-gym
     revision: eb69916c1b0c1eecbfb0aacacb8057ca3dc19526
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/eb69916c1b0c1eecbfb0aacacb8057ca3dc19526/{path}
   - name: protocol_f373881c
     url: https://github.com/open-thought/reasoning-gym
     revision: f373881c069ae71a4dfc36890482063d6ac64eb1
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/f373881c069ae71a4dfc36890482063d6ac64eb1/{path}
   - name: protocol_f5176992
     url: https://github.com/open-thought/reasoning-gym
     revision: f51769927e0211a41772bd57c5ad2edd69d8b42c
     files:
-    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/.*[.]py|LICENSE|pyproject[.]toml
       path: protocol/f51769927e0211a41772bd57c5ad2edd69d8b42c/{path}

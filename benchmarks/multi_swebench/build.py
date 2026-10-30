@@ -2,11 +2,14 @@
 """Curate pinned Multi-SWE-bench releases using table transformations."""
 
 import json
+import re
 import sys
 from pathlib import Path
 import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.build_measurement_tables import subject_id_for
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class MultiSWEBench(BenchmarkBuild):
@@ -18,7 +21,8 @@ class MultiSWEBench(BenchmarkBuild):
         # 1. Load task definitions, then prepare their text and grading information.
         task_columns = [
             "instance_id", "org", "repo", "number", "resolved_issues", "title", "body",
-            "fix_patch", "patch", "test_patch", "FAIL_TO_PASS", "PASS_TO_PASS", "f2p_tests", "p2p_tests"
+            "fix_patch", "patch", "test_patch", "FAIL_TO_PASS", "PASS_TO_PASS", "f2p_tests", "p2p_tests",
+            "base", "base_commit"
         ]
         task_files = sorted(
             name for name in self.source_files if "/" not in name and name.endswith(".jsonl")
@@ -77,6 +81,8 @@ class MultiSWEBench(BenchmarkBuild):
         verifiers = pd.Series(test_specs.to_dict("records"), index=tasks.index).map(json.dumps)
         has_tests = test_specs.test_patch.notna() | failed_tests.str.len().gt(0) | passed_tests.str.len().gt(0)
         reference_patches = tasks.fix_patch.where(tasks.fix_patch.map(bool), tasks.patch)
+        environments = {identity: dict(repository='/'.join(str(row.get(k) or '') for k in ('org', 'repo')),
+            base=row.get('base'), base_commit=row.get('base_commit')) for identity, row in tasks.to_dict('index').items()}
         tasks = tasks.assign(
             content=content.where(content.ne(""), None),
             reference_answer=reference_patches.replace("", None),
@@ -95,6 +101,12 @@ class MultiSWEBench(BenchmarkBuild):
                 lambda text: text.strip() if isinstance(text, str) and text.strip() else None
             )
             tasks["content"] = tasks.content.fillna(prompts)
+
+        # Backports can share issue text and tests but run against different code.
+        # Preserve the actual repository revision as part of the task input.
+        tasks['content'] = [json.dumps(dict(issue=text, repository_context=environments[identity]),
+            ensure_ascii=False, sort_keys=True) if text is not None else None
+            for identity, text in tasks.content.items()]
 
         # 2. Load run metadata and reshape outcome lists into response rows.
         files = pd.DataFrame({"source_file": sorted(
@@ -173,6 +185,7 @@ class MultiSWEBench(BenchmarkBuild):
         items = items.assign(
             item_key=range(len(items)),
             raw_item_id=items.instance_id,
+            testlet_id=items.instance_id,
             features=items[["lang"]].to_dict("records"),
             grading_criterion=criteria.to_dict("records"),
             verifier=items.verifier.map(ExactMatcher)
@@ -181,8 +194,16 @@ class MultiSWEBench(BenchmarkBuild):
             items[["instance_id", "lang", "item_key"]],
             on=["instance_id", "lang"], how="left", sort=False, validate="many_to_one"
         ).rename(columns={"run_id": "subject_key"})
+        responses['response_key'] = responses.subject_key + '::' + responses.instance_id
+        canonical_subjects = {row.subject_key: subject_id_for(row.raw_label,
+            features=self.subject_settings(row.raw_label, row.features or {}), access_date=row.access_date)
+            for row in subjects.itertuples()}
+        responses['trial'] = responses.groupby([responses.subject_key.map(canonical_subjects), responses.instance_id], sort=False).cumcount() + 1
+        items['attachments'] = [[dict(path='test-environment.json', role='grading_reference', media_type='application/json',
+            data=json.dumps(dict(test_protocol=json.loads(row.verifier.spec), reference_patch=row.grading_criterion['reference_answer']),
+                ensure_ascii=False).encode())] for row in items.itertuples()]
 
-        # 5. Load patches for evaluated runs, retaining complete nonempty text.
+        # 5. Load patches for evaluated runs, including explicitly empty submissions.
         prediction_frames = []
         selected_files = files.loc[files.run_id.isin(responses.subject_key), ["run_id", "prediction_file"]]
         for run_id, name in selected_files.itertuples(index=False, name=None):
@@ -192,26 +213,54 @@ class MultiSWEBench(BenchmarkBuild):
             columns=["instance_id", "model_patch", "run_id"]
         )
         has_text = patches.model_patch.map(lambda value: isinstance(value, str))
-        nonempty = patches.model_patch.where(has_text, "").astype("string").str.strip().ne("")
-        patches = patches.loc[patches.instance_id.notna() & nonempty].set_index(["run_id", "instance_id"])
+        patches = patches.loc[patches.instance_id.notna() & has_text].set_index(["run_id", "instance_id"])
         duplicate_keys = patches.index[patches.index.duplicated()].tolist()
         if duplicate_keys:
-            raise ValueError(f"Duplicate nonempty prediction patches: {duplicate_keys[:5]}")
+            raise ValueError(f"Duplicate prediction patches: {duplicate_keys[:5]}")
 
         # 6. Attach available patches to responses; absent patches leave the recorded grade intact.
         traces = responses.merge(
             patches[["model_patch"]], left_on=["subject_key", "instance_id"],
             right_index=True, how="left", sort=False, validate="one_to_one"
         )
-        traces = traces.loc[traces.model_patch.notna(), ["response_key", "model_patch"]].rename(
-            columns={"model_patch": "trace"}
-        )
-        return {
+        definitions, outcomes, evidence, seen = [], [], [], set()
+        for row in traces.itertuples():
+            run = re.sub(r'[^A-Za-z0-9._/-]', lambda m: f'_x{ord(m[0]):02x}_', row.subject_key)
+            folder = self.raw_dir / 'checks' / run / row.instance_id
+            report = None
+            if (folder / 'report.json').is_file():
+                report = json.loads((folder / 'report.json').read_text())
+                identity = f"{report['org']}__{report['repo']}-{report['number']}"
+                if identity != row.instance_id or not isinstance(row.model_patch, str):
+                    raise ValueError('Named test report lacks an unambiguous submitted prediction')
+                if (folder / 'fix.patch').read_text() != row.model_patch:
+                    raise ValueError('The evaluated fix patch differs from the submitted agent prediction')
+                result = report.get('fix_patch_result')
+                if result:
+                    passed, failed, skipped = (set(result[field]) for field in ('passed_tests', 'failed_tests', 'skipped_tests'))
+                    for name in sorted(passed | failed | skipped):
+                        if (row.item_key, name) not in seen:
+                            seen.add((row.item_key, name))
+                            definitions.append(dict(parent_item_key=row.item_key, component_id=name,
+                                grading_criterion=dict(rule=json.dumps(dict(test_name=name,
+                                    rule='Named test result after applying the exact submitted patch and reference test patch',
+                                    test_environment_asset='test-environment.json'))),
+                                verifier=ExactMatcher(spec=json.dumps(dict(kind='native_fix_patch_result',
+                                    test_environment_asset='test-environment.json')))))
+                        grade = None if name in skipped or name in passed and name in failed else float(name in passed)
+                        outcomes.append(dict(parent_response_key=row.response_key, component_id=name, response=grade))
+            evidence.append(dict(response_key=row.response_key, trace=json.dumps(dict(
+                source_result_file=row.source_file, source_run=row.subject_key, instance_id=row.instance_id,
+                model_patch=row.model_patch if isinstance(row.model_patch, str) else None,
+                test_report=report, test_report_source=str((folder / 'report.json').relative_to(self.raw_dir)) if report is not None else None),
+                ensure_ascii=False, allow_nan=False)))
+        tables = {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
-            "responses": responses[["response_key", "subject_key", "item_key", "response"]],
-            "traces": traces,
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
+            "responses": responses[["response_key", "subject_key", "item_key", "trial", "response"]],
+            "traces": pd.DataFrame(evidence, columns=['response_key', 'trace']),
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 def _test_list(value) -> list[str]:

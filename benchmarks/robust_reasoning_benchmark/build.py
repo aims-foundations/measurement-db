@@ -68,6 +68,7 @@ class RobustReasoningBenchmark(BenchmarkBuild):
         items = rows.drop_duplicates(definition)[definition + ['raw_item_id', 'features', 'response_key']].rename(columns={'response_key': 'item_key'})
         rows = rows.merge(items[definition + ['item_key']], on=definition, validate='many_to_one')
         items['verifier'] = items.verifier.map(lambda value: Judge(spec=value))
+        items['testlet_id'] = items.raw_item_id
 
         # 4. Retain native grades and full provenance; API failures remain observed, ungraded attempts.
         grade = rows.correct.where(rows.task.eq('math'), rows.recovered)

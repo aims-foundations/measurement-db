@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 449942
-    logical_sha256: f66a71e99df84f2d43088df6010680dadc1b4bb0aac8256f9880a88d41e50cb8
-  subjects:
-    rows: 83
-    logical_sha256: cdfba00952d4194efbdc226bd6a525cc644232d90b6e22333496505b35b9e24a
-  responses:
-    rows: 449942
-    logical_sha256: 665cb3645be528d57a2f1cf48237f887a2f2544d47bea47dd130bfca155dae56
   assets:
     rows: 642
     logical_sha256: ea05bb802474f0b861e2b8a40dac77c75fd8ba73a71ea6a591fa33a648f66324
-  items:
-    rows: 8600
-    logical_sha256: c81f8eaad4599eb150e48ee78149a977422e2a3ec72b9287e80fe945fabef875
+  attempts:
+    rows: 267018
+    logical_sha256: e6044f9e34b0884de90380540c63300957f25b2000f237034c50a9377ca69d11
   benchmarks:
     rows: 1
-    logical_sha256: e4fc2d1684749af4fffb59ce842b21a4afd6d8597acc31ee928a21baeb511414
+    logical_sha256: 62012635bad567871d56c5ab5161b7a4e0607a361e4f35f406c0a3d3bac3eb3c
+  items:
+    rows: 8750
+    logical_sha256: 12fc0d8dc931cbe879cd75f43e5436f9e23ca7ec62f07523a0243028b4c70083
+  responses:
+    rows: 462392
+    logical_sha256: 68a31793801ac750506ebda7c661b00b739afeb2683d55817aac3cd75ebfb4d5
+  subjects:
+    rows: 83
+    logical_sha256: cdfba00952d4194efbdc226bd6a525cc644232d90b6e22333496505b35b9e24a
 source_claims:
   source_native_attempts:
     kind: count
@@ -73,15 +73,6 @@ source_claims:
     scope: All captured native attempts and distinct panel judgments. Validate exact model, task, grade, rater,
       trace and image associations; preserve nulls and flag non-grade statistics and invalid ratings.
     expected: 555
-  source_irfl_verified_attempts:
-    kind: count
-    origin: derived_from_data
-    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/tree/30918045d5c1cf318e698c73469400de2251b9e6
-    locator: generations/_consolidation_audit.csv, native generation and prompt Parquets, analysis/jrt_complete_ratings.parquet,
-      and the corresponding run_specs/metrics/annotators.
-    scope: All captured native attempts and distinct panel judgments. Validate exact model, task, grade, rater,
-      trace and image associations; preserve nulls and flag non-grade statistics and invalid ratings.
-    expected: 1950
   source_panel_judgments:
     kind: count
     origin: derived_from_data
@@ -91,6 +82,15 @@ source_claims:
     scope: All captured native attempts and distinct panel judgments. Validate exact model, task, grade, rater,
       trace and image associations; preserve nulls and flag non-grade statistics and invalid ratings.
     expected: 182924
+  source_irfl_verified_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/tree/30918045d5c1cf318e698c73469400de2251b9e6
+    locator: generations/_consolidation_audit.csv, native generation and prompt Parquets, analysis/jrt_complete_ratings.parquet,
+      and the corresponding run_specs/metrics/annotators.
+    scope: All captured native attempts and distinct panel judgments. Validate exact model, task, grade, rater,
+      trace and image associations; preserve nulls and flag non-grade statistics and invalid ratings.
+    expected: 1950
   source_responses:
     kind: count
     origin: derived_from_data
@@ -145,3 +145,51 @@ source_claims:
     scope: All captured native attempts and distinct panel judgments. Validate exact model, task, grade, rater,
       trace and image associations; preserve nulls and flag non-grade statistics and invalid ratings.
     expected: 8600
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 267018
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 462392
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 8750
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 5027
+  source_connection_group_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source connection group observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 16600
+  source_partial_connection_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source partial connection runs. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 1268

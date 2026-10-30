@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 918000
-    logical_sha256: 0c77484a50c502f9118107f830e31f6dc8626eb7ca9ad435092f4f987aa670ef
+    logical_sha256: 75a8daeec13717aae5f3745889a79ce3eecc624de494af4064b0dad324ec452a
+  benchmarks:
+    rows: 1
+    logical_sha256: 466df6800fbba881a41c7d711a1e1c505c1f003b54ebdeea94dec0964c79b458
+  items:
+    rows: 340210
+    logical_sha256: da81ff6d27bc54fd36d15fb403a7aa6c0b35732af03057d91433846c24a31ac7
+  responses:
+    rows: 1338648
+    logical_sha256: 3f14947db86878d91078d6ba78ed3922e7c827eb861c00ca30920cc14f7fe524
   subjects:
     rows: 51
     logical_sha256: 07fe42123be1b7fcd2dcdb6c7151f7e9a8842623630b05cf91bdc1a9e8bee740
-  responses:
-    rows: 918000
-    logical_sha256: a27da5ca55cb2de5913b94320429cc3f62e8e81575c5e352d659db356a772f36
-  items:
-    rows: 233168
-    logical_sha256: 19ec19991e61b3f484f97f4af8fffc0b23643f6637b9e87916c4cd5da7b64989
-  benchmarks:
-    rows: 1
-    logical_sha256: 93c96215aac2eac4b617a991158ab86f71483b196c2e9c3c3fedf1d78bc6619f
 source_claims:
   source_responses:
     kind: count
@@ -250,3 +250,35 @@ source_claims:
     scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
       metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
     expected: 51000
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 918000
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 1338648
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 340210
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 233142

@@ -41,11 +41,13 @@ def test_tables_preserve_nested_source_associations(builder):
         {"item_key": 0, "raw_item_id": "007", "content": "First question", "features": {"website": "first"}},
         {"item_key": 1, "raw_item_id": "008", "content": "008", "features": {"website": "second"}},
     ]
-    assert tables["responses"].to_dict("records") == [
+    assert tables["responses"][["response_key", "subject_key", "item_key", "response"]].to_dict("records") == [
         {"response_key": 0, "subject_key": 0, "item_key": 0, "response": 1.0},
         {"response_key": 1, "subject_key": 2, "item_key": 1, "response": 0.0},
     ]
-    assert tables["traces"].to_dict("records") == [{"response_key": 1, "trace": "Different answer"}]
+    assert tables['responses'].trial.tolist() == [1, 1]
+    evidence = [json.loads(json.loads(row.trace)['source_trace']) for row in tables['attempts'].itertuples()]
+    assert evidence == [first_sites[0]['tasks'][0], second_sites[0]['tasks'][0]]
     assert source_path.read_bytes() == original_bytes
 
 
@@ -54,9 +56,9 @@ def test_empty_model_input_returns_empty_tables_with_required_columns(builder):
     tables = builder.build_tables()
     expected = {
         "subjects": ["subject_key", "raw_label"],
-        "items": ["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"],
-        "responses": ["response_key", "subject_key", "item_key", "response"],
-        "traces": ["response_key", "trace"],
+        "items": ["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"],
+        "responses": ["response_key", "subject_key", "item_key", "trial", "response", "attempt_key"],
+        "attempts": ["attempt_key", "subject_key", "raw_attempt_id", "trace"],
     }
     assert set(tables) == set(expected)
     for name, columns in expected.items():
@@ -87,11 +89,14 @@ def model(tasks, name="fixture", website="site"):
 
 def record_build(builder, monkeypatch):
     subjects, items, responses = [], [], []
+    builder.recorded_attempts = []
     monkeypatch.setattr(builder, "add_subject", lambda raw_label:
                         subjects.append(raw_label) or raw_label)
     monkeypatch.setattr(builder, "add_item", lambda **kw:
                         items.append(kw) or str(len(items)))
     monkeypatch.setattr(builder, "add_response", lambda **kw: responses.append(kw))
+    monkeypatch.setattr(builder, 'add_attempt', lambda **kw:
+                        builder.recorded_attempts.append(kw) or kw['raw_attempt_id'])
     builder.build_subject_item_response_rows()
     return subjects, items, responses
 
@@ -113,7 +118,9 @@ def test_repeated_runs_and_full_answers_keep_their_context(builder, monkeypatch)
     assert len(items) == 1
     assert [r["response"] for r in responses] == [1.0, 0.0]
     assert [r["trial"] for r in responses] == [1, 2]
-    assert [r["trace"] for r in responses] == [answer, "failed answer"]
+    evidence = [json.loads(json.loads(r['trace'])['source_trace']) for r in builder.recorded_attempts]
+    assert [r['retrievedAnswer'] for r in evidence] == [answer, 'failed answer']
+    assert all(r['trace'] is None for r in responses)
 
 
 def test_verdict_precedence_ungraded_entries_and_trace_placeholders(builder, monkeypatch):
@@ -126,12 +133,13 @@ def test_verdict_precedence_ungraded_entries_and_trace_placeholders(builder, mon
         {"accuracy": 100},
     ]
     write_inputs(builder, [model(records)])
-    _, _, responses = record_build(builder, monkeypatch)
-    assert [r["response"] for r in responses] == [1.0, 0.0, 1.0, 0.0]
+    _, items, responses = record_build(builder, monkeypatch)
+    grades = {items[int(r['item_id'])-1]['raw_item_id']: r['response'] for r in responses}
+    assert grades == {'a': 1., 'b::failed': 0., 'c': 1., 'd': 0.}
     assert all(r["trace"] is None for r in responses)
 
 
-def test_checks_do_not_require_numeric_accuracy_and_nontext_answers_are_excluded(builder, monkeypatch):
+def test_checks_do_not_require_numeric_accuracy_and_original_answers_are_retained(builder, monkeypatch):
     answer = "  Actual answer\n"
     write_inputs(builder, [model([
         {"id": "a", "accuracy": "not numeric", "evalsFailed": [], "retrievedAnswer": {"text": "not a trace"}},
@@ -139,9 +147,11 @@ def test_checks_do_not_require_numeric_accuracy_and_nontext_answers_are_excluded
         {"id": "c", "accuracy": "100", "retrievedAnswer": answer},
         {"id": "d", "accuracy": "99", "retrievedAnswer": ["not a trace"]},
     ])])
-    _, _, responses = record_build(builder, monkeypatch)
-    assert [row["response"] for row in responses] == [1.0, 0.0, 1.0, 0.0]
-    assert [row["trace"] for row in responses] == [None, None, answer, None]
+    _, items, responses = record_build(builder, monkeypatch)
+    grades = {items[int(r['item_id'])-1]['raw_item_id']: r['response'] for r in responses}
+    assert grades == {'a': 1., 'b::failed': 0., 'c': 1., 'd': 0.}
+    evidence = [json.loads(json.loads(r['trace'])['source_trace']) for r in builder.recorded_attempts]
+    assert [r['retrievedAnswer'] for r in evidence] == [{'text': 'not a trace'}, 123, answer, ['not a trace']]
 
 
 def test_rules_website_identity_and_missing_v2_definitions(builder, monkeypatch):
@@ -213,3 +223,18 @@ def test_empty_optional_arrays_preserve_named_models(builder, monkeypatch):
     subjects, items, responses = record_build(builder, monkeypatch)
     assert subjects == ["without websites", "empty", "without tasks"]
     assert not items and not responses
+
+
+def test_registry_aliases_share_trial_numbering_before_check_expansion(builder, monkeypatch):
+    import sys
+    registry = sys.modules[module.subject_id_for.__module__]
+    entry = dict(model='owner/model', company='owner')
+    monkeypatch.setattr(registry, '_model_registry', {'alias one': entry, 'alias two': entry})
+    write_inputs(builder, [
+        model([dict(id='task', accuracy=50, evalsPassed=['a'], evalsFailed=['b'])], name='alias one'),
+        model([dict(id='task', accuracy=100, evalsPassed=['a'], evalsFailed=[])], name='alias two')])
+    tables = builder.build_tables()
+    cells = tables['responses'].merge(tables['items'][['item_key', 'raw_item_id']], on='item_key')
+    assert sorted((r.raw_item_id, r.trial, r.response) for r in cells.itertuples()) == [
+        ('task::a', 1, 1.), ('task::a', 2, 1.), ('task::b', 1, 0.)]
+    assert len(tables['attempts']) == 2

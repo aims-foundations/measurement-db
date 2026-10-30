@@ -261,8 +261,9 @@ class MJBench(BenchmarkBuild):
             image1_sha256=None if row.grade_kind == 'bias' else row.image1_hash,
             reported_preferences=row.reported_preferences, grade_status=row.grade_status),
             ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
+        items["testlet_id"] = items.raw_item_id
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': observations[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

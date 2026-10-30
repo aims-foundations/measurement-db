@@ -1,3 +1,4 @@
 - Join by category and item number; preserve full answer options, outputs/logits, and both released annotation versions.
 - Match the author's ordered answer parser. Keep unparsed attempts ungraded and question-only context copies as trace provenance.
 - Preserve input-format differences and RACE fine-tuning labels; historical tokenization and checkpoint revisions are unverified.
+- Testlet membership migration (2026-10-29): 204,201 existing item identities link to 29,208 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. Membership was checked against the complete, previously reviewed canonical item table; this grouping-only change did not rerun the upstream import. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

@@ -61,6 +61,7 @@ class CRUXEval(BenchmarkBuild):
         if items[["code", "input", "output"]].isna().any().any():
             raise ValueError("CRUXEval result references a task absent from the captured bank")
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.sample_id
         items["content"] = [parameters["prompt_templates"][row.prompt_variant].format(
             code=row.code, input=row.input, output=row.output) for row in items.itertuples()]
         items["features"] = [dict(task=row.task, source_task_id=row.sample_id,
@@ -93,7 +94,7 @@ class CRUXEval(BenchmarkBuild):
             trace_scope="released_postprocessed_generation"), ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }

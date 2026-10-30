@@ -1,6 +1,7 @@
 """Tabulate original SWE-PolyBench attempts and their complete source artifacts."""
 
 import json
+import hashlib
 from pathlib import Path
 import sys
 
@@ -9,6 +10,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class SWEPolyBench(BenchmarkBuild):
@@ -94,6 +96,7 @@ class SWEPolyBench(BenchmarkBuild):
         items = attempts[list(dict.fromkeys(item_columns + check_fields))].drop_duplicates(['bank', 'instance_id']).reset_index(drop=True)
         items['item_key'] = items.index
         items['raw_item_id'] = items.bank + '/' + items.instance_id
+        items['testlet_id'] = items.instance_id
         items['content'] = items.problem_statement
         items['features'] = [dict(source_instance_id=row.instance_id, split=row.bank, repo=row.repo,
             base_commit=row.base_commit, language=row.language, task_definition_file=row.task_source_file,
@@ -101,6 +104,11 @@ class SWEPolyBench(BenchmarkBuild):
         items['grading_criterion'] = [dict(reference_answer=row['patch'], rule=json.dumps(dict(rule=self.grading['rule'],
             checks={field: row[field] for field in check_fields}), sort_keys=True)) for row in items.to_dict('records')]
         items['verifier'] = [ExactMatcher(spec=json.dumps(self.grading['verifiers']['published_report'], sort_keys=True)) for _ in items.index]
+        # The shared test environment can contain thousands of names. Store it
+        # once as a grading asset instead of copying it into every test criterion.
+        items['attachments'] = [[dict(path='test-environment.json', role='grading_reference',
+            media_type='application/json', data=json.dumps({field: row[field] for field in check_fields},
+                sort_keys=True).encode())] for row in items.to_dict('records')]
         attempts = attempts.merge(items[['bank', 'instance_id', 'item_key']], on=['bank', 'instance_id'], validate='many_to_one')
 
         # 7. Preserve complete predictions, verdicts, retrieval exports and trajectories.
@@ -113,8 +121,29 @@ class SWEPolyBench(BenchmarkBuild):
                 protocol_scope=labels['task_version_scope']) for row in attempts.itertuples()]
         traces['trace'] = [json.dumps(record, ensure_ascii=False, allow_nan=False) for record in records]
         attempts['subject_key'] = attempts.run
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        # 8. Import named post-patch verdicts. Repeated identical names provide no
+        # new test identity; a name listed as both passed and failed is ambiguous.
+        definitions, outcomes, seen = [], [], set()
+        item_bank = items.set_index('item_key').to_dict('index')
+        for row in attempts.itertuples():
+            result = row.result or {}
+            passed, failed = set(result.get('passed_tests', [])), set(result.get('failed_tests', []))
+            for name in sorted(passed | failed):
+                component = hashlib.sha256(name.encode()).hexdigest()
+                key = row.item_key, component
+                if key not in seen:
+                    seen.add(key)
+                    definition = item_bank[row.item_key]
+                    rule = dict(test_name=name, rule='Recorded post-patch verdict; contradictory named verdicts remain ungraded',
+                        test_environment_asset='test-environment.json', repo=definition['repo'], base_commit=definition['base_commit'])
+                    definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion=dict(rule=json.dumps(rule, sort_keys=True)),
+                        verifier=ExactMatcher(spec=json.dumps(self.grading['verifiers']['published_report'], sort_keys=True))))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component,
+                    response=None if name in passed and name in failed else float(name in passed)))
+        tables = {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

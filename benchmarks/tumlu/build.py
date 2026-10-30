@@ -1,10 +1,12 @@
 """Tabulate TUMLU's complete recorded prompts, outputs and native parser grades."""
 
 import ast
+import hashlib
 import json
 from pathlib import Path
 import re
 import sys
+import unicodedata
 
 import pandas as pd
 
@@ -67,6 +69,13 @@ class TUMLU(BenchmarkBuild):
         responses['test_condition'] = responses.response_key
         items = responses.drop_duplicates('item_key').copy()
         items['raw_item_id'] = items.response_key
+        # The released runner shuffles options independently for each model.
+        # Group by the question and option multiset, retaining each actual
+        # prompt, option order and matching reference as its own item.
+        items['testlet_id'] = [hashlib.sha256(json.dumps([
+            row.language, unicodedata.normalize('NFC', row.question).strip(),
+            sorted(unicodedata.normalize('NFC', choice).strip() for choice in row.choices)],
+            ensure_ascii=False).encode()).hexdigest() for row in items.itertuples()]
         items['features'] = [dict(language=row.language, input_scope=labels['input_scope'])
                              for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=answer, rule=self.grading['rule']) for answer in items.answer]
@@ -86,7 +95,7 @@ class TUMLU(BenchmarkBuild):
             grade_status=row.grade_status, extracted_answer=row.prediction, record=row.record),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], 'traces': traces}
 
 

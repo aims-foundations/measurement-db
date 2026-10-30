@@ -2,7 +2,8 @@ benchmark:
   release: public
   description: Healthcare workflow agents evaluated in a managed-care simulator; retain released per-trial rewards,
     configurations and complete trajectories.
-  testing_condition: Capture all 46 published submission packets, including third-party systems under their reported
+  testing_condition: Released named checkpoints are separate items grouped by task; not-applicable checks remain ungraded. Full task rewards and scorecards stay on the shared attempt. Runs without scorecards keep their original aggregate.
+    Capture all 46 published submission packets, including third-party systems under their reported
     model identities. The 7,750 result files contain 7,700 distinct run UUIDs; 50 byte-identical runs were resubmitted
     and count once. Keep all 33 missing per-trial rewards null, even though the upstream leaderboard aggregator
     imputes failures. Preserve the reported agent settings, harness version, provider route, per-packet grading

@@ -81,7 +81,8 @@ class AgenticReviewPerturbation(BenchmarkBuild):
         if items.item_key.duplicated().any():
             raise ValueError("A review item has conflicting paper or rubric definitions")
         items = items.assign(
-            raw_item_id=items.item_key, grading_criterion=items.rule.map(lambda rule: {"rule": rule}),
+            raw_item_id=items.item_key, testlet_id=items.item_key.str.rsplit("/", n=1).str[0],
+            grading_criterion=items.rule.map(lambda rule: {"rule": rule}),
             verifier=Judge(spec=self.grading["verifiers"]["detection"]["spec"], judged_by="llm"),
             features=items[["paper_id", "perturbation_id"]].to_dict("records"),
         )
@@ -95,7 +96,7 @@ class AgenticReviewPerturbation(BenchmarkBuild):
         responses = observations.assign(response_key=observations.source_file + "/" + observations.perturbation_id)
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
         }
 

@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 114
-    logical_sha256: 445149fc2c7a605864a77ede2234f2cae34ca7353720e2d3154b212d0e17ea6b
+    logical_sha256: 08006759d21253ab340ad8b434013b079c08b0578889bf468d94cd5ef8913d2f
+  benchmarks:
+    rows: 1
+    logical_sha256: f7ad3107d4094b112c23ab1d09d15d2a6b9257be8ef6e3a4f93db093e4bfc83a
+  items:
+    rows: 912
+    logical_sha256: 2aff0940c1218cc9930b871c6a5d82093e17fa0b0a36d1447938d256529d116d
+  responses:
+    rows: 912
+    logical_sha256: fdc68fe6d50ac6bc78044aeb47911e7b32c27edc3f34fbeb5e3f8ab2aedc2962
   subjects:
     rows: 7
     logical_sha256: 9c47f3d5e29192faa294b349c1446ab9ab3320863e57c9de838996be6dc5b408
-  responses:
-    rows: 114
-    logical_sha256: 041a7ba17099d3f8f92744165bdff5f7799df033ef2c2e57953c94fbb78002e4
-  items:
-    rows: 114
-    logical_sha256: 62e4994a927b88be0d023b42e67ba208528a2a1946b4e8bc03b54797d483abd8
-  benchmarks:
-    rows: 1
-    logical_sha256: c7f87c2de6f67b9709d9651c00a37c784ddf8b928a39daa5193df96e18ab38c7
 source_claims:
   source_responses:
     kind: count
@@ -29,9 +29,9 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
     locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
-    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
-      exclude notes. Not the full model evaluation sweep.
-    expected: 114
+    scope: Eight native clause definitions for each of the 114 selected best hybrid rollouts. This remains the original
+      released subset, not the full model evaluation sweep.
+    expected: 912
   source_subjects:
     kind: count
     origin: derived_from_data
@@ -96,3 +96,35 @@ source_claims:
     scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
       exclude notes. Not the full model evaluation sweep.
     expected: 0
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://weavebench.github.io/trajectories/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 114
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://weavebench.github.io/trajectories/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 912
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://weavebench.github.io/trajectories/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 912
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://weavebench.github.io/trajectories/
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 114

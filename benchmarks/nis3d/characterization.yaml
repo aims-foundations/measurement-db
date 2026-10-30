@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 180
-    logical_sha256: d930b6960a6aad5047bb277c4eac72a6a1b07d6326a4684034d0ff8b7451361a
-  subjects:
-    rows: 6
-    logical_sha256: d10b07f85149f29bcc96a2015c11f2bc4cb2a78353432f5083f8202b4bf4250b
-  responses:
-    rows: 180
-    logical_sha256: c67a65c918b0bf8f91971367479f3dd662937e56e0b303d908994c66812b4c1f
   assets:
     rows: 6
     logical_sha256: 2d792c8045496a15be163ca914ef1f09022efc73253b97645dce8756e7dbb97b
-  items:
-    rows: 30
-    logical_sha256: 8f8d306db6bba71635d32ee67c45f55c09adbe5dc0bcddf673de128fe6084244
+  attempts:
+    rows: 36
+    logical_sha256: 2f57a0116ed3cc20b3db08ff5e2e15a2c877ed31934df58b00a4d2fba8b8f7b0
   benchmarks:
     rows: 1
-    logical_sha256: 0c7ea0d85efb612d7a314a5053805b96e500dc7e4afe0a29c19941180759c295
+    logical_sha256: f80a5fee219c788e27f26171cc9fa3566494fdea9f99fb667d03293cd93b156b
+  items:
+    rows: 44205
+    logical_sha256: a8f757d8c99b0284277aba5a6a432c527d8f1511cb80813fb84b9d8484a5b53a
+  responses:
+    rows: 265230
+    logical_sha256: 8eb564d8791ae501b180b7cbbef5b8e61a0d6fb0a78d199f7cd6cca3ba185823
+  subjects:
+    rows: 6
+    logical_sha256: d10b07f85149f29bcc96a2015c11f2bc4cb2a78353432f5083f8202b4bf4250b
 source_claims:
   source_volumes:
     kind: count
@@ -109,3 +109,43 @@ source_claims:
     scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
       runtime values and absent output files are distinguished explicitly.
     expected: 5
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/11456029
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 36
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/11456029
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 265230
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/11456029
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 44205
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/11456029
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 6
+  source_reconciled_prediction_arrays:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/11456029
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source reconciled prediction arrays. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 30

@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class HealthAdminBench(BenchmarkBuild):
@@ -60,10 +61,12 @@ class HealthAdminBench(BenchmarkBuild):
         judgments["item_key"] = judgments.task_path + ":" + judgments.prompt_type + ":" + judgments.protocol
         judgments["response_key"] = judgments.run_name + ":" + judgments.source_field
         judgments["test_condition"] = "obs=" + judgments.input_type + ";prompt=" + judgments.prompt_type
+        judgments["trial"] = judgments.groupby(["subject_key", "item_key", "test_condition"], sort=False).cumcount() + 1
 
         # 4. Build task inputs and grading definitions without exposing expected outcomes.
         items = judgments.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.domain + "/" + items.task_id
+        items["testlet_id"] = items.task_path
         items["selected_evals"] = [row.task_record["evals"] if row.protocol == "strict_all" else
             [value for index, value in enumerate(row.task_record["evals"]) if index not in {int(flag["eval_idx"]) for flag in row.removed_checks}]
             for row in items.itertuples()]
@@ -92,11 +95,47 @@ class HealthAdminBench(BenchmarkBuild):
         traces = judgments[["response_key", "source_row", "source_field", "source_record", "website_record", "task_path", "task_record", "removed_checks"]].copy()
         traces["source_file"] = paths["runs"]
         traces["trace"] = [json.dumps(record, ensure_ascii=False, allow_nan=False) for record in traces.drop(columns="response_key").to_dict("records")]
-        return {"subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
-            "responses": judgments[["response_key", "subject_key", "item_key", "response", "test_condition"]],
-            "traces": traces[["response_key", "trace"]]}
+        # 6. Each physical run supplies one set of checks, shared by the two policies.
+        components, outcomes = [], []
+        for row in items.loc[items.protocol.eq("strict_all")].itertuples():
+            removed_indices = {int(flag["eval_idx"]) for flag in row.removed_checks}
+            for index, criterion in enumerate(row.task_record["evals"]):
+                verifier = Judge if criterion["type"] == "llm_judge" else ExactMatcher
+                options = {"judged_by": "llm"} if verifier is Judge else {}
+                components.append(dict(parent_item_key=row.item_key, component_id=str(index),
+                    grading_criterion=dict(rule=json.dumps(dict(criterion=criterion, eval_index=index,
+                        removed_from_revised_policy=index in removed_indices), ensure_ascii=False, sort_keys=True)),
+                    verifier=verifier(**options, spec=json.dumps(dict(
+                        self.grading["verifiers"]["task_evaluator"], eval_index=index), sort_keys=True))))
+        strict = judgments.loc[judgments.protocol.eq("strict_all")]
+        for row in strict.itertuples():
+            text = row.website_record["trajectory_json"]
+            if not text:
+                continue  # The 270 missing exports have aggregate grades only.
+            evaluations = json.loads(text)["evaluation_result"]["eval_results"]
+            if len(evaluations) != len(row.task_record["evals"]):
+                raise ValueError("Released checks do not align with the task rubric")
+            for index, evaluation in enumerate(evaluations):
+                if (evaluation["type"] != row.task_record["evals"][index]["type"]
+                        or type(evaluation["success"]) is not bool):
+                    raise ValueError("A released check has a mismatched type or non-boolean verdict")
+                outcomes.append(dict(parent_response_key=row.response_key,
+                    component_id=str(index), response=int(evaluation["success"])))
+        item_columns = ["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]
+        response_columns = ["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]
+        tables = component_tables({"subjects": subjects,
+            "items": items.loc[items.protocol.eq("strict_all"), item_columns],
+            "responses": strict[response_columns],
+            "traces": traces.loc[traces.response_key.isin(strict.response_key), ["response_key", "trace"]]},
+            pd.DataFrame(components), pd.DataFrame(outcomes))
+        # Both aggregate policies survive when the individual evaluations are absent.
+        missing_runs = set(strict.loc[~strict.response_key.isin(pd.DataFrame(outcomes).parent_response_key), "run_name"])
+        revised = judgments.loc[judgments.run_name.isin(missing_runs) & judgments.protocol.eq("without_process_checks")].copy()
+        revised["attempt_key"] = revised.run_name + ":pass_orig"
+        tables["items"] = pd.concat([tables["items"], items.loc[items.item_key.isin(revised.item_key), item_columns]], ignore_index=True)
+        tables["responses"] = pd.concat([tables["responses"], revised[response_columns + ["attempt_key"]]], ignore_index=True)
+        return tables
 
 
 if __name__ == "__main__":
-    HealthAdminBench(__file__).main()
+    HealthAdminBench(__file__).main_from_args()

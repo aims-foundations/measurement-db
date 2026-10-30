@@ -1,20 +1,23 @@
 format_version: 1
 tables:
+  assets:
+    rows: 2754
+    logical_sha256: 79b8ae44e37676e6f2c06b9be1d75e48138dd9b908774ae42697886f0195cf3e
+  attempts:
+    rows: 23872
+    logical_sha256: 0bfdc21b057c5b7dd7063effe84015f9891ecab2070abe29c8c1d01aea6e5f09
   benchmarks:
     rows: 1
-    logical_sha256: aff87e120dba0fa76bd4bea8a075b2af4a8546d73bc03ee39d0645e55b6a13a0
+    logical_sha256: 5708d64e1e1906af492afaf30b8ac3edd08b52741e48016847184d95e2d5d37f
   items:
-    rows: 7410
-    logical_sha256: 11c102e326afcdd62fb256c8d332cb45bf9e340771c3b7b24904071af4ed2228
+    rows: 1544819
+    logical_sha256: f07045e7cd38c6b51a24c6dcfbd378f791a05f1be009f40cc9dcd78554d105ab
   responses:
-    rows: 23872
-    logical_sha256: 1ed04a49a15008c8ccb8073c15044c1d5bf532aea8eff09499b9a0d579abe6f2
+    rows: 4106471
+    logical_sha256: f8433fa88ddc1ed88e6495524410afb0d21a171227d8b44f2ad3d70a01345c7e
   subjects:
     rows: 16
     logical_sha256: 593b06bae8a4966d6bb79bfcd44e2440a4e2879d9883a2493749cfcf8770b436
-  traces:
-    rows: 23872
-    logical_sha256: ae66404037dc47d8db168eab8a6618081ec300c54420b222458faea7fdf439d2
 source_claims:
   source_responses:
     kind: count
@@ -52,10 +55,9 @@ source_claims:
     source: https://zenodo.org/records/8031783
     locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
       JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
-    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
-      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
-      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
-    expected: 7410
+    scope: Canonical amino-acid position items for the saved unperturbed CATH predictions, retaining complete original
+      coordinate and target associations.
+    expected: 1544819
   source_original_proteins:
     kind: count
     origin: derived_from_data
@@ -72,10 +74,9 @@ source_claims:
     source: https://zenodo.org/records/8031783
     locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
       JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
-    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
-      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
-      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
-    expected: 0
+    scope: Distinct original backbone input assets attached to the converted protein-position items; noisy inputs
+      and unsupported multi-chain associations stay outside the import.
+    expected: 2754
   source_raw_only_collections:
     kind: count
     origin: derived_from_data
@@ -96,3 +97,35 @@ source_claims:
       layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
       Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
     expected: 69042
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 23872
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 4106471
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1544819
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 2754

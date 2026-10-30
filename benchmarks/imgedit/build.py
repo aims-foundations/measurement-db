@@ -11,6 +11,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.benchmarks.imgedit.ratings import read_ratings, rubric_dimensions
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ImgEdit(BenchmarkBuild):
@@ -50,10 +52,11 @@ class ImgEdit(BenchmarkBuild):
 
         # 3. Keep the editing stimulus separate from the rubric and generated image.
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.raw_item_id
         items['content'] = [json.dumps(dict(text=row.prompt, multimedia_elements=[
             dict(content_type='image/jpeg', location=row.path)])) for row in items.itertuples()]
         items['features'] = items.edit_type.map(lambda value: dict(edit_type=value))
-        items['grading_criterion'] = [dict(rule=json.dumps(dict(instruction=self.grading['rule'],
+        items['grading_criterion'] = [dict(rule=json.dumps(dict(instruction=self.grading['verifiers']['native_judge']['aggregate_rule'],
             judge_prompt=rubrics[row.edit_type].replace('<edit_prompt>', row.prompt)))) for row in items.itertuples()]
         items['verifier'] = [Judge(judge=labels['judge'], judged_by='llm',
             spec=json.dumps(self.grading['verifiers']['native_judge'], sort_keys=True))] * len(items)
@@ -73,10 +76,26 @@ class ImgEdit(BenchmarkBuild):
             grade_status=labels['omitted'] if pd.isna(row.response) else labels['saved'],
             output=dict(member=row.output_member, sha256=row.output_sha256, bytes=row.output_bytes)), allow_nan=False)
             for row in responses.itertuples()]
-        return {'subjects': subjects,
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+        tables = {'subjects': subjects,
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             'traces': traces}
+        dimensions = {category: rubric_dimensions(prompt) for category, prompt in rubrics.items()}
+        protocol = self.grading['verifiers']['native_judge']
+        components, outcomes = [], []
+        for row in items.itertuples():
+            for dimension in dimensions[row.edit_type]:
+                rule = dict(instruction=self.grading['rule'], dimension=dimension,
+                    judge_prompt=rubrics[row.edit_type].replace('<edit_prompt>', row.prompt))
+                components.append(dict(parent_item_key=row.item_key, component_id=dimension,
+                    grading_criterion=dict(rule=json.dumps(rule)),
+                    verifier=Judge(judge=labels['judge'], judged_by='llm',
+                        spec=json.dumps(dict(protocol, selected_dimension=dimension), sort_keys=True))))
+        for row in responses.itertuples():
+            ratings = read_ratings(row.judge_text, dimensions[row.edit_type], protocol['dimension_aliases'])
+            outcomes.extend(dict(parent_response_key=row.response_key, component_id=dimension, response=score)
+                for dimension, score in ratings.items())
+        return component_tables(tables, pd.DataFrame(components), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

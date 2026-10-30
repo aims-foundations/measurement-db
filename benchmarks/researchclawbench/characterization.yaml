@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 1432
-    logical_sha256: 1c37b4391bf18fe0ca7c42eab3ff196b7ba28c53ecd6705bb4b2734be7840ad6
-  subjects:
-    rows: 37
-    logical_sha256: d963d45733a4e8e757d8637a445b316c3acda09d35b2dbfb354c59dfebdf0b40
-  responses:
-    rows: 1432
-    logical_sha256: 5bf2641ed2e0c784339dfca4c48c824f8df06c1c0aef4d890abacadb0a50a1c0
   assets:
     rows: 7610
     logical_sha256: bc496d1eb91b7d6080f34d68d4571048f6357d02ce795f6f6bfaa2ae3119262c
-  items:
-    rows: 40
-    logical_sha256: 9ef4ffa94413be956fbbfb579cc2ff64ee2d78a2a4fa0289fc30647bee4758a8
+  attempts:
+    rows: 1432
+    logical_sha256: 102583d0b1d87f244e2bec7eb213ec080b924f81de9256fc65def1c814075937
   benchmarks:
     rows: 1
-    logical_sha256: 95179e8d2557821717f202281f671edb9b948799b6f14201e2f8fad352534473
+    logical_sha256: 8f0da44109fe3ddb9837d12b14419cafbeb2ddde5fbbb3048a9b0a773f80f492
+  items:
+    rows: 194
+    logical_sha256: cad1d489b8a81136288094fa3ce9bfc14e5c9b59a62bda5e1a969b5a7e242153
+  responses:
+    rows: 3894
+    logical_sha256: 344616bdf85759a146d53fcf001a0e0dfba09d9962859243c196317d0fd35ee2
+  subjects:
+    rows: 37
+    logical_sha256: d963d45733a4e8e757d8637a445b316c3acda09d35b2dbfb354c59dfebdf0b40
 source_claims:
   source_runs:
     kind: count
@@ -159,3 +159,35 @@ source_claims:
       weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
       trajectories.
     expected: 7610
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1432
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3894
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 194
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 40

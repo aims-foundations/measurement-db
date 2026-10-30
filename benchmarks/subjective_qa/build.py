@@ -131,8 +131,9 @@ class SubjectiveQA(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(request_id=row.request_id, source_exports=row.source_exports,
             predicted_rating=None if pd.isna(row.rating) else int(row.rating), grade_status=row.grade_status,
             input_scope=row.input_scope), ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
+        items["testlet_id"] = items.bank_row.astype(str)
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

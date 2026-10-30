@@ -1,6 +1,7 @@
 """Tabulate LexEval's released predictions with its native deterministic metrics."""
 
 import ast
+import hashlib
 import importlib.metadata
 import io
 import json
@@ -9,6 +10,7 @@ import re
 import string
 import sys
 import tempfile
+import unicodedata
 import zipfile
 from collections import OrderedDict
 from concurrent.futures import ProcessPoolExecutor
@@ -96,6 +98,9 @@ class LexEval(BenchmarkBuild):
         items = attempts[keys + ["source_file", "source_key"]].drop_duplicates(subset=keys).reset_index(drop=True)
         items["item_key"] = items.index.astype(str)
         items["raw_item_id"] = items.source_file + "#" + items.source_key
+        items["testlet_id"] = [hashlib.sha256(json.dumps([row.task,
+            unicodedata.normalize("NFC", row.content).strip()], ensure_ascii=False).encode()).hexdigest()
+            for row in items.itertuples()]
         items["features"] = [dict(task=row.task, recorded_prompt_setting=row.setting,
             input_scope=parameters["labels"]["input_scope"]) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=json.dumps(row.answer, ensure_ascii=False),
@@ -112,7 +117,7 @@ class LexEval(BenchmarkBuild):
             source_record=row.source_record, grade_status=row.grade_status), ensure_ascii=False, allow_nan=False)
             for row in attempts.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces}
 

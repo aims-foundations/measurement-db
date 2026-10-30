@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 from .register_measurements import _locked_registration_rows
@@ -52,7 +53,7 @@ def validate_parquet_schema(table_name: str, schema: pa.Schema) -> None:
 def write_parquet(
     table: pd.DataFrame, path: Path | str, *, item_id_version: str = "4",
     table_name: str | None = None, response_scale: dict | str | None = None,
-    items: pd.DataFrame | None = None, **kwargs,
+    items: pd.DataFrame | None = None, row_group_bytes: int | None = None, **kwargs,
 ) -> None:
     """Validate and write canonical fields with fixed Arrow types.
 
@@ -92,8 +93,47 @@ def write_parquet(
     metadata[b"measurement_db.schema_version"] = PARQUET_SCHEMA_VERSION.encode()
     metadata[b"measurement_db.response_id_version"] = b"1"
     metadata[b"measurement_db.item_id_version"] = item_id_version.encode()
-    kwargs.setdefault("row_group_size", _ARROW_BATCH_ROWS)
-    pq.write_table(arrow.replace_schema_metadata(metadata), path, **kwargs)
+    arrow = arrow.replace_schema_metadata(metadata)
+    if row_group_bytes is None:
+        kwargs.setdefault("row_group_size", _ARROW_BATCH_ROWS)
+        pq.write_table(arrow, path, **kwargs)
+    else:
+        if row_group_bytes <= 0:
+            raise ValueError("row_group_bytes must be positive")
+        max_rows = kwargs.pop("row_group_size", _ARROW_BATCH_ROWS)
+        # Long text has little useful min/max information. Omitting its
+        # statistics also prevents large records from inflating the footer.
+        if name in {"items", "attempts", "traces"}:
+            large_fields = {"content", "grading_criterion", "verifier", "trace"}
+            kwargs.setdefault("write_statistics", [
+                field for field in arrow.column_names if field not in large_fields
+            ])
+        groups = list(_byte_bounded_groups(arrow, row_group_bytes, max_rows))
+        with pq.ParquetWriter(path, arrow.schema, **kwargs) as output:
+            for start, count in groups:
+                output.write_table(arrow.slice(start, count), row_group_size=count)
+
+
+def _byte_bounded_groups(table, budget, max_rows):
+    """Bound decoded row groups; an oversized record occupies its own group."""
+    start, count, size, position = 0, 0, 0, 0
+    for batch in table.to_batches(max_chunksize=_ARROW_BATCH_ROWS):
+        sizes = [0] * batch.num_rows
+        for column in batch.columns:
+            if pa.types.is_string(column.type) or pa.types.is_binary(column.type):
+                lengths = pc.fill_null(pc.binary_length(column), 0).to_pylist()
+                sizes = [a + b + 5 for a, b in zip(sizes, lengths)]
+            else:
+                sizes = [a + column.type.bit_width // 8 + 1 for a in sizes]
+        for row_size in sizes:
+            if count and (size + row_size > budget or count == max_rows):
+                yield start, count
+                start, count, size = position, 0, 0
+            size += row_size
+            count += 1
+            position += 1
+    if count:
+        yield start, count
 
 
 def save(out_dir: Path | str, *, additional_tables: dict[str, pd.DataFrame] | None = None,
@@ -116,4 +156,5 @@ def save(out_dir: Path | str, *, additional_tables: dict[str, pd.DataFrame] | No
                              expected_benchmark_id=expected_benchmark_id, context=str(output_directory))
         output_directory.mkdir(parents=True, exist_ok=True)
         for table_name, table in tables.items():
-            write_parquet(table, output_directory / f"{table_name}.parquet")
+            write_parquet(table, output_directory / f"{table_name}.parquet",
+                row_group_bytes=2 * 1024 * 1024 if table_name == 'items' else None)

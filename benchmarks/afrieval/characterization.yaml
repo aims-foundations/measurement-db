@@ -1,20 +1,20 @@
 format_version: 1
 tables:
+  attempts:
+    rows: 1403380
+    logical_sha256: 762a3a55293d83399ed31fbfeabba5257d61861a87141be42c877a4ee3b1ddc7
   benchmarks:
     rows: 1
-    logical_sha256: a0921981cb6367ae1ebac82eed58f54adf24e5804a50bc8971f1d78938effea3
+    logical_sha256: 3f214a415bf435ebbb8e5fa2177805cc2ecb077b8146874bdeacd8d3ec01c5b2
   items:
-    rows: 35205
-    logical_sha256: 34c40d5bd9f2ecbfeb4c2b85ba4dc6ad325a6f44d6a6e591b2f22c11f1b52d53
+    rows: 856369
+    logical_sha256: 936428b19633eb295f30535e49010123177bd7fb343e274b6c9366f3d67e0d82
   responses:
-    rows: 1403380
-    logical_sha256: 1a8ef83a02674021d59c7070f1e19d0d9dc2f7048ce24a7da65b36e852b3a891
+    rows: 33727683
+    logical_sha256: ee8c00fbf6ff8e2c60a77b2d53a6ebe0a9352eb3ed2f50e91bb6d0b607bb7be6
   subjects:
     rows: 948
     logical_sha256: b919efd0283cba6909d5b8d682e24e7bee8bc9b35d06b49ac2dd085189188de4
-  traces:
-    rows: 1403380
-    logical_sha256: d600aa7cd727f62f37dd590097c482c3bbce6d2e8d8d0a99afa5032e00e96233
 source_claims:
   source_subjects:
     kind: count
@@ -32,10 +32,9 @@ source_claims:
     source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
     locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
       joined to their separately pinned historical references.
-    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
-      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
-      no corpus F1 is substituted for a sentence outcome.
-    expected: 35205
+    scope: Canonical token-position items after expanding the original sentence assessments; each preserves its
+      complete sentence, reference tag, native normalization and model/language association.
+    expected: 856369
   source_traces:
     kind: count
     origin: derived_from_data
@@ -106,3 +105,35 @@ source_claims:
       and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
       no corpus F1 is substituted for a sentence outcome.
     expected: 2072
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1403380
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 33727683
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 856369
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 35195

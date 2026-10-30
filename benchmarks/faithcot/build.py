@@ -68,9 +68,10 @@ class FaithCoT(BenchmarkBuild):
         measurements["trace"] = [json.dumps(dict(source_file=path, metric=metric, source_record_json=text,
             source_issues=issues), ensure_ascii=False, allow_nan=False)
             for path, metric, text, issues in zip(measurements.source_file, measurements.metric, measurements.native_json, measurements.source_issues)]
+        items["testlet_id"] = items.task + ':' + items['index']
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": measurements[["response_key", "subject_key", "item_key", "response"]],
             "traces": measurements[["response_key", "trace"]],
         }

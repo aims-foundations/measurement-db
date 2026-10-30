@@ -3,11 +3,7 @@ benchmark:
   description: Multi-SWE-bench tests whether coding agents can resolve real issues in open source repositories
     written in languages beyond Python, such as Java, Go and Rust, counting an issue resolved only when
     the agent's patch passes the project's tests.
-  testing_condition: 'settings: lang (the language the submission ran on, an item feature folded into
-    item identity by the builder) and agent (the scaffold, routed to the harness subject column so each
-    scaffold+model submission stays a distinct subject). The subject label is the model as upstream names
-    it; response is 1 if the instance was resolved, 0 if unresolved, for instances the submission attempted.
-    test_condition is null.'
+  testing_condition: 'Each task is a testlet. Import named passed, failed and skipped tests from released C and C++ fix-patch reports only after confirming their exact patch matches the agent submission. Missing reports retain the original resolved/unresolved grade; skipped or contradictory verdicts remain ungraded. Original task scores, patches and complete reports share an execution record. Preserve repository base revisions so backports remain distinct. The language remains an item feature and the agent scaffold a subject setting.'
   paper_url: https://openreview.net/forum?id=MhBZzkz4h9
   data_source_url: https://github.com/multi-swe-bench/experiments
   subject_type: model
@@ -55,6 +51,8 @@ sources:
       path: results/{language}__{run}.json
     - match: evaluation/(?P<language>[^/]+)/verified/(?P<run>[^/]+)/all_preds\.jsonl
       path: preds/{language}__{run}.jsonl
+    - match: evaluation/(?P<language>c|c\+\+)/verified/(?P<run>[^/]+)/logs/(?P<org>[^/]+)/(?P<repo>[^/]+)/evals/pr-(?P<number>\d+)/(?P<artifact>report\.json|fix\.patch)
+      path: checks/{language}__{run}/{org}__{repo}-{number}/{artifact}
   - url: https://huggingface.co/datasets/ByteDance-Seed/Multi-SWE-bench
     revision: 56ff018c04a38e27ada1e9d0a6d5839a51f88f0d
     name: tasks

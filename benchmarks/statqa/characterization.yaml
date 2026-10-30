@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 53498
-    logical_sha256: 1d4a610c6909fa4b5005b5818fb0fb860a7f90d2f51561449b03c907370bb478
+    logical_sha256: 1a4046679ef9b6ceb13de31395bd083773f15b371f7eb106e08cd8bda2c068a5
+  benchmarks:
+    rows: 1
+    logical_sha256: 4cb53e5a12690b2c7cbfe8d8b098e6ba8fe5e4344aa9b81925bf8a672b941a6c
+  items:
+    rows: 2366
+    logical_sha256: d6a3436b382a4f579c4912606a60a5309ed5de2b4d7d8dae0fcfbb778501b5ce
+  responses:
+    rows: 106996
+    logical_sha256: 60703778f9ba613898cd5c3aa2b4e8fd4f7accf3bdb700e09be088c6bc8725cd
   subjects:
     rows: 46
     logical_sha256: 133f51bbbe06617965853c452a60ffa84b1b37949deeae8cb8c27655958d2960
-  responses:
-    rows: 53498
-    logical_sha256: 826565e004be61d7fc2951bc8db5a2cc1d657bb631beeeb78c876202534daf08
-  items:
-    rows: 1183
-    logical_sha256: c93f8a04928e30377de59afcd87a084359bcca8f14a8483141657d397d7776ae
-  benchmarks:
-    rows: 1
-    logical_sha256: da4320258e715470c00ef02ccbcd1b6e28dd400ec0f51204207426e001d236a3
 source_claims:
   source_reference_parser_failures:
     kind: count
@@ -120,3 +120,35 @@ source_claims:
     scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
       grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
     expected: 53498
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 53498
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 106996
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 2366
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 1183

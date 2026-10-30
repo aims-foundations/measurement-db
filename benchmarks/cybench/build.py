@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Curate Cybench's original task-level scores and complete released run logs."""
+"""Curate Cybench's recorded flag and subtask verdicts with shared run evidence."""
 
 import json
 import sys
@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class Cybench(BenchmarkBuild):
@@ -76,6 +77,11 @@ class Cybench(BenchmarkBuild):
         if observations.loc[missing, ["subject_key", "task_key", "mode"]].to_dict("records") != [
             {key: expected[key] for key in ["subject_key", "task_key", "mode"]}]:
             raise ValueError("Unexpected missing Cybench run; preserve the paper grade without inventing a trace")
+        # The fractional score is another measurement of the same guided run.
+        # Preserve it as evidence, without manufacturing a second execution.
+        fractional_cells = observations.loc[observations['mode'].eq('subtask_fractional')].set_index('source_file')
+        observations = observations.loc[observations['mode'].ne('subtask_fractional')].copy()
+        missing = observations.source_file.isna()
 
         # 4. Keep actual first requests and exact grading references. The one
         # unavailable log uses both authored task descriptions, explicitly
@@ -102,6 +108,7 @@ class Cybench(BenchmarkBuild):
         observations["item_key"] = observations.content + observations.grading_criterion.map(json.dumps) + observations["mode"]
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.task_key + ":" + items["mode"]
+        items['testlet_id'] = items.task_key
         items["features"] = [dict(task=row.task_key, mode=row.mode, input_scope=row.input_scope) for row in items.itertuples()]
         items["verifier"] = items["mode"].map(lambda mode: ExactMatcher(spec=json.dumps(self.grading["verifiers"][mode], sort_keys=True)))
 
@@ -114,17 +121,44 @@ class Cybench(BenchmarkBuild):
             configuration={key: value for key, value in row.configuration.items() if key != "start_time_in_ms"}
                 if isinstance(row.configuration, dict) else None), sort_keys=True) for row in observations.itertuples()]
         observations["trial"] = 1
-        traces = observations.loc[~missing, ["response_key"]].copy()
-        traces["trace"] = [json.dumps(dict(source_file=row.source_file, record=row.native,
-            measurement=row.mode, paper_cell=dict(table=row.paper_table, task=row.paper_task, model=row.paper_model, value=row.paper_value)
-                if pd.notna(row.paper_score) else None), ensure_ascii=False, allow_nan=False)
-            for row in observations.loc[~missing].itertuples()]
-        return {
+        traces, definitions, outcomes = [], {}, []
+        for row in observations.itertuples():
+            fractional_cell = None
+            if row.source_file in fractional_cells.index:
+                cell = fractional_cells.loc[row.source_file]
+                fractional_cell = dict(score=cell.response, paper_table=cell.paper_table if pd.notna(cell.paper_score) else None,
+                    paper_value=cell.paper_value if pd.notna(cell.paper_score) else None)
+            traces.append(dict(response_key=row.response_key, trace=json.dumps(dict(
+                source_file=row.source_file if pd.notna(row.source_file) else None,
+                record=row.native if isinstance(row.native, dict) else None,
+                measurement=row.mode, subtask_fraction=fractional_cell,
+                paper_cell=dict(table=row.paper_table, task=row.paper_task, model=row.paper_model, value=row.paper_value)
+                    if pd.notna(row.paper_score) else None), ensure_ascii=False, allow_nan=False)))
+            checks = [('flag_recovery', row.response, row.grading_criterion,
+                ExactMatcher(spec=json.dumps(self.grading['verifiers'][row.mode], sort_keys=True)))]
+            if row.mode == 'subtask_guided':
+                for name, check in row.native['subtask_completions'].items():
+                    if check['score'] not in (0, 1):
+                        raise ValueError('Unknown native subtask score')
+                    criterion = dict(reference_answer=check['subtask']['answer'], rule=json.dumps(dict(
+                        rule='Recorded binary subtask verdict; unanswered subtasks retain their released score',
+                        subtask=name, definition=check['subtask']), ensure_ascii=False, sort_keys=True))
+                    checks.append((name, check['score'], criterion, ExactMatcher(spec=json.dumps(dict(
+                        kind='recorded_subtask_verdict', protocol=self.grading['verifiers']['subtask_fractional']), sort_keys=True))))
+            for name, grade, criterion, verifier in checks:
+                key = row.item_key, name
+                definition = dict(parent_item_key=row.item_key, component_id=name, grading_criterion=criterion, verifier=verifier)
+                if key in definitions and definitions[key]['grading_criterion'] != criterion:
+                    raise ValueError('One Cybench item has conflicting subtask definitions')
+                definitions[key] = definition
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=name, response=grade))
+        tables = {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
-            "traces": traces,
+            "traces": pd.DataFrame(traces),
         }
+        return component_tables(tables, pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

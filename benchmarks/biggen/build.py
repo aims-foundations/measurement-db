@@ -95,9 +95,10 @@ class BiggenBench(BenchmarkBuild):
                                       "published_feedback": row.get(row["score_field"].replace("_score", "_feedback"))},
                                      ensure_ascii=False, allow_nan=False)
                            for row in observations.to_dict("records")]
+        items["testlet_id"] = items.id
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial"]],
             "traces": traces,
         }

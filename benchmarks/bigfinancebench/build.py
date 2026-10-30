@@ -69,46 +69,64 @@ class BigFinanceBench(BenchmarkBuild):
         subjects["features"] = [dict(harness="BigFinanceBench", model_identifier=row.model,
             resolved_model=row.resolved_model, harness_version=row.harness_version) for row in subjects.itertuples()]
 
-        # 4. Unpivot the two released measures, with distinct judge/metric protocols.
-        if not observations.final_answer_correct.map(lambda value: isinstance(value, bool)).all():
-            raise ValueError("Final-answer correctness must be a recorded Boolean")
-        if not observations.rubric_points_possible.gt(0).all():
-            raise ValueError("Rubric fractions require a positive point denominator")
-        observations["final_answer_correct"] = observations.final_answer_correct.astype(float)
-        observations["rubric_fraction"] = observations.rubric_points_earned / observations.rubric_points_possible
-        measures = list(grading["measures"])
-        observations = observations.melt(id_vars=[column for column in observations.columns if column not in measures],
-            value_vars=measures, var_name="metric", value_name="response")
-        observations["item_key"] = (observations.question_id + ":" + observations.judge + ":" +
-            observations.metric + ":" + observations.content)
-        items = observations.drop_duplicates("item_key").copy()
-        items["raw_item_id"] = items.question_id
-        items["features"] = [dict(source_question_id=row.question_id, evaluation_only=row.task_record["evaluation_only"],
-            do_not_train=row.task_record["do_not_train"], benchmark_canary=row.task_record["benchmark_canary"])
-            for row in items.itertuples()]
-        items["grading_criterion"] = [dict(reference_answer=row.task_record["reference_answer"],
-            rule=json.dumps(dict(metric=row.metric, rubric=row.task_record["rubric"],
-                interpretation=grading["measures"][row.metric]["rule"]), ensure_ascii=False, sort_keys=True),
-            response_scale=grading["measures"][row.metric]["scale"]) for row in items.itertuples()]
-        items["verifier"] = [Judge(judge=row.judge, judged_by="llm",
-            spec=json.dumps(grading["protocol"], ensure_ascii=False, sort_keys=True)) for row in items.itertuples()]
+        # 4. One attempt is one recorded agent execution, shared by its judges.
+        # Three assessments match multiple retries; keep those associations unknown.
+        executions = {}
+        original_tasks = tasks.set_index('id').record.to_dict()
+        for row in runs.itertuples():
+            key = row.source_file + ':' + str(row.source_row)
+            executions[key] = dict(attempt_key=key, raw_attempt_id=key, subject_key=row.model,
+                evidence=dict(source_file=row.source_file, source_row=row.source_row,
+                    record=row.record, task_record=original_tasks[row.question_id],
+                    assessments=[], ambiguous_assessments=[]))
+        definitions, responses, traces = {}, [], []
+        for row in observations.itertuples():
+            assessment = dict(source_file=row.source_file, source_row=row.source_row, record=row.grade_record)
+            matching = [row.run_records[index] for index in row.matching_run_indices]
+            attempt_keys = [run['source_file'] + ':' + str(run['source_row']) for run in matching]
+            unique = len(attempt_keys) == 1
+            for key in attempt_keys:
+                executions[key]['evidence']['assessments' if unique else 'ambiguous_assessments'].append(assessment)
+            checks = [('final_answer_correct', row.grade_record['final_answer_correct'],
+                dict(metric='final_answer_correct', rule=grading['measures']['final_answer_correct']['rule']))]
+            for index, line in enumerate(row.grade_record['rubric_lines']):
+                if type(line['earned']) is not bool:
+                    raise ValueError('A rubric line lacks an explicit Boolean verdict')
+                checks.append(('rubric:' + str(index), line['earned'],
+                    dict(metric='rubric_line', criterion=line['text'], points=line['points'],
+                        rule='Recorded earned flag for this rubric line; points are its original aggregation weight')))
+            points = sum(line['points'] for line in row.grade_record['rubric_lines'])
+            earned = sum(line['points'] for line in row.grade_record['rubric_lines'] if line['earned'])
+            if (points, earned) != (row.rubric_points_possible, row.rubric_points_earned):
+                raise ValueError('Rubric components do not reproduce the published point totals')
+            for name, grade, rule in checks:
+                if type(grade) is not bool:
+                    raise ValueError('A native assessment lacks its Boolean verdict')
+                criterion = dict(reference_answer=row.task_record['reference_answer'],
+                    rule=json.dumps(rule, ensure_ascii=False, sort_keys=True))
+                item = json.dumps([row.question_id, row.judge, row.content, name, criterion], ensure_ascii=False, sort_keys=True)
+                definitions[item] = dict(item_key=item, raw_item_id=row.question_id + '::' + name,
+                    testlet_id=row.question_id, content=row.content,
+                    features=dict(source_question_id=row.question_id, evaluation_only=row.task_record['evaluation_only'],
+                        do_not_train=row.task_record['do_not_train'], benchmark_canary=row.task_record['benchmark_canary']),
+                    grading_criterion=criterion, verifier=Judge(judge=row.judge, judged_by='llm',
+                        spec=json.dumps(grading['protocol'], ensure_ascii=False, sort_keys=True)))
+                key = row.source_file + ':' + str(row.source_row) + ':' + name
+                responses.append(dict(response_key=key, subject_key=row.model, item_key=item,
+                    response=float(grade), trial=int(row.trial_idx) + 1,
+                    test_condition='judge=' + row.judge, attempt_key=attempt_keys[0] if unique else None))
+                if not unique:
+                    traces.append(dict(response_key=key, trace=json.dumps(dict(assessment=assessment,
+                        matching_run_records=matching, trace_association='ambiguous_final_answer_match'),
+                        ensure_ascii=False, allow_nan=False)))
+        attempts = []
+        for execution in executions.values():
+            evidence = execution.pop('evidence')
+            attempts.append(dict(**execution, trace=json.dumps(evidence, ensure_ascii=False, allow_nan=False)))
+        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
+            items=pd.DataFrame(definitions.values()), responses=pd.DataFrame(responses),
+            attempts=pd.DataFrame(attempts), traces=pd.DataFrame(traces, columns=['response_key', 'trace']))
 
-        # 5. Retain full outputs, grading explanations, source flags and retry evidence.
-        observations["response_key"] = observations.source_file + ":" + observations.source_row.astype(str) + ":" + observations.metric
-        observations["subject_key"] = observations.model
-        observations["trial"] = observations.trial_idx.astype(int) + 1
-        observations["test_condition"] = "judge=" + observations.judge + ";metric=" + observations.metric
-        traces = observations[["response_key"]].copy()
-        traces["trace"] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
-            metric=row.metric, grade_record=row.grade_record, task_record=row.task_record, run_records=row.run_records,
-            matching_run_indices=row.matching_run_indices, trace_association=row.trace_association),
-            ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
-        return {
-            "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
-            "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
-            "traces": traces,
-        }
 
 
 if __name__ == "__main__":

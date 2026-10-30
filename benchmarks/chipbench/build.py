@@ -123,9 +123,10 @@ class ChiPBench(BenchmarkBuild):
             design=row.design, method=row.method, stage=row.stage, metric=row.metric,
             native_record=row.native_record, grade_status="not_reported" if pd.isna(row.response) else "published_value"),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+        items["testlet_id"] = items.stage + ':' + items.design
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

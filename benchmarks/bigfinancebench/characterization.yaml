@@ -1,20 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 9000
-    logical_sha256: a7c247938083c8e1809067bc8e9d9d6a3e5c510c85ea388ea18dad8a61cdb87b
+  attempts:
+    rows: 1502
+    logical_sha256: 9dd8841bf8943e096a83fbd9c623784904f7777d70de63b3f68719e7c52c52a0
+  benchmarks:
+    rows: 1
+    logical_sha256: eeeca8c18b5e47a2af7324d4be6910ac62a4452feaa921f3264994cb2b1c4de1
+  items:
+    rows: 5058
+    logical_sha256: ec8bca413e29da9f3343d36417d10ed6c4a12b362c0e9fbe3dee062a3f14313e
+  responses:
+    rows: 75870
+    logical_sha256: 8723ded8e85178209af7f73fdc0455ef65bb565190915dda811385541ace71db
   subjects:
     rows: 10
     logical_sha256: 1ab247f4942d4bfe29ced7d8d2a1bb66afbe4f385a93a16fdbc387ad005988ff
-  responses:
-    rows: 9000
-    logical_sha256: 3c6de2d8ec49c121159db6a46994da1af18d3c11145f31c9fc1af01641b613bf
-  items:
-    rows: 600
-    logical_sha256: 66b5fc940a1dd0a747538238666ade1173827cbc1ab756754388bc5c6c89510e
-  benchmarks:
-    rows: 1
-    logical_sha256: 6a64ed782131f212dbc0aeaa022890ab8e694170f736b81e7b3f8302fefdf5bb
+  traces:
+    rows: 69
+    logical_sha256: 549496ef3c77be108b9890df784fb58fde9695021a661e419f1dbff24665150e
 source_claims:
   source_questions:
     kind: count
@@ -112,3 +115,35 @@ source_claims:
     scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
       ambiguous trace associations.
     expected: 2
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1502
+  source_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source assessments. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 4500
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 75870
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 5058

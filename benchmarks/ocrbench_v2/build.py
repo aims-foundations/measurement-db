@@ -1,5 +1,6 @@
 """Tabulate OCRBench v2's released predictions and their original image inputs."""
 
+import hashlib
 import io
 import json
 import sys
@@ -56,6 +57,7 @@ class OCRBenchV2(BenchmarkBuild):
         # 3. Keep exact image bytes and native grading inputs in the item definition.
         items = records.assign(item_key=records.id, raw_item_id=records.id.astype(str)).copy()
         items['image_bytes'] = items.image.map(lambda image: image['bytes'])
+        items['testlet_id'] = items.image_bytes.map(lambda data: hashlib.sha256(data).hexdigest())
         if not items.image_bytes.map(lambda data: Image.open(io.BytesIO(data)).format == 'JPEG').all():
             raise ValueError('Expected original JPEG image bytes')
         items['content'] = [json.dumps(dict(multimedia_elements=[
@@ -80,7 +82,7 @@ class OCRBenchV2(BenchmarkBuild):
             grade_status='upstream_grade_unavailable'), ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
         return {
             'subjects': subjects,
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses,
             'traces': traces,
         }

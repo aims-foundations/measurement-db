@@ -75,6 +75,7 @@ class Pxplore(BenchmarkBuild):
         items['criterion_sha256'] = items.criterion.map(lambda value: hashlib.sha256(value.encode()).hexdigest())
         items['item_key'] = items.response_key
         items['raw_item_id'] = 's' + items.source_row.astype(str) + ':' + items.input_mode + ':' + items.dimension + ':' + items.criterion_sha256
+        items['testlet_id'] = 's' + items.source_row.astype(str) + ':' + items.input_mode
         items['features'] = items[['source_row', 'input_mode', 'dimension', 'criterion_sha256']].to_dict('records')
         items['grading_criterion'] = [dict(rule=self.grading['rule'] + '\nDimension: ' + row.dimension + '\nCriterion: ' + row.criterion)
             for row in items.itertuples()]
@@ -99,7 +100,7 @@ class Pxplore(BenchmarkBuild):
             component_status=row.component_status, native_evaluation=row.native_evaluation, native_input=row.native_input),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

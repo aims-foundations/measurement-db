@@ -11,6 +11,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.aider.test_cases import case_names, final_outcomes
 
 
 class Aider(BenchmarkBuild):
@@ -89,7 +91,7 @@ class Aider(BenchmarkBuild):
         observations = observations.sort_values("source_member", kind="stable").reset_index(drop=True)
 
         # 4. Load complete instructions, initial files, reference code and tests.
-        definitions = []
+        definitions, cases = [], {}
         for task in sorted(observations.testcase.unique()):
             directory = paths["tasks"] / "cpp/exercises/practice" / task
             config = json.loads((directory / ".meta/config.json").read_text())
@@ -99,6 +101,7 @@ class Aider(BenchmarkBuild):
             initial_files = {name: (directory / name).read_text() for name in config["files"]["solution"]}
             references = {name: (directory / name).read_text() for name in config["files"].get("example", [])}
             tests = {name: (directory / name).read_text() for name in config["files"]["test"]}
+            cases[task] = case_names(tests)
             definitions.append({"item_key": task, "raw_item_id": "cpp/" + task,
                 "content": json.dumps({"instructions": instructions, "initial_files": initial_files}, ensure_ascii=False),
                 "grading_criterion": {"rule": self.grading["rule"], "reference_answer": json.dumps(references, ensure_ascii=False)},
@@ -107,8 +110,9 @@ class Aider(BenchmarkBuild):
                     "postbuild": (paths["tasks"] / "cpp/cpptest-postbuild.cmake").read_text()}, ensure_ascii=False)),
                 "features": {"lang": "cpp"}})
         items = pd.DataFrame(definitions)
+        items['testlet_id'] = items.raw_item_id
 
-        # 5. Project linked tables; each benchmark run remains one observation.
+        # 5. Recover final-cycle test verdicts while keeping the full execution once.
         observations = observations.rename(columns={"testcase": "item_key", "source_member": "response_key"})
         trace_records = observations[["response_key", "native_record", "published_record", "history",
                                        "additional_instructions_md", "final_files"]].rename(
@@ -116,12 +120,26 @@ class Aider(BenchmarkBuild):
         traces = pd.DataFrame({"response_key": observations.response_key,
             "trace": [json.dumps({"source_archive": parameters["layout"]["archive"], **record},
                                  ensure_ascii=False, allow_nan=False) for record in trace_records]})
-        return {
+        components, outcomes, seen = [], [], set()
+        parents = items.set_index('item_key')
+        for row in observations.itertuples():
+            for name, grade in final_outcomes(row.history, row.tests_outcomes, cases[row.item_key]).items():
+                if (row.item_key, name) not in seen:
+                    seen.add((row.item_key, name))
+                    parent = parents.loc[row.item_key]
+                    components.append(dict(parent_item_key=row.item_key, component_id=name,
+                        grading_criterion=dict(reference_answer=parent.grading_criterion['reference_answer'],
+                            rule=json.dumps(dict(test_case=name, test_file=cases[row.item_key][name],
+                                rule='Native Catch test-case result in the final recorded test-feedback cycle'))),
+                        verifier=parent.verifier))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=name, response=grade))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
             "items": items,
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(components), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

@@ -79,9 +79,13 @@ class DatasetTests(unittest.TestCase):
 def _source_claim_test(self):
     observed = self.source_audit(self.directory)
     check_source_claims(self.expected, observed)
-    if "source_responses" in observed:
+    if "source_component_observations" in observed:
+        # Full provenance audits also retain counts of the original aggregate
+        # measurements. Compare the expanded table to its explicit child count.
+        self.assertEqual(len(self.tables["responses"]), observed["source_component_observations"])
+    elif "source_responses" in observed:
         self.assertEqual(len(self.tables["responses"]), observed["source_responses"])
-    if "source_successes" in observed:
+    if "source_successes" in observed and "source_component_observations" not in observed:
         self.assertEqual(float(self.tables["responses"].response.sum()),
                          observed["source_successes"])
 

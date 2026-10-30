@@ -1,13 +1,15 @@
 benchmark:
   description: Recorded coding-agent attempts on multilingual repository issues, including full and Verified task
     definitions.
-  testing_condition: Preserve predictions, trajectories and native final verdicts by original run and task. Default
-    result exports without attempt evidence remain in raw. Full and Verified releases retain their distinct grading
-    environments.
+  testing_condition: Each named post-patch test becomes an item within the original repository-issue testlet. Repeated
+    identical names collapse; names recorded as both passed and failed remain ungraded because occurrence identity
+    is unavailable. Tests missing from a report are not fabricated as failures. Attempts without named tests retain
+    the released overall verdict. Full predictions, test lists, task checks and trajectories are preserved on shared
+    attempts; the original resolved flag remains separate from the average test grade.
   paper_url: https://arxiv.org/abs/2504.08703
   data_source_url: https://github.com/amazon-science/SWE-PolyBench
   subject_type: agent
-  item_type: task
+  item_type: test_within_repository_issue_testlet
   license: CC-BY-NC-4.0 for the captured submission branch; MIT for the official task banks and evaluation harness.
   citation: "@misc{rashid2025swepolybenchmultilanguagebenchmarkrepository,\n      title={SWE-PolyBench: A multi-language\
     \ benchmark for repository level evaluation of coding agents},\n      author={Muhammad Shihab Rashid and Christian\

@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 16817
-    logical_sha256: ce11fcd83758d93e78c3b9a23e9a41401ded0f37eecf194e1e15b634c032231e
+    logical_sha256: 8eaa5556adf8cc5452adf14e9edb0ae23fdca5631a17245062824f8f334e4748
+  benchmarks:
+    rows: 1
+    logical_sha256: ef09a29dc8ceba503b6690395801b82f550c26df0aacac9fb538173474a62d39
+  items:
+    rows: 4404
+    logical_sha256: de5ed3b6d56792322c8a515dcf1bb4a220f73b71e7f3c70967b6a4e61ec6c5cf
+  responses:
+    rows: 18425
+    logical_sha256: ea221f03ff7f7d8ba25d37cd06736066c6a193a37e1e75d1036582a86dadb982
   subjects:
     rows: 22
     logical_sha256: 39570728b4d03f42743060537fbc8d102b6828baab615a02e69d3eb036406665
-  responses:
-    rows: 16817
-    logical_sha256: d77b3242edb225bde275aea9ac080ed63a7c437e2b7b2b5895bdba1411735d4e
-  items:
-    rows: 4136
-    logical_sha256: 7a2bc1eb56268647d402c7b63c77f62ae708cbf094e070830224a73c939c53f9
-  benchmarks:
-    rows: 1
-    logical_sha256: 38ecd3bf110a29e4dda698755c614488f9c3a86808683640b17ec9d0a69fba2a
 source_claims:
   source_responses:
     kind: count
@@ -97,3 +97,35 @@ source_claims:
     scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
       checks all records, full rankings, inputs, subject conditions and per-reference grades.
     expected: 4960
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 16817
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 18425
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 4404
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 4136

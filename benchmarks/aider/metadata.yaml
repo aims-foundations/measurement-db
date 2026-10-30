@@ -4,8 +4,11 @@ benchmark:
   description: 'Native Aider polyglot results from Parasoft''s MISRA prompting study: 5,356 attempts on 26 C++ tasks
     using seven model labels and sixteen named experimental arms. One GPT-5 arm changes its instruction text between
     runs, yielding seventeen recorded agent configurations.'
-  testing_condition: Each observation is one complete Aider run on an exercise, including up to two test-feedback
-    cycles. Preserve initial task files, full instructions, reference implementations, unit tests, complete chat
+  testing_condition: Each attempt is one complete Aider run on an exercise, including up to two test-feedback
+    cycles. Named test-case outcomes from the final recorded cycle are separate items within an exercise testlet.
+    Infer unlisted passes only when the final Catch summary accounts for the complete source test roster;
+    otherwise retain only explicitly named failures. Runs without recoverable final checks retain their aggregate.
+    A compilation failure does not imply that individual tests ran. Preserve initial task files, full instructions, reference implementations, unit tests, complete chat
     histories and final generated files. Model labels, weak models, edit formats, harness version and prompting
     variants distinguish subjects. The official multi-language leaderboard contains aggregates and is not converted
     into synthetic item outcomes. No evaluations are rerun; exact API checkpoint revisions and unspecified sampling

@@ -65,6 +65,7 @@ class IgakuQA(BenchmarkBuild):
         items['content'] = items.question + '\n' + items.options.map(
             lambda options: '\n'.join(f'{chr(97 + index)}: {option}' for index, option in enumerate(options)))
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.problem_id
         items['features'] = [dict(language=row.language, exam_year=row.year, requested_choices=len(row.answer),
             input_scope=parameters['labels']['input_scope']) for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=','.join(row.reference_parts),
@@ -82,7 +83,7 @@ class IgakuQA(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row, record=row.record),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], 'traces': traces}
 
 

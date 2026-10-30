@@ -2,9 +2,9 @@ benchmark:
   name: TheAgentCompany
   description: 'TheAgentCompany: ~175 consequential real-world workplace agent tasks across professional
     domains (admin, HR, finance/PM, software engineering, data science). Each task has an agent-facing
-    prompt (task.md) and a checkpoint rubric; runs are graded into a partial-credit final_score. Per-(model,
-    task) final scores are taken from the official experiments leaderboard repo.'
-  testing_condition: Each recorded attempt is graded by the released final_score.result / final_score.total.
+    prompt (task.md) and a checkpoint rubric. Each released checkpoint is an item, grouped by task in a
+    testlet. Checkpoint fractions preserve partial credit; official task scores remain in the shared attempt record.'
+  testing_condition: Each recorded checkpoint is graded by its released result / total.
     The scaffold identifies the subject configuration; test_condition is null. Task-specific evaluator
     definitions distinguish identical prompts with different grading protocols. Native JSON and text trajectories
     are retained in full, including tool outputs, without reconstructing them from an earlier MeasurementDB
@@ -12,7 +12,7 @@ benchmark:
   paper_url: https://arxiv.org/abs/2412.14161
   data_source_url: https://github.com/TheAgentCompany/experiments
   subject_type: model
-  item_type: task
+  item_type: checkpoint within a task testlet
   license: MIT
   citation: "@misc{xu2025theagentcompanybenchmarkingllmagents,\n      title={TheAgentCompany: Benchmarking\
     \ LLM Agents on Consequential Real World Tasks},\n      author={Frank F. Xu and Yufan Song and Boxuan\
@@ -108,6 +108,7 @@ grading:
     in final_score.result / final_score.total.
   verifiers:
     checkpoint:
+      checkpoint_rule: Fraction of the available credit awarded to this individual checkpoint in the released evaluation.
       kind: provider_result_mapping
       source_revision: 98b68ef82a47690c316f42fddb05baafaab56851
       interpretation: Read the released checkpoint fraction; captured grading code is versioned, not asserted

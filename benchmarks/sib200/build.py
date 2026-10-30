@@ -91,6 +91,7 @@ class SIB200(BenchmarkBuild):
         attempts['item_key'] = attempts.protocol + '/' + attempts.language + '/' + attempts.bank_index_id
         items = attempts.drop_duplicates('item_key')[['item_key', 'protocol', 'language', 'bank_index_id', 'text', 'reference']].copy()
         items['raw_item_id'] = 'sib200_' + items.language + '_' + items.bank_index_id
+        items['testlet_id'] = items.raw_item_id
         items['content'] = items.text
         items['features'] = [dict(language=row.language, protocol=row.protocol,
             input_scope=labels[row.protocol + '_scope'],
@@ -113,7 +114,7 @@ class SIB200(BenchmarkBuild):
                 if row.protocol == 'classifier' else None), ensure_ascii=False, allow_nan=False)
             for row in attempts.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

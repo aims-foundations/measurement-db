@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ComplexBench(BenchmarkBuild):
@@ -52,6 +53,7 @@ class ComplexBench(BenchmarkBuild):
             historical_inference_settings="not_recorded") for model in subjects.subject_key]
         items = tasks.rename(columns={"main_id": "item_key", "instruction": "content"}).copy()
         items["raw_item_id"] = items.item_key.astype(str)
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [dict(task_type=row.task_types, category=row.category) for row in items.itertuples()]
         items["grading_criterion"] = [{"rule": json.dumps(dict(
             protocol=self.grading["rule"], scoring_questions=questions),
@@ -74,12 +76,28 @@ class ComplexBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(source_file=row.source_file, source_line=row.source_line,
             source_record=row.source_record, source_task=row.source_task),
             ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
-        return {
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }
+        protocol = self.grading['verifiers']['official_pipeline']
+        components = []
+        for row in items.itertuples():
+            for point in row.scoring_questions:
+                components.append(dict(parent_item_key=row.item_key, component_id=str(point['point_id']),
+                    grading_criterion=dict(rule=json.dumps(dict(protocol=protocol['component_rule'],
+                        scoring_question=point), ensure_ascii=False, sort_keys=True)),
+                    verifier=Judge(spec=json.dumps(dict(protocol, selected_point_id=point['point_id']), sort_keys=True), judged_by='llm')))
+        definitions = pd.DataFrame(components)
+        # The rubric structure is known even though none of its historical
+        # judgments were released. Null children do not assert any pass or fail.
+        outcomes = responses[['response_key', 'item_key']].merge(
+            definitions[['parent_item_key', 'component_id']], left_on='item_key', right_on='parent_item_key', validate='many_to_many')
+        outcomes = outcomes[['response_key', 'component_id']].rename(columns={'response_key': 'parent_response_key'})
+        outcomes['response'] = None
+        return component_tables(tables, definitions, outcomes)
 
 
 if __name__ == "__main__":

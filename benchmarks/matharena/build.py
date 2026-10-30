@@ -123,9 +123,10 @@ class MathArenaBuild(BenchmarkBuild):
         has_answer = traces.answer.map(lambda value: isinstance(value, str) and bool(value.strip()))
         traces["trace"] = traces.answer.where(has_answer, traces.parsed_answer)
         traces = traces.loc[traces.trace.map(lambda value: isinstance(value, str) and bool(value.strip()))]
+        items["testlet_id"] = items.raw_item_id
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "grading_criterion", "verifier", "verifier_features", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "grading_criterion", "verifier", "verifier_features", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "trial", "response"]],
             "traces": traces[["response_key", "trace"]],
         }

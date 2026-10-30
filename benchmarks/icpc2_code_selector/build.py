@@ -45,6 +45,7 @@ class Icpc2CodeSelector(BenchmarkBuild):
         items = items.assign(
             item_key=range(len(items)),
             raw_item_id=items["query"] + "::top_k=" + items.top_k.astype(str),
+            testlet_id=items['query'].str.normalize('NFC').str.strip(),
             content=self.build_parameters["prompt"]["system"] + "\n\nQuery: "
                 + items["query"] + "\n\nSearch engine results: " + candidates,
             features=items.top_k.astype(str).map(lambda value: {"top_k": value}),
@@ -69,7 +70,7 @@ class Icpc2CodeSelector(BenchmarkBuild):
         )
         return {
             "subjects": subjects[["subject_key", "raw_label"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

@@ -109,7 +109,7 @@ class MultiMoE(BenchmarkBuild):
             native_record=row.native_record), ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']].assign(testlet_id=items.raw_item_id),
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             'traces': traces,
         }

@@ -1,9 +1,9 @@
 benchmark:
   description: Scientific-visualization agent benchmark with 108 logical tasks; this build preserves provider-released
-    per-case pass outcomes from selected public and historical model/harness reports.
+    component ratings and checks grouped by task from selected public and historical model/harness reports.
   testing_condition: Preserve all published case outcomes in the current 108-task roster and the additional recorded
-    repeat runs. The response is the provider-reported case percentage thresholded at 50 percent, not a new model
-    or judge run. Keep each administered task text and its own visible grading rules; missing report details are
+    repeat runs. Responses preserve each explicitly scored visual rubric, rule check, and remaining metric subtotal on its native scale.
+    The original case percentage and threshold verdict remain on the shared attempt; cases without component detail retain that verdict. Keep each administered task text and its own visible grading rules; missing report details are
     not borrowed from another run. Full native report sections remain in traces. Original task resources are captured
     at the declared upstream revisions; exact historical workspace snapshots and all generation/judge settings are
     unavailable. Input volumes exceeding the canonical binary value limit remain intact in raw, with paths, sizes
@@ -31,17 +31,10 @@ benchmark:
   - science
   - agents_and_tool_use
   multi_single_turn: multi_turn
-  response_type: binary
+  response_type: mixed
   response_scale:
-    kind: discrete
-    values:
-    - 0
-    - 1
-    direction: higher_is_better
-    meanings:
-      '0': criterion not satisfied
-      '1': criterion satisfied
-  categorical: true
+    kind: mixed
+  categorical: false
   release_date: 2026-03
   release: withheld
   release_reason: "The captured project license expressly prohibits redistribution without prior written permission; project-use authorization does not cover publication."

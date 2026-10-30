@@ -1,3 +1,4 @@
 - Preserve all released HF and current GitHub attempts and complete native configurations; count overlapping files and filtered Gemini copies only once.
 - Restore long passages through exact ordered input-bank matches and linked UTF-8 assets. Retain 700 unresolved 1M/2M attempts with an explicit missing-context flag.
 - Use the original deterministic label metric. Preserve refusals, full outputs, and all source-copy links; historical API serialization remains unverified.
+- Testlet membership migration (2026-10-29): 526,202 existing item identities link to 50,568 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

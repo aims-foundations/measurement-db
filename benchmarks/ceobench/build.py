@@ -73,6 +73,7 @@ class CEOBench(BenchmarkBuild):
         items = pd.DataFrame.from_dict(grading["measures"], orient="index").rename_axis("metric").reset_index()
         items["item_key"] = items.metric
         items["raw_item_id"] = parameters["scenario"]["raw_item_id"] + "/" + items.metric
+        items['testlet_id'] = parameters['scenario']['raw_item_id']
         items["content"] = (self.raw_dir / paths["instructions"]).read_text().strip()
         items["grading_criterion"] = [dict(rule=row.rule, response_scale=row.scale) for row in items.itertuples()]
         items["verifier"] = [ExactMatcher(spec=json.dumps(dict(**grading["protocol"], metric=metric), sort_keys=True))
@@ -92,7 +93,7 @@ class CEOBench(BenchmarkBuild):
         traces = responses[["response_key", "run_id"]].merge(runs[["run_id", "trace"]], on="run_id", validate="many_to_one")
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces[["response_key", "trace"]],
         }

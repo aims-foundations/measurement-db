@@ -94,9 +94,10 @@ class EduGuardBench(BenchmarkBuild):
         traces = traces.astype(object).where(traces.notna(), None)
         traces["trace"] = [json.dumps(record, ensure_ascii=False, allow_nan=False)
             for record in traces.drop(columns="response_key").to_dict("records")]
+        items["testlet_id"] = items.metric.str.startswith("sata_").map({True: "sata/", False: "adversarial/"}) + items.ID.astype(str)
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces[["response_key", "trace"]],
         }

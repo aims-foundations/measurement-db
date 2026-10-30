@@ -119,8 +119,9 @@ class WmtMqm(BenchmarkBuild):
             for row in ratings.itertuples()]
         traces = responses[['response_key', 'rating_key']].merge(ratings[['rating_key', 'trace']],
             on='rating_key', validate='many_to_one')
+        items["testlet_id"] = items.source_file + '::' + items.doc + '::' + items.seg_id
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             'traces': traces[['response_key', 'trace']]}
 

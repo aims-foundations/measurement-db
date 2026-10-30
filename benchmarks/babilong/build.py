@@ -148,6 +148,12 @@ class Babilong(BenchmarkBuild):
             **({"unresolved_input_record": row.source_file + ":" + str(row.source_row)}
                if row.context_status == "released_context_unresolved" else {})) for row in items.itertuples()]
         items["attachments"] = [value if isinstance(value, list) else [] for value in items.attachment]
+        # Prompt variants share a question only when the complete passage agrees.
+        # The unresolved historical runs have no recoverable passage identity.
+        items["testlet_id"] = [hashlib.sha256(json.dumps([
+            row.task, row.question, hashlib.sha256(row.attachments[0]["data"]).hexdigest()
+        ], ensure_ascii=False).encode()).hexdigest() if row.attachments else None
+            for row in items.itertuples()]
         items["grading_criterion"] = items.target.map(
             lambda target: dict(reference_answer=target, rule=self.grading["rule"]))
         items["verifier"] = [ExactMatcher(spec=json.dumps(self.grading["verifiers"]["answer"], sort_keys=True))] * len(items)
@@ -161,7 +167,7 @@ class Babilong(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "attachments", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "attachments", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

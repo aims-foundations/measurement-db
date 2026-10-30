@@ -93,8 +93,9 @@ class RelianceScope(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
             source_segment_id=row.id, source_call_key=row.call_key, axis=row.axis, native_output=row.native_output),
             ensure_ascii=False, allow_nan=False) for row in measurements.itertuples()]
+        items["testlet_id"] = items.id.astype(str)
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-                'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+                'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
                 'responses': measurements[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
                 'traces': traces}
 

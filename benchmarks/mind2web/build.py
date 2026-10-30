@@ -73,8 +73,9 @@ class Mind2Web(BenchmarkBuild):
         # 3. Keep input material separate from the gold targets used for grading.
         subjects = pd.DataFrame([dict(subject_key=parameters["subject"]["key"],
             raw_label=parameters["subject"]["label"], features=parameters["subject_features"])])
-        items = attempts[["sample_id", "query", "cleaned_html", "candidate_ids", "positive_ids", "source_split"]].copy()
+        items = attempts[["sample_id", "annotation_id", "query", "cleaned_html", "candidate_ids", "positive_ids", "source_split"]].copy()
         items["item_key"] = items["raw_item_id"] = items.sample_id
+        items["testlet_id"] = items.annotation_id
         items["content"] = [json.dumps(dict(query=row.query, cleaned_html=row.cleaned_html,
             candidate_node_ids=row.candidate_ids), ensure_ascii=False, allow_nan=False) for row in items.itertuples()]
         items["features"] = [dict(**parameters["item_features"], source_split=split) for split in items.source_split]
@@ -93,7 +94,7 @@ class Mind2Web(BenchmarkBuild):
             source_operation=row.operation, source_positive_candidates=row.pos_candidates,
             source_negative_candidates=row.neg_candidates), ensure_ascii=False, allow_nan=False)
             for row in attempts.itertuples()]
-        return {"subjects": subjects, "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+        return {"subjects": subjects, "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response"]], "traces": traces}
 
 

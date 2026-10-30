@@ -90,6 +90,7 @@ class HarmBench(BenchmarkBuild):
         subjects["features"] = [dict(source_model=key, **self.build_parameters["subject_features"]) for key in subjects.subject_key]
         items = judgments.copy()
         items["raw_item_id"] = items.BehaviorID
+        items["testlet_id"] = items.raw_item_id
         items["image_path"] = items.image_name.map({name: "images/" + hashlib.sha256(blob).hexdigest() + ".png" for name, blob in images.items()})
         items["attachments"] = [[dict(data=images[row.image_name], path=row.image_path, media_type="image/png", role="input")]
             if row.modality == "multimodal" else [] for row in items.itertuples()]
@@ -110,7 +111,7 @@ class HarmBench(BenchmarkBuild):
         traces = judgments[fields].copy()
         traces["trace"] = [json.dumps(record, ensure_ascii=False, allow_nan=False) for record in traces.drop(columns="response_key").to_dict("records")]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": judgments[["response_key", "subject_key", "item_key", "response", "interactors"]],
             "traces": traces[["response_key", "trace"]]}
 

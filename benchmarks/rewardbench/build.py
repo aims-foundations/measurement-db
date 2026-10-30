@@ -1,6 +1,8 @@
 """Tabulate recorded RewardBench preferences against their original task versions."""
 
 import json
+import hashlib
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -95,6 +97,7 @@ class RewardBench(BenchmarkBuild):
         items = tasks.drop_duplicates("content").copy()
         items["item_key"] = items.index.astype(str)
         items["raw_item_id"] = items.subset + ":" + items.id.astype(str)
+        items["testlet_id"] = items.prompt.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         subsets = tasks.groupby("content").subset.agg(lambda values: sorted(set(values)))
         items["features"] = [dict(source_subsets=values) for values in items.content.map(subsets)]
         items["grading_criterion"] = [dict(reference_answer="A", rule=self.grading["rule"])
@@ -120,7 +123,7 @@ class RewardBench(BenchmarkBuild):
             task_record=row.task_record), ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

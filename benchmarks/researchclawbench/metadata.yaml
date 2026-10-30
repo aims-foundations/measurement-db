@@ -1,7 +1,7 @@
 benchmark:
   name: ResearchClawBench
-  description: Recorded autonomous scientific research attempts, graded against expert-weighted task rubrics.
-  testing_condition: 'Preserve every published run-index observation and its native continuous 0–100 score, including
+  description: Individual rubric judgments from autonomous scientific research attempts, grouped by research task.
+  testing_condition: 'Released criterion judgments are separate items linked to the research task testlet and the original execution. Summary-only attempts retain their overall task observation; no criterion grades are inferred. Preserve every published run-index observation and its native continuous 0–100 score, including
     attempts omitted by the best-run leaderboard. Retain the earlier Qiushi Engine / GPT-5.5 batch from its original
     Git revision; a later refresh replaced it with another model. Subjects distinguish the recorded agent and model.
     Item text is the source instruction template: every available recorded instruction matches it after replacing
@@ -16,7 +16,7 @@ benchmark:
   paper_url: https://arxiv.org/abs/2606.07591
   data_source_url: https://github.com/InternScience/ResearchClawBench-Home
   subject_type: agent
-  item_type: scientific_research_task
+  item_type: rubric_criterion_within_research_task_testlet
   license: MIT (captured project and dataset licenses); retain attribution for original scientific inputs and papers.
   citation: 'Shanghai Artificial Intelligence Laboratory. ResearchClawBench: A Benchmark for End-to-End Autonomous
     Scientific Research. 2026. arXiv:2606.07591.'
@@ -82,7 +82,8 @@ grading:
     reported:
       kind: source_reported_multimodal_rubric_score
       source: https://github.com/InternScience/ResearchClawBench/blob/01bc2371f698f755892935ef2965a95a790ff0db/evaluation/score.py
-      execution: import_native_total_score_only
+      execution: import_native_criterion_scores_when_released
+      criterion_rule: Preserve the released criterion score on its 0–100 scale. Criterion weights and the overall weighted task score are retained separately.
       historical_judge_model: not_recorded
 sources:
   upstream:

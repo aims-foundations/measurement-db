@@ -1,0 +1,2 @@
+# financebench curation record
+- Testlet membership migration (2026-10-29): 150 existing item identities link to 84 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. Membership was checked against the complete, previously reviewed canonical item table; this grouping-only change did not rerun the upstream import. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

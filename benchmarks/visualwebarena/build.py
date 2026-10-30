@@ -60,6 +60,7 @@ class VisualWebArena(BenchmarkBuild):
         items = tasks.loc[tasks.task_number.isin(attempts.task_number)].merge(protocols, how='cross')
         items['item_key'] = items.task_number.astype(str) + ':' + items.protocol
         items['raw_item_id'] = items.task_number.astype(str)
+        items['testlet_id'] = items.task_number.astype(str)
         items['features'] = items[['task_number', 'protocol']].rename(columns={'protocol': 'grading_channel'}).to_dict('records')
         items['content'] = [json.dumps(dict(multimedia_elements=[dict(content_type='text/plain', text=row.intent)] +
             [dict(content_type=mimetypes.guess_type(name)[0], location='input_images/' + name) for name in row.image_paths]))
@@ -94,7 +95,7 @@ class VisualWebArena(BenchmarkBuild):
             annotation_row=int(row.annotation_row) if row.protocol == 'human' else None, annotation=row.annotation),
             ensure_ascii=True, allow_nan=False) for row in responses.itertuples()]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', "testlet_id", 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response']],
             traces=responses[['response_key', 'trace']])
 

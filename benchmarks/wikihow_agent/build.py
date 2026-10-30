@@ -8,7 +8,8 @@ import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class WikiHowAgent(BenchmarkBuild):
@@ -18,6 +19,7 @@ class WikiHowAgent(BenchmarkBuild):
     def build_tables(self):
         layout = self.build_parameters['layout']
         grading = self.grading['verifiers']['completion']
+        rubrics = json.loads((self.raw_dir / layout['rubrics']).read_text())
 
         # 1. Normalize the original conversation records, keeping their file and row locations.
         paths = sorted(self.raw_dir.glob(layout['conversations']))
@@ -51,8 +53,10 @@ class WikiHowAgent(BenchmarkBuild):
             raise ValueError('An upstream tutorial identity has conflicting instructions')
         items = runs[['item_key', 'doc_id', 'method_id', 'content']].drop_duplicates('item_key').copy()
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.item_key
         items['features'] = items[['doc_id', 'method_id']].to_dict('records')
-        items['grading_criterion'] = [dict(rule=grading['rule']) for _ in range(len(items))]
+        items['grading_criterion'] = [dict(rule=grading['rule'], response_scale=dict(
+            kind='discrete', values=[0, 1], direction='higher_is_better')) for _ in range(len(items))]
         items['verifier'] = [ExactMatcher(spec=json.dumps(grading['spec'], sort_keys=True)) for _ in range(len(items))]
 
         # 4. Preserve the released binary flags without filtering failed conversations or regrading.
@@ -65,10 +69,30 @@ class WikiHowAgent(BenchmarkBuild):
         runs['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=int(row.source_row),
             config_files=row.config_files, record=row.record), ensure_ascii=True, allow_nan=False)
             for row in runs.itertuples()]
-        return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        definitions = []
+        for row in items.itertuples():
+            definitions.append(dict(parent_item_key=row.item_key, component_id='Completion Achieved',
+                grading_criterion=row.grading_criterion, verifier=row.verifier))
+            for name, rubric in rubrics.items():
+                definitions.append(dict(parent_item_key=row.item_key, component_id=name,
+                    grading_criterion=dict(rule=json.dumps(dict(criterion=name, **rubric), ensure_ascii=False),
+                        response_scale=dict(kind='interval', min=1, max=5, direction='higher_is_better')),
+                    verifier=Judge(spec=json.dumps(self.grading['verifiers']['rubric'], sort_keys=True))))
+        outcomes = []
+        for row in runs.itertuples():
+            outcomes.append(dict(parent_response_key=row.response_key, component_id='Completion Achieved', response=row.response))
+            for name in rubrics:
+                score = row.evaluation.get(name)
+                # The native correction script fills missing scores with zero.
+                # Zero and malformed out-of-range scores are not rubric failures.
+                valid = isinstance(score, (int, float)) and not isinstance(score, bool) and 1 <= score <= 5
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=name,
+                    response=float(score) if valid else None))
+        tables = dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=runs[['response_key', 'subject_key', 'item_key', 'response']],
             traces=runs[['response_key', 'trace']])
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

@@ -2,6 +2,8 @@
 """Reshape EVOUNA's human judgments and corresponding model answers."""
 
 import json
+import unicodedata
+import hashlib
 import sys
 from pathlib import Path
 
@@ -39,6 +41,7 @@ class EVOUNA(BenchmarkBuild):
             verifier=Judge(spec=judge_spec, judged_by="human"),
         )
 
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         # 3. Expand model columns into observed judgments and attach the matching answer.
         models = self.build_parameters["models"]
         labels = questions.melt(id_vars=["item_key", "test_condition"],
@@ -61,7 +64,7 @@ class EVOUNA(BenchmarkBuild):
         has_trace = has_trace.loc[responses.index]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": responses.loc[has_trace, ["response_key", "trace"]],
         }

@@ -1,13 +1,14 @@
 benchmark:
   release: public
-  description: Released clinical answers and LLM assessments from the main, prompt-optimization and repeated-generation
-    experiments.
-  testing_condition: 'Each response row is one released model/case assessment. The three main files mostly
+  description: Released clinical answers and individual rubric judgments, grouped by clinical case in
+    testlets, from the main, prompt-optimization and repeated-generation experiments.
+  testing_condition: 'Each response row is one released rule judgment, or the original binary case judgment
+    where no multi-rule rubric is defined. The three main files mostly
     reassess the same answers: only two cases have changed answers. The prompt-optimization panel contains
     three assessments of 60 cases; its mg field denotes structured-prompt DeepSeek-R1, not MedGPT, and the
     other five models reuse main-panel answers. The worst_at_k panel contains ten answer generations for each
-    of 60 cases. Preserve all 41,922 native assessments and 9,515 partial-credit scores; eleven parser-fallback
-    zeros without aligned judgments become null, with their original values retained in the trace. Trial denotes
+    of 60 cases. Preserve all 41,922 native assessments and their original aggregate scores as shared attempts;
+    eleven parser-fallback zeros without aligned judgments remain ungraded attempts. Trial denotes
     the source file index within a named panel, not guaranteed independent generation. Complete clinical text,
     rubrics, answers and judge outputs are retained. Published prompt templates are captured in the supplementary
     archive; exact historical request payloads and decoding settings are not recorded. Derived averages and
@@ -15,7 +16,7 @@ benchmark:
   paper_url: https://arxiv.org/abs/2507.23486
   data_source_url: https://github.com/Medlinker-MG/CSEDB
   subject_type: model
-  item_type: task
+  item_type: rubric rule within a clinical-case testlet
   license: Apache-2.0
   citation: "@article{wang2025csedb,\n  title={A Novel Evaluation Benchmark for Medical LLMs: Illuminating\
     \ Safety and Effectiveness in Clinical Domains},\n  author={Wang, Shirui and Tang, Zhihui and Yang, Huaxia\
@@ -32,13 +33,12 @@ benchmark:
   domain:
   - medicine
   - safety
-  response_type: fraction
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values: [0, 1]
     direction: higher_is_better
-  categorical: false
+  categorical: true
   release_date: 2025-07
   name: CSEDB
   multi_single_turn: single_turn

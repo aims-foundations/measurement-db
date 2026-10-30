@@ -5,7 +5,7 @@ tables:
     logical_sha256: 5bab164e30bb44a3ed8970afb3403dd20ec1cc8fa12e52f17e4f5a1c6909d062
   items:
     rows: 72223
-    logical_sha256: a06b99886eebaca9341fb0e9303bbc2f8577b9799523b01ede49de5133679224
+    logical_sha256: 0f35f0ef633c7de729b4564ca74ad864f9b380be7dde61e415295c64ac5e6f47
   responses:
     rows: 745360
     logical_sha256: a3010ed2ef51b75b3cdf242e76ab7bd4ff279429247798bac83a09f6ae3aa338
@@ -20,31 +20,27 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/mmlu-winogrande-afr/benchmark_output/releases/v1.1.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.1.0, all 968 selected run exports; actual task metrics, including ungraded attempts.
     expected: 968
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/mmlu-winogrande-afr/benchmark_output/releases/v1.1.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.1.0, all 968 selected run exports; actual task metrics, including ungraded attempts.
     expected: 745360
   source_successes:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/mmlu-winogrande-afr/benchmark_output/releases/v1.1.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.1.0, all 968 selected run exports; actual task metrics, including ungraded attempts.
     expected: 394788
   source_ungraded:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/mmlu-winogrande-afr/benchmark_output/releases/v1.1.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.1.0, all 968 selected run exports; actual task metrics, including ungraded attempts.
     expected: 0

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tabulate recorded BEHAVIOR goal-interpretation answers and missing grades."""
 
+import hashlib
 import json
 import sys
 from fnmatch import fnmatchcase
@@ -11,6 +12,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class EmbodiedAgentInterface(BenchmarkBuild):
@@ -64,6 +66,7 @@ class EmbodiedAgentInterface(BenchmarkBuild):
             historical_inference_settings=labels["settings_status"]) for model in subjects.subject_key]
         items = tasks.rename(columns={"identifier": "item_key"}).copy()
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.item_key
         items["features"] = [dict(simulator=labels["simulator"], module=labels["module"])
                              for _ in items.index]
         items["grading_criterion"] = [dict(
@@ -88,12 +91,37 @@ class EmbodiedAgentInterface(BenchmarkBuild):
             source_conditions=dict(initial_conditions=row.initial_conditions, goal_conditions=row.goal_conditions),
             grade_status=labels["grade_status"]), ensure_ascii=False, allow_nan=False)
             for row in records.itertuples()]
-        return {
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }
+        # Preserve conditional checks without choosing an unreleased alternative.
+        # Repeated predicates keep all native positions and multiplicities.
+        definitions, component_ids = [], {}
+        for row in items.itertuples():
+            checks = {}
+            for goal, alternatives in row.goal_conditions.items():
+                for alternative, conditions in enumerate(alternatives):
+                    for position, condition in enumerate(conditions):
+                        encoded = json.dumps(condition, ensure_ascii=False, sort_keys=True)
+                        key = str(goal) + ':' + hashlib.sha256(encoded.encode()).hexdigest()
+                        check = checks.setdefault(key, dict(goal_id=str(goal), condition=condition,
+                            goal_alternatives=alternatives, positions=[]))
+                        check['positions'].append(dict(alternative=alternative, position=position))
+            if not checks:
+                raise ValueError('A task has no declared symbolic goal conditions')
+            component_ids[row.item_key] = list(checks)
+            for key, check in checks.items():
+                definitions.append(dict(parent_item_key=row.item_key, component_id=key,
+                    grading_criterion=dict(reference_answer=json.dumps(check['condition'], ensure_ascii=False),
+                        rule=json.dumps(dict(protocol=self.grading['verifiers']['official_pipeline']['component_rule'], **check), ensure_ascii=False, sort_keys=True)),
+                    verifier=Judge(spec=json.dumps(dict(self.grading['verifiers']['official_pipeline'],
+                        goal_id=check['goal_id'], selected_condition=check['condition']), ensure_ascii=False, sort_keys=True))))
+        outcomes = [dict(parent_response_key=row.response_key, component_id=key, response=None)
+            for row in responses.itertuples() for key in component_ids[row.item_key]]
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

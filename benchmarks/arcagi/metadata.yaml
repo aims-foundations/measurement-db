@@ -1,42 +1,48 @@
 benchmark:
   release: public
   name: ARC-AGI
-  description: ARC Prize's released model attempts on the public evaluation tasks of
-    ARC-AGI-1 and ARC-AGI-2, which test the inference of transformations from example grids.
-  testing_condition: One response is one model-configuration/task evaluation, with up
-    to two candidate answers for each test grid. Preserve published fractional task scores;
-    otherwise derive exact-grid-match scores only when every test grid is represented.
-    An incomplete export without a published score remains ungraded. Byte-identical copies
-    of the same task record count once, with every source path retained in its trace.
-    Subjects preserve the released configuration label, actual API model, provider and
-    request parameters; temperature is a response condition. Item text contains complete
-    training examples and test inputs, while test outputs occur only in the grading criterion.
-    The April 14, 2025 ARC-AGI-2 runs use the task definitions from the preceding April 4
-    revision; all other released ARC-AGI-2 runs occur after the final May 15 task update.
-    This task-version association is reconstructed from recorded run times and public Git
-    history, not an explicit historical checkout identifier. Six tasks changed between
-    those releases. Exact historical request messages and harness versions are unavailable;
-    the separately captured harness documents the grading rule and published prompt template.
-    No new model inference is performed.
+  description: ARC Prize's released model attempts on the public evaluation tasks of ARC-AGI-1 and ARC-AGI-2, which
+    test the inference of transformations from example grids.
+  testing_condition: Each recorded test-grid pair is an item within its original ARC puzzle. Either of the two released
+    candidate grids may satisfy that item, preserving the original two-candidate budget. Present pairs with null
+    candidates have the native zero outcome; absent pairs do not create inferred failures. Task-level published
+    or derived scores and full candidate records remain on shared evaluation attempts. Historical task snapshots
+    and candidate-order/index checks are unchanged. One response is one model-configuration/task evaluation, with
+    up to two candidate answers for each test grid. Preserve published fractional task scores; otherwise derive
+    exact-grid-match scores only when every test grid is represented. An incomplete export without a published score
+    remains ungraded. Byte-identical copies of the same task record count once, with every source path retained
+    in its trace. Subjects preserve the released configuration label, actual API model, provider and request parameters;
+    temperature is a response condition. Item text contains complete training examples and test inputs, while test
+    outputs occur only in the grading criterion. The April 14, 2025 ARC-AGI-2 runs use the task definitions from
+    the preceding April 4 revision; all other released ARC-AGI-2 runs occur after the final May 15 task update.
+    This task-version association is reconstructed from recorded run times and public Git history, not an explicit
+    historical checkout identifier. Six tasks changed between those releases. Exact historical request messages
+    and harness versions are unavailable; the separately captured harness documents the grading rule and published
+    prompt template. No new model inference is performed.
   paper_url: https://arxiv.org/abs/1911.01547
   data_source_url: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
   subject_type: model
-  item_type: task
-  license: 'ARC task definitions: Apache-2.0. ARC Prize result datasets and captured
-    benchmarking harness: MIT.'
-  citation: 'Chollet, F. (2019). On the Measure of Intelligence. arXiv:1911.01547.
-    ARC Prize Foundation (2025–2026). ARC-AGI public evaluation model results.'
-  tags: [reasoning, abstraction, grid_transformations]
-  modality: [grid]
-  domain: [reasoning]
-  response_type: continuous_bounded
+  item_type: test_grid_within_puzzle_testlet
+  license: 'ARC task definitions: Apache-2.0. ARC Prize result datasets and captured benchmarking harness: MIT.'
+  citation: Chollet, F. (2019). On the Measure of Intelligence. arXiv:1911.01547. ARC Prize Foundation (2025–2026).
+    ARC-AGI public evaluation model results.
+  tags:
+  - reasoning
+  - abstraction
+  - grid_transformations
+  modality:
+  - grid
+  domain:
+  - reasoning
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values:
+    - 0
+    - 1
     direction: higher_is_better
-  categorical: false
-  release_date: '2019-11'
+  categorical: true
+  release_date: 2019-11
   multi_single_turn: single_turn
 build:
   contract_version: 2

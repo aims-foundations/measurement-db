@@ -2,15 +2,7 @@ benchmark:
   name: scBench-Long
   description: Published endpoint assessments of long-horizon single-cell biology analysis agents, restricted to
     the four tasks with released instructions and vocabularies.
-  testing_condition: 'Keep all named model/harness/trial observations for the four released task definitions. The
-    full captured index also contains 1,478 observations on 17 tasks without released prompts; those remain in raw
-    rather than being assigned synthetic instructions. Preserve original replicate indices and endpoint verdicts.
-    Include the released vocabulary as an input attachment and preserve declared Latch data-node URIs; the biological
-    matrices referenced by those URIs are not captured. API settings and historical harness versions are unknown.
-    Save every explicitly linked web trajectory preview with its original truncation flags. The separate full GitHub
-    examples are retained in raw but are not silently joined by matching directory names: their contents do not
-    consistently match the web export. Newer per-task aggregate results are a distinct release and are not expanded
-    into individual observations. Source summary counts disagree with run-level fields; use each recorded passed verdict. The score-threshold task does not release its numeric threshold, so its grading rule remains incomplete and no threshold is inferred. No agent or grader is executed.'
+  testing_condition: "Released named grader-check passed flags are separate items grouped by task. Runs without detailed verdicts retain their endpoint grade. Scores, diagnostic checkpoint signals, and full native evidence remain on the shared attempt. Keep all named model/harness/trial observations for the four released task definitions. The full captured index also contains 1,478 observations on 17 tasks without released prompts; those remain in raw rather than being assigned synthetic instructions. Preserve original replicate indices and endpoint verdicts. Include the released vocabulary as an input attachment and preserve declared Latch data-node URIs; the biological matrices referenced by those URIs are not captured. API settings and historical harness versions are unknown. Save every explicitly linked web trajectory preview with its original truncation flags. The separate full GitHub examples are retained in raw but are not silently joined by matching directory names: their contents do not consistently match the web export. Newer per-task aggregate results are a distinct release and are not expanded into individual observations. Source summary counts disagree with run-level fields; use each recorded passed verdict. The score-threshold task does not release its numeric threshold, so its grading rule remains incomplete and no threshold is inferred. No agent or grader is executed."
   paper_url: https://arxiv.org/abs/2606.26563
   data_source_url: https://github.com/latchbio/scbench-long
   subject_type: model

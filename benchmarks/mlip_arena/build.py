@@ -255,8 +255,9 @@ class MLIPArena(BenchmarkBuild):
             source_coordinates=row.source_coordinates, input_source=row.input_source, reference=row.reference,
             native_record=row.native_record, metric=row.metric, native_metric=native_json_value(row.native_metric),
             grade_status=row.grade_status), ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
+        items["testlet_id"] = items.family + '/' + items.task_name
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'grading_criterion', 'verifier', 'features']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'grading_criterion', 'verifier', 'features']],
             responses=observations[['response_key', 'subject_key', 'item_key', 'response']], traces=traces)
 
 

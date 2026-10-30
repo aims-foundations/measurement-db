@@ -195,11 +195,12 @@ class BridgingGap(BenchmarkBuild):
         definitions["content"] = definitions.messages.map(lambda messages: json.dumps(messages, ensure_ascii=False))
         definitions["grading_criterion"] = [dict(reference_answer=row.gold, rule=self.grading["verifiers"][row.protocol]["rule"]) for row in definitions.itertuples()]
         definitions["verifier"] = definitions.protocol.map(lambda name: ExactMatcher(spec=json.dumps(self.grading["verifiers"][name], sort_keys=True)))
+        definitions['testlet_id'] = definitions.item_key
         definitions["item_key"] = definitions.raw_item_id
         observations["item_key"] = observations.item_key + ":" + observations.protocol
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": definitions[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": definitions[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": observations[["response_key", "trace"]],
         }

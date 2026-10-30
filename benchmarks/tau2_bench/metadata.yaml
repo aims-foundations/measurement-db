@@ -2,7 +2,7 @@ benchmark:
   name: tau2-bench
   description: Recorded customer-service agent trials in the airline, retail and telecom domains, including the
     original telecom ablations.
-  testing_condition: Preserve each published simulation, its embedded task, policy, tools, run configuration and
+  testing_condition: Released checker verdicts are separate binary items within each domain/task testlet, linked to their original simulation. Checks outside the official reward basis are explicitly marked in their grading rules; their mean is not the official task reward. The complete original reward and trace remain on the attempt. Missing check records are never inferred. Some recorded checks differ from the embedded task definition; retain the check actually graded and explicitly record whether it matches, without claiming historical task/rubric agreement. Preserve each published simulation, its embedded task, policy, tools, run configuration and
     native reward. Missing rewards remain ungraded, including logged API-error attempts with no conversation. Agent
     configurations and harness revisions identify subjects. Task and grading revisions remain distinct items. Full
     run and submission records retain disagreements between embedded settings and later leaderboard descriptions;
@@ -11,7 +11,7 @@ benchmark:
   paper_url: https://arxiv.org/abs/2506.07982
   data_source_url: https://github.com/sierra-research/tau2-bench
   subject_type: agent
-  item_type: task
+  item_type: checker_verdict_within_task_testlet
   license: MIT
   citation: "@misc{barres2025tau2benchevaluatingconversational,\n      title={$\\tau^2$-Bench: Evaluating Conversational\
     \ Agents in a Dual-Control Environment},\n      author={Victor Barres and Honghua Dong and Soham Ray and Xujie\
@@ -42,7 +42,7 @@ benchmark:
   release: public
   granularity: item
   version: 363133ada1936491fb5bcec33cd62c3518a99f65
-  one_line_description: Measures tool-using customer-service agents in dual-control conversations.
+  one_line_description: Measures individual action, environment, communication and database checks in customer-service conversations.
 build:
   contract_version: 2
   parameters:

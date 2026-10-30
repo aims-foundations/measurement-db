@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 61384
-    logical_sha256: cbaa9983894388b42ec97737fbecfb364df03684c705037a655f2d2b9c3a306e
-  subjects:
-    rows: 6
-    logical_sha256: 1e1e79528bb8440b1a0887d2621ad6cfb807701171af093c4cf76642969cc4a7
-  responses:
-    rows: 61384
-    logical_sha256: c2756aef8fe6bd5928369195ed1eb64e4f55d1048325aa362f933537d4d04adf
   assets:
     rows: 190
     logical_sha256: 3e5dd337ead2aa0f09d6747e1c0e0e1171965296f9a7d0fd7c113c84f2f99248
-  items:
-    rows: 36458
-    logical_sha256: be286210133c75cd3e52d1ccc82db6a0bd90c306e6314f83593d6f5e4f51b619
+  attempts:
+    rows: 14829
+    logical_sha256: dadaf654ad21054faa348ef0a2a5c7901c8aebdcfd5e30a93c97122e66d8d7fb
   benchmarks:
     rows: 1
-    logical_sha256: 0b4e1f5bfca41594ad02a1919aba1eba7c1530d99d956db2fff6864f9668efba
+    logical_sha256: 78f9fd0cedcfbcbbf9311b5c73ee418cea55303fcb9f9589ae6a4704504d080a
+  items:
+    rows: 3078614
+    logical_sha256: 7eeb18435e1ab168606453f75e46dbf861ccb88634b79fcd7f74f451260e243a
+  responses:
+    rows: 3285426
+    logical_sha256: 271bf8ae717250619068efb776a9d43a3d45f1ad2d831ea57cec4fca750fc72c
+  subjects:
+    rows: 6
+    logical_sha256: 1e1e79528bb8440b1a0887d2621ad6cfb807701171af093c4cf76642969cc4a7
 source_claims:
   source_subjects:
     kind: count
@@ -35,19 +35,17 @@ source_claims:
     source: https://github.com/spapicchio/QATCH
     locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
       author-linked Spider archive.
-    scope: Every applicable published metric with its complete original record and model-specific table context.
-      Different metrics define different grading protocols; repeated publication records are not asserted to be
-      independent generations.
-    expected: 36458
+    scope: Original publication-row and metric definitions before component expansion, distinguished by released
+      file and row rather than canonical item deduplication. The converted canonical item count is imported_items.
+    expected: 42392
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/spapicchio/QATCH
     locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
       author-linked Spider archive.
-    scope: Every applicable published metric with its complete original record and model-specific table context.
-      Different metrics define different grading protocols; repeated publication records are not asserted to be
-      independent generations.
+    scope: Original published metric observations before component expansion. The converted observation count is
+      source_component_observations.
     expected: 61384
   source_traces:
     kind: count
@@ -55,9 +53,8 @@ source_claims:
     source: https://github.com/spapicchio/QATCH
     locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
       author-linked Spider archive.
-    scope: Every applicable published metric with its complete original record and model-specific table context.
-      Different metrics define different grading protocols; repeated publication records are not asserted to be
-      independent generations.
+    scope: Complete original metric-level evidence associations before sharing recorded outputs through attempts.parquet;
+      this does not count a current traces.parquet table.
     expected: 61384
   source_assets:
     kind: count
@@ -149,3 +146,59 @@ source_claims:
       Different metrics define different grading protocols; repeated publication records are not asserted to be
       independent generations.
     expected: 931
+  source_expanded_metric_measurements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source expanded metric measurements. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 20146
+  source_expanded_predicates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source expanded predicates. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 3244188
+  source_weighted_cell_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source weighted cell comparisons. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 19246256
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Released source-row and model evaluation occasions, each retaining its complete output and original metrics.
+      Repeated publication records are not asserted to be independent model generations.
+    expected: 14829
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3285426
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3078614
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 7417

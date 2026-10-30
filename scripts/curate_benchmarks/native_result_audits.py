@@ -336,6 +336,8 @@ def _prox(directory, tables, metadata):
 
 def _cseo(directory, tables, metadata):
     """Read Arrow records and compare every paired measurement without importing the builder."""
+    import hashlib
+    import unicodedata
     import pyarrow.parquet as pq
     import re
 
@@ -410,6 +412,8 @@ def _cseo(directory, tables, metadata):
     for item in tables["items"].itertuples():
         content, features = json.loads(item.content), _features(item.item_features)
         _check(set(content), {"baseline_prompt", "modified_prompt", "target_before", "target_after"}, "C-SEO input fields")
+        _check(item.testlet_id, hashlib.sha256(unicodedata.normalize('NFC', content['baseline_prompt']).encode()).hexdigest(),
+            'C-SEO shared original stimulus across promoted documents and interventions')
         items[item.item_id] = (features["domain"], features["method"], features["adoption"],
                               _digest(content["baseline_prompt"]), _digest(content["modified_prompt"]),
                               content["target_before"], content["target_after"])
@@ -764,6 +768,9 @@ def _clasheval(directory, tables, metadata):
 
 def _engdesign(directory, tables, metadata):
     """Compare all native records, using AST fields rather than the builder's tokenizer."""
+    if 'attempts' in tables:
+        from .testlet_engdesign_audit import verify
+        return verify(directory, tables, metadata)
     import ast
     import hashlib
     import mimetypes
@@ -937,6 +944,9 @@ def _engdesign(directory, tables, metadata):
 
 def _phyblock(directory, tables, metadata):
     """Compare all conversions with the reviewed author's deterministic checker."""
+    if 'attempts' in tables:
+        from .testlet_phyblock_audit import verify
+        return verify(directory, tables, metadata)
     import ast
     import hashlib
     import re
@@ -2908,6 +2918,9 @@ def _aider_source_records(directory, metadata):
 
 
 def _aider(directory, tables, metadata, source_records=None):
+    if 'attempts' in tables:
+        from .testlet_coding_audit import verify
+        return verify(directory, tables, metadata)
     native, definitions = (_aider_source_records(directory, metadata) if source_records is None else source_records)
     subjects = tables["subjects"].set_index("subject_id").to_dict("index")
     items = tables["items"].set_index("item_id").to_dict("index")
@@ -4164,6 +4177,9 @@ def _autoresearch_source_records(directory, metadata):
 
 def _autoresearch(directory, tables, metadata, source_records=None):
     """Check all source associations, original scores, prompt messages and full passes."""
+    if 'attempts' in tables:
+        from .testlet_autoresearch_audit import verify
+        return verify(directory, tables, metadata)
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
 
     native, inputs, counts = _autoresearch_source_records(directory, metadata) if source_records is None else source_records
@@ -4438,7 +4454,9 @@ def _babilong_source_records(directory, metadata):
             item = dict(content=unicodedata.normalize("NFC", content).strip(),
                         features=dict(task=task, context_length=length, input_context_status=state,
                                       **({"unresolved_input_record": key[0] + ":" + str(key[1])} if not bank else {})),
-                        target=row["target"], context_hash=source_input["context_sha256"] if bank else None)
+                        target=row["target"], context_hash=source_input["context_sha256"] if bank else None,
+                        testlet_id=hashlib.sha256(json.dumps([task, row["question"],
+                            source_input["context_sha256"]], ensure_ascii=False).encode()).hexdigest() if bank else None)
             if item_key in items:
                 _check(item, items[item_key], "BABILong consistent source item definition")
             items[item_key] = item
@@ -4526,6 +4544,8 @@ def _babilong(directory, tables, metadata, source_records=None):
         else:
             _check(item["content"], expected["content"], "BABILong full source prompt configuration and question")
             _check(_features(item["item_features"]), expected["features"], "BABILong task, length and context availability")
+            _check(None if pd.isna(item["testlet_id"]) else item["testlet_id"], expected["testlet_id"],
+                   "BABILong shared exact passage and question; unresolved contexts remain ungrouped")
             _check(json.loads(item["grading_criterion"]),
                    dict(reference_answer=expected["target"], rule=metadata["grading"]["rule"]),
                    "BABILong correct original reference and grading protocol")
@@ -5239,6 +5259,9 @@ def _bounty_source_records(directory, metadata):
 
 
 def _bounty(directory, tables, metadata, source_records=None):
+    if 'attempts' in tables:
+        from .testlet_bounty_audit import verify
+        return verify(directory, tables, metadata)
     native, definitions, configurations, counts = (_bounty_source_records(directory, metadata)
         if source_records is None else source_records)
     _check((len(tables['responses']), len(tables['traces'])), (len(native), len(native)), 'BountyBench complete released workflows and traces')
@@ -6763,6 +6786,9 @@ def _classroom_source_records(directory, metadata):
 
 def _classroom_ai(directory, tables, metadata, source_records=None):
     """Compare every question, model variant, grade and complete trace to the native record."""
+    if 'attempts' in tables:
+        from .testlet_classroom_audit import verify
+        return verify(directory, tables, metadata, source=source_records)
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
 
     source = source_records if source_records is not None else _classroom_source_records(directory, metadata)
@@ -6819,10 +6845,11 @@ def _classroom_ai(directory, tables, metadata, source_records=None):
     _check(seen, Counter({key:1 for key in source['native']}), 'Classroom AI every original attempt exactly once')
     _check(set(traces), set(tables['responses'].response_id), 'Classroom AI exact trace links')
     repeated = tables['responses'].groupby(['subject_id','item_id']).size()
-    _check(int((repeated-1).sum()), 84, 'Classroom AI repeated attempts retained across all subjects')
+    repetitions = len(source['native']) - len({(r['subject'], r['question']) for r in source['native'].values()})
+    _check(int((repeated-1).sum()), repetitions, 'Classroom AI repeated attempts retained across all subjects')
     _check(len(tables.get('assets', [])), 0, 'Classroom AI text-only inputs')
     return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
-        source_question_occurrences=len(source['question_order']), source_repeated_attempts=84,
+        source_question_occurrences=len(source['question_order']), source_repeated_attempts=repetitions,
         source_printed_number_restarts=source['numbering_restarts'], source_ungraded=grades[None],
         **{'source_level_'+str(level):grades[level] for level in range(1,7)})
 
@@ -6874,6 +6901,8 @@ def _cmmlu_source_records(directory, metadata):
 
 def _cmmlu(directory, tables, metadata, source_records=None):
     """Check every prompt, prediction, reference, model, grade and repeated attempt."""
+    import hashlib
+    import unicodedata
     source = source_records if source_records is not None else _cmmlu_source_records(directory, metadata)
     parameters = metadata['build']['parameters']
     protocol = metadata['grading']['verifiers']['reconstructed_option_accuracy']
@@ -6911,6 +6940,10 @@ def _cmmlu(directory, tables, metadata, source_records=None):
         _check(subjects[row.subject_id], (original['subject'],original['prompt_condition']), 'CMMLU prediction/system association')
         item = items[row.item_id]
         _check(item.content, original['prompt'].strip(), 'CMMLU complete model-facing prompt with only outer whitespace trimmed')
+        header, separator, question = original['prompt'].strip().partition('\n\n')
+        shared = header.removesuffix(' 请在回答之前一步步思考.') + separator + question
+        _check(item.testlet_id, hashlib.sha256(unicodedata.normalize('NFC', shared).strip().encode()).hexdigest(),
+            'CMMLU group only the explicit native CoT-header variation')
         _check(json.loads(item.grading_criterion)['reference_answer'], original['record']['gold'], 'CMMLU recorded reference preserved')
         _check(trace['source_record'], original['record'], 'CMMLU complete unmodified source record')
         _check(trace['extracted_answer'], original['extracted_answer'], 'CMMLU captured parser result')
@@ -7068,6 +7101,9 @@ def _complex_source_records(directory, metadata):
 
 
 def _complex(directory, tables, metadata, source_records=None):
+    if 'attempts' in tables:
+        from .testlet_complex_audit import verify
+        return verify(directory, tables, metadata, source=source_records)
     tasks, records = source_records if source_records is not None else _complex_source_records(directory, metadata)
     subjects = {}
     for subject in tables["subjects"].itertuples():
@@ -7577,6 +7613,9 @@ def _das_source_records(directory, metadata):
 
 
 def _das_med_hallucination(directory, tables, metadata, source_records=None):
+    if 'attempts' in tables:
+        from .testlet_das_audit import verify
+        return verify(directory, tables, metadata, source_records=source_records)
     import hashlib
 
     generations, judgments, stale = source_records if source_records is not None else _das_source_records(directory, metadata)
@@ -7640,7 +7679,7 @@ def _das_med_hallucination(directory, tables, metadata, source_records=None):
         seen[key] += 1
     _check(seen, Counter({key: 1 for key in generations}), "DAS each generation exactly once")
     scale = json.loads(tables["benchmarks"].iloc[0].response_scale)
-    _check(scale["values"], [0., .5, 1.], "DAS uncertainty is a preserved category")
+    _check(scale["values"], metadata['benchmark']['response_scale']['values'], "DAS declared observation scale")
     _check(scale["direction"], "unordered", "DAS detector uncertainty is not fractional correctness")
     verifier = metadata["grading"]["verifiers"]["detector"]
     _check(verifier["prompts_sha256"], hashlib.sha256((directory / "raw/release/src/med_red_team/hallucination/prompts.py").read_bytes()).hexdigest(),
@@ -8359,6 +8398,9 @@ def _decodingtrust_source_records(directory, metadata):
 
 def _decodingtrust(directory, tables, metadata, source_records=None):
     """Reconcile every output, input, model, grade and source-trace association."""
+    if 'attempts' in tables:
+        from .testlet_decodingtrust_audit import verify
+        return verify(directory, tables, metadata)
     import ast
     import csv
     import re
@@ -10735,6 +10777,8 @@ def _genai(directory, tables, metadata, source=None):
         _check(json.loads(item["content"]), content, "GenAI exact input variant and question coordinate")
         _check(_features(item["item_features"]), features, "GenAI phase-specific input features")
         _check(item["raw_item_id"], phase + ":" + problem, "GenAI separate human and model stimuli")
+        _check(item['testlet_id'], ('practice' if phase == 'gpt' else phase) + ':' + problem,
+            'GenAI shared native practice question across human and GPT input variants')
         _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=protocols[phase]["protocol"], response_scale=protocols[phase]["response_scale"]), "GenAI correct phase grading protocol and no invented reference")
         _check(json.loads(item["verifier"]), dict(**{"class": "judge"}, judged_by="human", spec=json.dumps(protocols[phase], sort_keys=True)), "GenAI original human grader")
         _check(pd.isna(response.interactors), True, "GenAI no fabricated response interlocutor")
@@ -11729,6 +11773,7 @@ def _hle(directory, tables, metadata, source=None, trace_cache=None):
         _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "HLE no inferred per-run settings")
         item = items[row.item_id]
         question = questions[key[0], key[1]]
+        _check(item['testlet_id'], key[1], 'HLE shared official question across evaluation protocols')
         parts = [dict(content_type="text/plain", text=question["question"])]
         if question["image"]:
             parts.append(dict(content_type=question["image"]["media_type"], location=question["image"]["path"]))
@@ -13304,6 +13349,7 @@ def _lawbench(directory, tables, metadata, source=None):
 
 def _check_recorded_prompt_results(tables, metadata, source, benchmark_name):
     """Verify the shared contract for native prompt/reference/output records."""
+    import hashlib
     import math
     import unicodedata
     from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
@@ -13334,6 +13380,10 @@ def _check_recorded_prompt_results(tables, metadata, source, benchmark_name):
         setting, task, content, reference = original["identity"]
         _check(row.raw_item_id, definitions[identities[row.raw_item_id]], f"{benchmark_name} first source alias for each complete stimulus")
         _check(row.content, content, f"{benchmark_name} exact recorded input text")
+        if benchmark_name == "LexEval":
+            testlet = hashlib.sha256(json.dumps([task, unicodedata.normalize("NFC", content).strip()],
+                ensure_ascii=False).encode()).hexdigest()
+            _check(row.testlet_id, testlet, "LexEval exact shared question across recorded settings")
         verifier = metadata["grading"]["verifiers"][task]
         expected = json.loads(canonical_grading_criterion(dict(reference_answer=json.dumps(reference, ensure_ascii=False),
             rule=verifier["rule"].format(task=task, setting=setting), response_scale=verifier["response_scale"])))
@@ -14330,7 +14380,7 @@ def _uncertainty_sources(directory):
         source_files=len(files),source_base_questions=sum(map(len,banks.values())),source_tied_maxima=ties))
 
 
-def _uncertainty_prompt(source,dataset,qid,method):
+def _uncertainty_prompt(source,dataset,qid,method,*,question_only=False):
     bank=source['banks'][dataset];question=bank[qid];constants=source['constants']
     def example(row,with_answer=False):
         family=row['source'];text=''
@@ -14342,6 +14392,8 @@ def _uncertainty_prompt(source,dataset,qid,method):
         for key,value in row['choices'].items():text+=key+'. '+str(value)+'\n'
         text+='Answer:'
         return text+(' '+row['answer']+'\n' if with_answer else '')
+    if question_only:
+        return example(question)
     prompts=constants['prompt.py'];header=''
     if method=='shared':header=prompts['shared_few_prompt']
     elif method=='task':header=json.loads(prompts['task_few_prompt'],strict=False)[question['source']]
@@ -14352,6 +14404,8 @@ def _uncertainty_prompt(source,dataset,qid,method):
 
 
 def _llm_uncertainty(directory,tables,metadata,source=None):
+    import hashlib
+    import unicodedata
     from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
 
     source=_uncertainty_sources(directory) if source is None else source
@@ -14377,6 +14431,10 @@ def _llm_uncertainty(directory,tables,metadata,source=None):
         dataset,qid,method=row.raw_item_id.split(':');qid=int(qid)
         question=source['banks'][dataset][qid]
         prompt=_uncertainty_prompt(source,dataset,qid,method)
+        stimulus = _uncertainty_prompt(source, dataset, qid, method, question_only=True)
+        _check(row.testlet_id, hashlib.sha256(unicodedata.normalize('NFC', json.dumps(
+            [dataset, stimulus], ensure_ascii=False)).encode()).hexdigest(),
+            'Uncertainty original question shared across prompt methods and duplicate IDs')
         _check(row.content,prompt,'Uncertainty full documented prompt and demonstrations')
         expected=dict(dataset=dataset,prompt_method=method,
             demonstration_ids=str(source['constants']['generate_logits.py']['few_shot_exp_ids'][question['source']]),
@@ -14583,6 +14641,8 @@ def _lohi_sources(directory, metadata):
 
 
 def _lohi(directory, tables, metadata, source=None):
+    import hashlib
+    import unicodedata
     from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
 
     source = _lohi_sources(directory, metadata) if source is None else source
@@ -14607,6 +14667,8 @@ def _lohi(directory, tables, metadata, source=None):
         reference = str(float({"True": "1", "False": "0"}.get(record["value"], record["value"])))
         key = batch["task"], batch["dataset"], record["smiles"], reference
         _check(row.content, record["smiles"], "Lo-Hi exact native SMILES")
+        _check(row.testlet_id, hashlib.sha256(unicodedata.normalize('NFC', record['smiles']).strip().encode()).hexdigest(),
+            'Lo-Hi property evaluations share the exact released molecular stimulus')
         _check(_features(row.item_features), dict(task=key[0], dataset=key[1], input_scope=parameters["labels"]["input_scope"]), "Lo-Hi original property task and input scope")
         protocol = metadata["grading"]["verifiers"][batch["task"]]
         expected = canonical_grading_criterion(dict(reference_answer=reference, rule=protocol["rule"], response_scale=protocol["response_scale"]))
@@ -15033,6 +15095,7 @@ def _medagentboard_sources(directory, metadata):
 
 
 def _medagentboard(directory, tables, metadata, source=None):
+    import hashlib
     from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
 
@@ -15045,8 +15108,11 @@ def _medagentboard(directory, tables, metadata, source=None):
         expected = dict(parameters['subject_features'], source_configuration=key,
                         recorded_configuration=source['configurations'][key])
         expected.pop('harness')
+        label = parameters['subject_labels'].get(key, key)
+        if label != key:
+            expected['source_display_name'] = key
         _check(_features(row.subject_features_extra), canonicalize_features(expected), 'Exact original subject configuration')
-        _check(row.display_name, key, 'Literal source-labelled subject')
+        _check(row.display_name, label, 'Explicit source-to-model label mapping')
         _check(row.harness, 'MedAgentBoard', 'Native harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'No invented historical setting: ' + field)
@@ -15057,6 +15123,9 @@ def _medagentboard(directory, tables, metadata, source=None):
     for row in tables['items'].itertuples():
         key = row.raw_item_id
         definition = source['definitions'][key]
+        _check(row.testlet_id, hashlib.sha256(json.dumps([definition['family'], definition['dataset'], definition['source_item'],
+            definition['question'], hashlib.sha256(source['images'][definition['image']]).hexdigest() if definition['image'] else None],
+            ensure_ascii=False).encode()).hexdigest(), 'MedAgentBoard original question and image group response-format variants')
         elements = [dict(content_type='text/plain', text=definition['question'])]
         if definition['options']:
             elements.append(dict(content_type='application/json', text=json.dumps(definition['options'], ensure_ascii=False)))
@@ -16667,6 +16736,7 @@ def _mmoral(directory, tables, metadata, source=None):
         _check(links[0], dict(asset_id=task['image_sha256'], path=path, media_type='image/jpeg', role='input', ordinal=1),
                'MMOral image content identity across reused filenames')
         _check(assets[links[0]['asset_id']]['data'], source['images'][task['image_sha256']], 'MMOral exact original JPEG bytes')
+        _check(item.testlet_id, task['image_sha256'], 'MMOral shared image testlets preserve distinct historical image bytes')
         used.add(links[0]['asset_id'])
         grading = metadata['grading']['verifiers'][task['split']]
         _check(json.loads(item.grading_criterion), dict(reference_answer=task['answer'], rule=grading['rule'],
@@ -18726,9 +18796,11 @@ def _scale_mrt_sources(directory, metadata):
     import hashlib
     import math
     import re
+    import unicodedata
 
     raw = directory / 'raw'
     native, definitions, configurations = {}, {}, set()
+    testlet_candidates = defaultdict(set)
     counts, occurrences, identical = Counter(), Counter(), Counter()
     for path in sorted(raw.glob('release/*/**/transcript_*.json')):
         data = path.read_bytes()
@@ -18789,11 +18861,15 @@ def _scale_mrt_sources(directory, metadata):
             counts['source_missing_monitor_requests'] += 1
         text = json.dumps(request, ensure_ascii=False, allow_nan=False)
         identity = _digest(text), scale
+        shared = hashlib.sha256(json.dumps([collection, task, record['conversation']],
+            ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+        testlet_candidates[unicodedata.normalize('NFC', text).strip(), scale].add(shared)
         literal_model = re.sub(r'_x([0-9a-f]{2})_', lambda match: chr(int(match[1], 16)), monitor)
         configuration = literal_model, condition
         configurations.add(configuration)
         definitions.setdefault(identity, dict(content_digest=identity[0], scale=scale, input_scope=scope,
-                                               raw_item_id=relative.removeprefix('release/')))
+                                               raw_item_id=relative.removeprefix('release/'),
+                                               testlet_key=(unicodedata.normalize('NFC', text).strip(), scale)))
         low, high = (1, 5) if scale == 'one_to_five' else (0, 100)
         lower = output.lower()
         begin = lower.find('<verdict>')
@@ -18818,6 +18894,9 @@ def _scale_mrt_sources(directory, metadata):
     counts.update(source_observations=len(native), source_items=len(definitions), source_configurations=len(configurations),
                   source_literal_models=len({key[0] for key in configurations}),
                   source_identical_record_files=sum(value - 1 for value in identical.values()))
+    for definition in definitions.values():
+        candidates = testlet_candidates[definition.pop('testlet_key')]
+        definition['testlet_id'] = next(iter(candidates)) if len(candidates) == 1 else None
     return dict(native=native, definitions=definitions, configurations=configurations, counts=dict(counts))
 
 
@@ -18841,6 +18920,8 @@ def _scale_mrt(directory, tables, metadata, source=None):
         identity = _digest(row.content), features['rating_scale']
         expected = source['definitions'][identity]
         _check(row.raw_item_id, expected['raw_item_id'], 'MRT first native source alias')
+        _check(None if pd.isna(row.testlet_id) else row.testlet_id, expected['testlet_id'],
+               'MRT shared original trajectory; ambiguous monitor inputs remain ungrouped')
         _check(features, dict(input_scope=expected['input_scope'], rating_scale=expected['scale']), 'MRT complete versus partial input scope')
         low, high = (1, 5) if expected['scale'] == 'one_to_five' else (0, 100)
         criterion = json.loads(row.grading_criterion)
@@ -19567,6 +19648,8 @@ def _sgrades_sources(directory, metadata):
 def _sgrades(directory, tables, metadata, source=None):
     """Compare every retained observation with original inputs, outputs and annotations."""
     import ast
+    import hashlib
+    import unicodedata
     from collections import defaultdict
 
     source = source or _sgrades_sources(directory, metadata)
@@ -19649,6 +19732,11 @@ def _sgrades(directory, tables, metadata, source=None):
             True, 'S-GRADES recorded item alias for the same content and grading')
         _check(item['content'], 'Question: ' + question.strip() + '\n\nStudent answer: ' + answer.strip(),
             'S-GRADES complete known question and student-answer fields')
+        expected_testlet = hashlib.sha256(json.dumps([
+            dataset.removesuffix('_2way').removesuffix('_3way'),
+            unicodedata.normalize('NFC', question).strip()], ensure_ascii=False).encode()).hexdigest() if question.strip() else None
+        _check(pd.isna(item['testlet_id']) if expected_testlet is None else item['testlet_id'] == expected_testlet,
+            True, 'S-GRADES shared source questions; missing questions have no inferred group')
         _check(_features(item['item_features']), dict(dataset=dataset, input_scope=labels['input_scope']), 'S-GRADES dataset and input limitations')
         _check(json.loads(item['grading_criterion']), dict(reference_answer=gold, rule=metadata['grading']['verifiers'][protocol]['rule']),
             'S-GRADES original reference category and declared grading rule')
@@ -19860,6 +19948,8 @@ def _situat3dchange(directory, tables, metadata, source=None):
         item = items[row.item_id]
         _check((item['raw_item_id'], item['content']), (expected['item_key'], expected['content']),
             'Situat3DChange complete source question and item identity')
+        _check(item['testlet_id'], hashlib.sha256(json.dumps([expected['previous'], expected['scan']]).encode()).hexdigest(),
+            'Situat3DChange related questions share the original ordered scene comparison')
         extra = _features(item['item_features'])
         _check(set(extra), {'task', 'input_scope', 'spatial_context'}, 'Situat3DChange stimulus fields without reference-label features')
         _check((extra['task'], extra['input_scope'], json.loads(extra['spatial_context'])),
@@ -19987,6 +20077,7 @@ def _sketchjudge_sources(directory, metadata):
 def _sketchjudge(directory, tables, metadata, source=None):
     """Check all captured observations and bytes, including the explicit source conflict."""
     import hashlib
+    import unicodedata
     from collections import defaultdict
 
     source = source or _sketchjudge_sources(directory, metadata)
@@ -20019,6 +20110,13 @@ def _sketchjudge(directory, tables, metadata, source=None):
         configurations[row.subject_id] = expected['configuration']
         item = items[row.item_id]
         _check(item['raw_item_id'] in source['aliases'][expected['definition']], True, 'SketchJudge original alias for identical content and grading')
+        question = trace['source_question']
+        expected_testlet = hashlib.sha256(json.dumps([
+            unicodedata.normalize('NFC', question['query_en']), expected['links'][-1]['asset_id'],
+            expected['links'][0]['asset_id'] if question['requires_input_image'] else None],
+            ensure_ascii=False).encode()).hexdigest() if expected['input_status'] == labels['valid_input'] else None
+        _check(pd.isna(item['testlet_id']) if expected_testlet is None else item['testlet_id'] == expected_testlet,
+            True, 'SketchJudge only verified variants of the original answer share a testlet')
         _check(item['content'], expected['content'], 'SketchJudge full recorded prompt')
         _check(_features(item['item_features']), dict(category=expected['category'], input_association=expected['input_status'],
             input_scope=labels['input_scope']), 'SketchJudge original task features and explicit association status')
@@ -20146,6 +20244,9 @@ def _statqa_sources(directory, metadata):
 
 def _statqa(directory, tables, metadata, source=None):
     """Check every attempt, parser outcome, full trace and original task association."""
+    if 'attempts' in tables:
+        from .testlet_statqa_audit import verify
+        return verify(directory, tables, metadata, source=source)
     from collections import defaultdict
 
     source = source or _statqa_sources(directory, metadata)
@@ -20674,12 +20775,17 @@ def _swe_live_tabular(directory, tables, metadata, source=None):
             True, 'SWE-Live exact final verdict or unavailable grade')
         run, instance_id = key
         label = run.removeprefix('submissions/').removeprefix('website/')
+        display = parameters.get('subject_labels', {}).get(label, label)
         subject = subjects[row.subject_id]
         _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
-            (label, labels['harness'], True), 'SWE-Live literal submission and harness identity')
+            (display, parameters['subject_harnesses'].get(label, labels['harness']), True), 'SWE-Live documented model and harness identity')
+        _check(None if pd.isna(subject['reasoning_effort']) else subject['reasoning_effort'],
+            parameters['subject_reasoning_efforts'].get(label), 'SWE-Live recorded reasoning effort')
         readme = parameters['layout']['release'] + '/' + run + '/README.md'
         features = canonicalize_features(dict(source_submission=run, configuration_scope=labels['configuration_scope'],
             source_readme=readme if (raw / readme).is_file() else None))
+        if display != label:
+            features['source_display_name'] = label
         _check(subject['subject_features_extra'], features_string(features), 'SWE-Live explicit source configuration provenance')
         configurations[row.subject_id] = run
         item, task = items[row.item_id], expected['task']
@@ -20850,10 +20956,14 @@ def _swe_poly_tabular(directory, tables, metadata, source=None):
         _check(row.trial, 1, 'PolyBench one recorded trial per source configuration')
         _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'PolyBench no invented response conditions')
         subject = subjects[row.subject_id]
+        label = source['configurations'][run]['name']
+        display = metadata['build']['parameters'].get('subject_labels', {}).get(label, label)
         _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
-            (source['configurations'][run]['name'], labels['harness'], True), 'PolyBench literal source configuration')
+            (display, metadata['build']['parameters']['subject_harnesses'].get(label, labels['harness']), True), 'PolyBench documented model and harness identity')
         features = canonicalize_features(dict(source_submission=run, configuration_scope=labels['configuration_scope'],
             source_readme='release/' + run + '/README.md'))
+        if display != label:
+            features['source_display_name'] = label
         _check(subject['subject_features_extra'], features_string(features), 'PolyBench complete configuration provenance')
         task, split = expected['task']['record'], expected['split']
         item = items[row.item_id]
@@ -22514,6 +22624,17 @@ def _weavebench_sources(directory, metadata):
 
 def _weavebench(directory, tables, metadata, source=None):
     native, screenshots = _weavebench_sources(directory, metadata) if source is None else source
+    expanded = 'attempts' in tables
+    if expanded:
+        from ..build_measurement_tables.validate_measurement_tables import validate_dataset
+        from .testlet_audits import verify_component_results
+        from .testlet_audit_views import attempt_view
+        validate_dataset(tables, context='WeaveBench component source audit')
+        verify_component_results(directory, tables=tables)
+        observations, traces = attempt_view(tables)
+    else:
+        observations = tables['responses']
+        traces = tables['traces'].set_index('response_id').trace.to_dict()
     settings = metadata["build"]["parameters"]
     subject_map = {}
     for row in tables["subjects"].itertuples():
@@ -22529,24 +22650,33 @@ def _weavebench(directory, tables, metadata, source=None):
     _check(Counter(subject_map.values()), Counter({key: 1 for key in expected_pairs}), "WeaveBench all native model/runtime pairs")
     items = {}
     for row in tables["items"].itertuples():
-        original = native[row.raw_item_id]["source_record"]
+        key, separator, dimension = row.raw_item_id.partition('::') if expanded else (row.raw_item_id, '', '')
+        original = native[key]['source_record']
+        if expanded:
+            _check(row.testlet_id, key, 'WeaveBench original task membership')
         _check(row.content, original["task_prompt"], "WeaveBench complete original task prompt")
         _check(_features(row.item_features), dict(category=original["category"]), "WeaveBench native task category")
         criterion = json.loads(row.grading_criterion)
         _check(criterion["reference_answer"], None, "WeaveBench checks are grading rules, not a reference answer")
-        _check(json.loads(criterion["rule"]), dict(pass_rule=metadata["grading"]["rule"], checks=original["checks"],
-            deliverables=original["deliverables"]), "WeaveBench complete task grading evidence and deliverable requirements")
+        if separator:
+            _check(dimension in original['dimensions'], True, 'WeaveBench source-declared rubric dimension')
+            rule = dict(dimension=dimension, rule='Released trajectory-aware judge dimension score',
+                checks=original['checks'], deliverables=original['deliverables'])
+        else:
+            rule = dict(pass_rule=metadata['grading']['rule'], checks=original['checks'], deliverables=original['deliverables'])
+        _check(json.loads(criterion['rule']), rule, 'WeaveBench complete task grading evidence and deliverable requirements')
         verifier = json.loads(row.verifier)
         _check(verifier["class"], "judge", "WeaveBench final grade is an agent judgment, not execution of the check script")
         _check(verifier["judged_by"], "llm", "WeaveBench explicit agent-as-judge protocol")
         _check(verifier.get("judge"), None, "WeaveBench no guessed historical judge model")
         _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["published_judge"], "WeaveBench full grader description")
-        items[row.item_id] = row.raw_item_id
-    _check(Counter(items.values()), Counter({key: 1 for key in native}), "WeaveBench one complete item per original task")
-    traces = tables["traces"].set_index("response_id").trace.to_dict()
-    _check(len(traces), len(tables["traces"]), "WeaveBench one native trace per response")
+        items[row.item_id] = key
+    _check(set(items.values()), set(native), 'WeaveBench complete original task coverage')
+    if not expanded:
+        _check(Counter(items.values()), Counter({key: 1 for key in native}), 'WeaveBench one complete item per original task')
+        _check(len(traces), len(tables['traces']), 'WeaveBench one native trace per response')
     seen = Counter()
-    for row in tables["responses"].itertuples():
+    for row in observations.itertuples():
         key = items[row.item_id]
         original = native[key]
         record = original["source_record"]
@@ -22562,7 +22692,7 @@ def _weavebench(directory, tables, metadata, source=None):
                "WeaveBench unabridged gallery record and every original screenshot link")
         seen[key] += 1
     _check(seen, Counter({key: 1 for key in native}), "WeaveBench every selected original rollout exactly once")
-    _check(set(traces), set(tables["responses"].response_id), "WeaveBench complete trace associations")
+    _check(set(traces), set(observations.response_id), "WeaveBench complete trace associations")
     _check(tables["benchmarks"].iloc[0].version, metadata["benchmark"]["version"], "WeaveBench pinned gallery revision")
     return dict(source_responses=len(native), source_items=len(items), source_subjects=len(subject_map),
         source_models=len({key[0] for key in subject_map.values()}), source_traces=len(traces), source_screenshots=len(screenshots),
@@ -23080,6 +23210,7 @@ def _osworld(directory, tables, metadata, source=None):
             _check(row.response_id not in traces, True, "OSWorld absent execution traces remain absent")
         if row.item_id not in checked_items:
             task = source["tasks"][key[2]]
+            _check(item['testlet_id'], key[2], 'OSWorld task identity across instruction variants')
             _check(item["content"], original["files"].get("instruction.txt", task["instruction"]), "OSWorld complete recorded instruction or provider fallback")
             _check(_features(item["item_features"]), dict(domain=key[2].split("/")[0], snapshot=task["snapshot"],
                 definition_provenance=parameters["labels"]["definition_provenance"]), "OSWorld explicit task-definition scope")
@@ -23754,7 +23885,10 @@ def _morphkv(directory, tables, metadata, source=None):
     subjects, subject_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_run']
-        _check(row.display_name, model, 'MorphKV literal original run identity')
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(model, model)
+        _check(row.display_name, label, 'MorphKV reviewed model identity')
+        if label != model:
+            _check(_features(row.subject_features_extra)['source_display_name'], model, 'MorphKV retained original run alias')
         _check(row.harness, 'MorphKV/LongGenBench', 'MorphKV source evaluation harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'MorphKV no guessed historical setting: ' + field)
@@ -23865,7 +23999,10 @@ def _morqa(directory, tables, metadata, source=None):
     subjects, model_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_evaluator']
-        _check(row.display_name, model, 'MORQA literal evaluator identity')
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(model, model)
+        _check(row.display_name, label, 'MORQA reviewed evaluator identity')
+        if label != model:
+            _check(_features(row.subject_features_extra)['source_display_name'], model, 'MORQA retained original evaluator alias')
         _check(row.harness, 'MORQA multireference evaluation', 'MORQA source evaluation condition')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'MORQA no inferred historical setting: ' + field)
@@ -25519,6 +25656,9 @@ def _pku_saferlhf_sources(directory, metadata):
 
 def _pku_saferlhf(directory, tables, metadata, source=None):
     """Reconcile all source-side labels, full texts, annotations and associations."""
+    if 'attempts' in tables:
+        from .testlet_pku_audit import verify
+        return verify(directory, tables, metadata, source=source)
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
     import unicodedata
 
@@ -25948,7 +26088,10 @@ def _qatch(directory, tables, metadata, source=None):
                 table=original['tbl_name']), 'QATCH original task attributes without grading metadata')
             protocol = metadata['grading']['verifiers'][metric]
             reference = json.dumps(dict(sql=original['query'], released_target=original['query_result']), ensure_ascii=False, sort_keys=True)
-            _check(json.loads(item['grading_criterion']) == dict(reference_answer=reference, rule=protocol['rule']), True,
+            expected_criterion = dict(reference_answer=reference, rule=protocol['rule'])
+            if 'response_scale' in protocol:
+                expected_criterion['response_scale'] = protocol['response_scale']
+            _check(json.loads(item['grading_criterion']) == expected_criterion, True,
                    'QATCH released reference retained even when upstream is inconsistent')
             _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'}, spec=json.dumps(protocol, sort_keys=True)),
                    'QATCH original deterministic grading protocol')
@@ -26239,6 +26382,10 @@ def _goodai_ltm_sources(directory, metadata):
 
 def _goodai_ltm(directory, tables, metadata, source=None):
     """Reconcile every original score, reference, conversation and task/subject association."""
+    if 'attempts' in tables:
+        from .testlet_memory_audit import verify
+        return verify(directory, tables, metadata, source)
+
     import hashlib
     import unicodedata
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
@@ -26888,6 +27035,9 @@ def _swe_smith(directory, tables, metadata):
 
 
 def _wikihow_agent(directory, tables, metadata):
+    if 'attempts' in tables:
+        from .testlet_wikihow_audit import verify
+        return verify(directory, tables, metadata)
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
@@ -26920,7 +27070,12 @@ def _wikihow_agent(directory, tables, metadata):
         configuration = {role: yaml.safe_load((raw / 'protocol' / name).read_text())
             for role, name in zip(['teacher', 'learner', 'evaluator'], config_files)}
         encoded = json.dumps(configuration, sort_keys=True).replace(';', r'\u003b').replace('=', r'\u003d')
-        expected_features = features_string(canonicalize_features(dict(source_configuration=encoded)))
+        raw_label = configuration['learner']['llm']['model']
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(raw_label, raw_label)
+        features = dict(source_configuration=encoded)
+        if label != raw_label:
+            features['source_display_name'] = raw_label
+        expected_features = features_string(canonicalize_features(features))
         for number, original in enumerate(document['total_conversations']):
             key = str(path.relative_to(raw)), number
             native_keys.add(key)
@@ -26928,7 +27083,7 @@ def _wikihow_agent(directory, tables, metadata):
             _check(trace['record'], original, 'WikiHowAgent complete unmodified original record and conversation')
             _check(trace['config_files'], config_files, 'WikiHowAgent recorded configuration-file association')
             subject, item = subjects[response['subject_id']], items[response['item_id']]
-            _check(subject['display_name'], configuration['learner']['llm']['model'], 'WikiHowAgent literal learner model alias')
+            _check(subject['display_name'], label, 'WikiHowAgent reviewed learner model alias')
             _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'WikiHowAgent harness')
             _check(subject['subject_features_extra'], expected_features, 'WikiHowAgent complete teacher/learner/evaluator configuration')
             grade = original['evaluation']['Completion Achieved']
@@ -27179,8 +27334,10 @@ def _multimodal_stem_ai(directory, tables, metadata):
 
 def _tensortrust(directory, tables, metadata):
     import bz2
+    import hashlib
     import math
     import re
+    import unicodedata
     from collections import Counter, defaultdict
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
 
@@ -27229,10 +27386,13 @@ def _tensortrust(directory, tables, metadata):
                     _check(bool(re.match(r'^\W*access granted\W*$', native['llm_output'], re.IGNORECASE)),
                            flag, 'Tensor Trust recorded flag agrees with published matcher on available output')
                 subject, item = subjects[response['subject_id']], items[response['item_id']]
-                _check(subject['display_name'], native['llm_choice'], 'Tensor Trust literal recorded model choice')
+                expected_label = metadata['build']['parameters']['subject_labels'].get(native['llm_choice'], native['llm_choice'])
+                _check(subject['display_name'], expected_label, 'Tensor Trust explicitly mapped recorded model choice')
                 _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'Tensor Trust game harness')
-                _check(_features(subject['subject_features_extra']), dict(recorded_model_choice=native['llm_choice'],
-                    request_configuration='not recorded per attempt'), 'Tensor Trust explicit configuration limits')
+                expected_features = dict(recorded_model_choice=native['llm_choice'], request_configuration='not recorded per attempt')
+                if expected_label != native['llm_choice']:
+                    expected_features['source_display_name'] = native['llm_choice']
+                _check(_features(subject['subject_features_extra']), expected_features, 'Tensor Trust explicit configuration limits')
                 stimulus = dict(opening_defense=native['opening_defense'],
                     user_input=native['attacker_input'] if stage == 'attack' else native['access_code'],
                     closing_defense=native['closing_defense'])
@@ -27240,6 +27400,11 @@ def _tensortrust(directory, tables, metadata):
                 features = dict(unavailable_input_source=f'{stage}:{key[1]}') if incomplete else {}
                 counts['incomplete_inputs'] += incomplete
                 _check(json.loads(item['content']), stimulus, 'Tensor Trust full ordered stimulus with literal nulls')
+                defenses = [stimulus['opening_defense'], stimulus['closing_defense']]
+                testlet = hashlib.sha256(json.dumps([unicodedata.normalize('NFC', value) for value in defenses],
+                    ensure_ascii=False).encode()).hexdigest() if all(isinstance(value, str) for value in defenses) else None
+                _check(pd.isna(item['testlet_id']) if testlet is None else item['testlet_id'] == testlet,
+                    True, 'Tensor Trust shared complete defense prompts; redacted defenses remain ungrouped')
                 _check(_features(item['item_features']), features, 'Tensor Trust withheld inputs have separate source identities')
                 _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=grading['rule']), 'Tensor Trust behavioral grading criterion')
                 verifier = json.loads(item['verifier'])
@@ -27347,6 +27512,8 @@ def _ocrbench_v2(directory, tables, metadata):
         payload = question['image']['bytes']
         _check(Image.open(io.BytesIO(payload)).format, 'JPEG', 'OCRBench v2 original encoding')
         _check(assets[link['asset_id']]['data'], payload, 'OCRBench v2 exact image bytes')
+        _check(item['testlet_id'], hashlib.sha256(payload).hexdigest(),
+               'OCRBench v2 questions share a testlet only for identical source image bytes')
         used_assets.add(link['asset_id'])
         signature = json.dumps(dict(question=record['question'], dataset=record['dataset_name'],
             reference=record['answers'], grading=auxiliary, image=hashlib.sha256(payload).hexdigest()), sort_keys=True)
@@ -27406,6 +27573,7 @@ def _mmmu_dev_val(directory, tables, metadata, source_records=None):
     """Check every native output, original reference, media byte and observation link."""
     import ast
     import base64
+    import hashlib
     import io
     from urllib.parse import unquote
     from PIL import Image
@@ -27438,6 +27606,10 @@ def _mmmu_dev_val(directory, tables, metadata, source_records=None):
         _check(json.loads(item['content']), content, 'MMMU complete question/options and image order')
         links = json.loads(item['asset_manifest'])
         _check(len(links), len(encoded), 'MMMU all original image attachments')
+        expected_testlet = hashlib.sha256(json.dumps([hashlib.sha256(base64.b64decode(value, validate=True)).hexdigest()
+            for value in encoded]).encode()).hexdigest() if encoded else None
+        _check(pd.isna(item['testlet_id']) if expected_testlet is None else item['testlet_id'] == expected_testlet,
+            True, 'MMMU shared complete image sequences form testlets')
         for number, (link, value) in enumerate(zip(links, encoded, strict=True), start=1):
             _check({key: link[key] for key in ['path', 'media_type', 'role', 'ordinal']},
                 dict(path=f'image_{number}.jpg', media_type='image/jpeg', role='input', ordinal=number), 'MMMU ordered image linkage')
@@ -27902,6 +28074,7 @@ def _mochi(directory, tables, metadata, source_records=None):
         _check(item['item_features'], features_string(canonicalize_features(dict(dataset=dataset, condition=condition))),
                'MOCHI original source dataset and condition')
         _check(item['raw_item_id'], first[signature]['dataset'] + '/' + first[signature]['trial'], 'MOCHI original task alias')
+        _check(item['testlet_id'], item['raw_item_id'], 'MOCHI reordered presentations of the same native image set')
         _check(json.loads(item['grading_criterion']), dict(reference_answer=str(reference), rule=metadata['grading']['rule']),
                'MOCHI zero-based reference corresponds to stored image order')
         verifier = json.loads(item['verifier'])
@@ -27925,6 +28098,7 @@ def _mochi(directory, tables, metadata, source_records=None):
 def _moe_cap_source_records(directory, metadata):
     """Read all released observations, including ungraded legacy judge inputs."""
     import unicodedata
+    import hashlib
     from urllib.parse import quote
     from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle, native_json_value
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
@@ -28000,7 +28174,10 @@ def _moe_cap_source_records(directory, metadata):
         coordinate = name, task, position
         _check(coordinate not in records, True, 'MoE-CAP unique original coordinates')
         records[coordinate] = dict(native=native_json_value(record), grade=grade, content=content, raw_alias=alias,
-            features=feature_text, criterion=criterion, spec=spec, signature=signature, scope=scope)
+            features=feature_text, criterion=criterion, spec=spec, signature=signature, scope=scope,
+            testlet=hashlib.sha256(unicodedata.normalize('NFC', json.dumps([family,
+                {key: value for key, value in doc.items() if key not in {'answer', 'model_answer', 'question_id'}}],
+                ensure_ascii=False, sort_keys=True)).encode()).hexdigest())
         counts['source_' + family + '_records'] += 1
         counts['source_graded_records'] += grade is not None
         counts['source_ungraded_records'] += grade is None
@@ -28027,12 +28204,14 @@ def _moe_cap(directory, tables, metadata, source_records=None):
     _check(len(responses), len(source['records']), 'MoE-CAP complete published-record count')
     _check(set(tables['traces'].response_id), set(responses), 'MoE-CAP complete trace linkage')
     first, expected_trials, trial_counts, expected_subjects = {}, {}, Counter(), {}
+    testlet_candidates = defaultdict(set)
     for key, record in source['records'].items():
         configuration = source['configurations'][key[0]]
         subject_signature = (configuration['model'], configuration['harness'],
             features_string(canonicalize_features(configuration['features'])))
         expected_subjects[key[0]] = subject_signature
         first.setdefault(record['signature'], record)
+        testlet_candidates[record['signature']].add(record['testlet'])
         trial_key = subject_signature, record['signature'], key[:2]
         trial_counts[trial_key] += 1
         expected_trials[key] = trial_counts[trial_key]
@@ -28063,6 +28242,9 @@ def _moe_cap(directory, tables, metadata, source_records=None):
         signature = record['signature']; first_record = first[signature]
         _check(item['content'], first_record['content'], 'MoE-CAP exact original input, without prompt truncation')
         _check(item['raw_item_id'], first_record['raw_alias'], 'MoE-CAP original task alias')
+        candidates = testlet_candidates[record['signature']]
+        _check(pd.isna(item['testlet_id']) if len(candidates) != 1 else item['testlet_id'] == record['testlet'], True,
+            'MoE-CAP source questions group variants; collapsed ambiguous requests stay ungrouped')
         _check(item['item_features'], record['features'], 'MoE-CAP task and available-input scope')
         _check(item['grading_criterion'], canonical_grading_criterion(record['criterion']), 'MoE-CAP original target and task-specific scale')
         verifier = json.loads(item['verifier'])
@@ -28481,6 +28663,17 @@ def _afrieval(directory, tables, metadata):
     from collections import Counter, defaultdict
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
     validate_dataset(tables, context='MasakhaNER source audit')
+    expanded = 'attempts' in tables
+    if expanded:
+        import hashlib
+        from .testlet_audits import verify_component_results
+        from .testlet_audit_views import attempt_view
+        verify_component_results(directory, tables=tables)
+        observations, trace_text = attempt_view(tables)
+        children = tables['responses'].groupby('attempt_id').item_id.agg(list).to_dict()
+    else:
+        observations = tables['responses']
+        trace_text = tables['traces'].set_index('response_id').trace.to_dict()
     raw = directory / 'raw'
     protocol = metadata['build']['parameters']['protocol']
 
@@ -28517,14 +28710,14 @@ def _afrieval(directory, tables, metadata):
                'MasakhaNER unrecorded runtime configuration stays unknown')
         configurations[source] = identifier, features
     items = tables['items'].set_index('item_id').to_dict('index')
-    responses = tables['responses'].set_index('response_id').to_dict('index')
+    responses = observations.set_index('response_id').to_dict('index')
     traces = {}
-    for row in tables['traces'].itertuples():
-        trace = json.loads(row.trace)
+    for response_id, original_trace in trace_text.items():
+        trace = json.loads(original_trace)
         key = trace['source_file'], trace['source_sentence']
         _check(key not in traces, True, 'MasakhaNER one observation per native sentence')
-        traces[key] = row.response_id, row.trace
-    _check(set(tables['traces'].response_id), set(responses), 'MasakhaNER full trace coverage')
+        traces[key] = response_id, original_trace
+    _check(set(trace_text), set(responses), 'MasakhaNER full trace coverage')
     seen, used_subjects, used_items = set(), set(), set()
     aliases = defaultdict(set)
     counts, occurrences = Counter(), Counter()
@@ -28577,25 +28770,49 @@ def _afrieval(directory, tables, metadata):
                 'MasakhaNER complete original output and reference without clipping')
             response = responses[response_id]
             _check(response['subject_id'], subject_id, 'MasakhaNER original response configuration')
-            item = items[response['item_id']]
-            _check(json.loads(item['content']), dict(task=protocol['instruction'], language=language, tokens=source_tokens),
-                   'MasakhaNER complete actual input tokens')
-            _check(json.loads(item['grading_criterion']), dict(reference_answer=json.dumps(reference_tags, ensure_ascii=False),
-                rule=metadata['grading']['rule']), 'MasakhaNER exact historical grading reference')
-            _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
-                spec=json.dumps(metadata['grading']['verifiers']['native'], sort_keys=True)),
-                'MasakhaNER declared sentence-level grading interpretation')
-            _check(_features(item['item_features']), dict(lang=language, split='test'),
-                   'MasakhaNER original evaluation language and split')
+            content = dict(task=protocol['instruction'], language=language, tokens=source_tokens)
+            if expanded:
+                testlet = hashlib.sha256(json.dumps(content, ensure_ascii=True).encode()).hexdigest()
+                linked = children[response['attempt_id']]
+                _check(len(linked), len(reference_tags), 'MasakhaNER one observation per native token')
+                selected = set()
+                for item_id in linked:
+                    item = items[item_id]
+                    criterion = json.loads(item['grading_criterion'])
+                    rule = json.loads(criterion['rule'])
+                    ordinal = rule['token_index']
+                    _check(ordinal in range(len(reference_tags)) and ordinal not in selected, True, 'MasakhaNER unique original token position')
+                    selected.add(ordinal)
+                    _check(criterion, dict(reference_answer=reference_tags[ordinal], rule=json.dumps(dict(token_index=ordinal,
+                        token=source_tokens[ordinal], rule='Exact BIO tag match at this position in the original sentence'))),
+                        'MasakhaNER exact token reference and grading rule')
+                    _check(json.loads(item['content']), content, 'MasakhaNER complete actual input tokens')
+                    _check((item['raw_item_id'], item['testlet_id']), (testlet + '::' + str(ordinal), testlet), 'MasakhaNER actual stimulus membership')
+                    _check(_features(item['item_features']), dict(lang=language, split='test'), 'MasakhaNER original language and split')
+                    _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
+                        spec=json.dumps(metadata['grading']['verifiers']['native'], sort_keys=True)), 'MasakhaNER native grader provenance')
+                    used_items.add(item_id)
+            else:
+                item = items[response['item_id']]
+                _check(json.loads(item['content']), dict(task=protocol['instruction'], language=language, tokens=source_tokens),
+                       'MasakhaNER complete actual input tokens')
+                _check(json.loads(item['grading_criterion']), dict(reference_answer=json.dumps(reference_tags, ensure_ascii=False),
+                    rule=metadata['grading']['rule']), 'MasakhaNER exact historical grading reference')
+                _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
+                    spec=json.dumps(metadata['grading']['verifiers']['native'], sort_keys=True)),
+                    'MasakhaNER declared sentence-level grading interpretation')
+                _check(_features(item['item_features']), dict(lang=language, split='test'),
+                       'MasakhaNER original evaluation language and split')
             grade = float(predicted == reference_tags)
             _check(response['response'], grade, 'MasakhaNER complete-sequence exact-match grade')
             _check(response['test_condition'], 'source_export=' + source, 'MasakhaNER original export provenance')
             _check(pd.isna(response['interactors']), True, 'MasakhaNER no invented interactor')
-            occurrence = subject_id, response['item_id'], response['test_condition']
+            occurrence = subject_id, testlet if expanded else response['item_id'], response['test_condition']
             occurrences[occurrence] += 1
             _check(response['trial'], occurrences[occurrence], 'MasakhaNER exact repeated-definition occurrence')
-            aliases[response['item_id']].add(f'{version}/{language}/sentence/{index}')
-            used_items.add(response['item_id'])
+            if not expanded:
+                aliases[response['item_id']].add(f'{version}/{language}/sentence/{index}')
+                used_items.add(response['item_id'])
             seen.add(key)
             counts['source_responses'] += 1
             counts['source_tokens'] += len(observed)
@@ -29455,6 +29672,12 @@ def _indeterminacy(directory, tables, metadata):
     # Repeated source rows can contain exactly the same stimulus. They share a
     # canonical item, while every source row/trial stays distinct in the traces.
     signatures = {}
+    stimulus_positions = {}
+    for task, original_rows in ratings.items():
+        for position, original in enumerate(original_rows):
+            stimulus = task, tuple(original[field] if original[field] != '' else 'nan'
+                for field in tasks[task]['prompt_fields'])
+            stimulus_positions.setdefault(stimulus, position)
     for task, position, fmt in expected_items:
         original = ratings[task][position]
         fields = {field: original[field] if original[field] != '' else 'nan' for field in tasks[task]['prompt_fields']}
@@ -29468,6 +29691,9 @@ def _indeterminacy(directory, tables, metadata):
         conf = tasks[task]
         tokens = conf['valid_fc_tokens' if fmt == 'FC' else 'valid_rs_tokens']
         fields = {field: original[field] if original[field] != '' else 'nan' for field in conf['prompt_fields']}
+        stimulus = task, tuple(fields[field] for field in conf['prompt_fields'])
+        _check(row.testlet_id, task + ':' + str(stimulus_positions[stimulus]),
+            'Indeterminacy shared stimulus across formats and duplicate source aliases')
         _check(row.content, prompts[task][fmt].format_map(fields), 'Indeterminacy complete original format-specific prompt')
         _check(_features(row.item_features), dict(task=task, elicitation_format=fmt, input_scope=labels['input_scope']),
             'Indeterminacy elicitation format and input scope')
@@ -29515,6 +29741,15 @@ def _infibench(directory, tables, metadata):
     from zipfile import ZipFile
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
     validate_dataset(tables, context='InfiBench native source audit')
+    expanded = 'attempts' in tables
+    if expanded:
+        from .testlet_audits import verify_component_results
+        from .testlet_audit_views import attempt_view
+        verify_component_results(directory, tables=tables)
+        observations, traces = attempt_view(tables)
+    else:
+        observations = tables['responses']
+        traces = tables['traces'].set_index('response_id').trace.to_dict()
     raw = directory / 'raw'
     parameters = metadata['build']['parameters']
     layout, labels = parameters['layout'], parameters['labels']
@@ -29594,7 +29829,10 @@ def _infibench(directory, tables, metadata):
     _check(Counter(subjects.values()), Counter({key: 1 for key in sources}), 'InfiBench full source configuration roster')
     items, used_items = {}, set()
     for row in tables['items'].itertuples():
-        version, case = row.raw_item_id.split(':', 1)
+        raw_id, separator, component = row.raw_item_id.partition('::') if expanded else (row.raw_item_id, '', '')
+        version, case = raw_id.split(':', 1)
+        if expanded:
+            _check(row.testlet_id, raw_id, 'InfiBench original task membership')
         source = cases[version, case]
         config = source['config']
         _check(row.content, source['prompt'], 'InfiBench complete original task text')
@@ -29603,17 +29841,28 @@ def _infibench(directory, tables, metadata):
         criterion = json.loads(row.grading_criterion)
         _check(criterion['reference_answer'], None, 'InfiBench no fabricated reference answer')
         rule = json.loads(criterion['rule'])
-        _check({k: v for k, v in rule.items() if k != 'full_score'},
-            dict(instruction=metadata['grading']['rule'], source_definition=config, dependencies=source['dependencies']),
-            'InfiBench unchanged native grading definition and dependencies')
+        full_scores = {record['full_score'] for (release, _), entry in sources.items() if release == version
+            for name, record in entry['records'].items() if name == case and record['detail']}
+        _check(len(full_scores), 1, 'InfiBench one declared full score per task')
+        full_score = next(iter(full_scores))
+        if separator:
+            from .testlet_infi_audits import check_definition
+            definition, scale = check_definition(config, component)
+            _check(rule, dict(selected_check=definition, complete_grading=config['grading'],
+                dependencies=source['dependencies']), 'InfiBench exact component rule and dependencies')
+            _check(criterion['response_scale'], scale, 'InfiBench native component direction and range')
+        else:
+            _check(rule, dict(instruction=metadata['grading']['rule'], source_definition=config,
+                dependencies=source['dependencies'], full_score=full_score),
+                'InfiBench unchanged native aggregate definition and dependencies')
         _check(json.loads(row.verifier), dict(**{'class': 'exact_matcher'},
             spec=json.dumps(metadata['grading']['verifiers'][version], sort_keys=True)), 'InfiBench native grader revision')
-        items[row.item_id] = (version, case), rule['full_score']
-    _check(len(items), len(set(key for key, _ in items.values())), 'InfiBench distinct item/grading definitions')
-    traces = tables['traces'].set_index('response_id').trace.to_dict()
-    _check(set(traces), set(tables['responses'].response_id), 'InfiBench exact grading-trace coverage')
+        items[row.item_id] = (version, case), full_score
+    if not expanded:
+        _check(len(items), len(set(key for key, _ in items.values())), 'InfiBench distinct item/grading definitions')
+    _check(set(traces), set(observations.response_id), 'InfiBench exact grading-trace coverage')
     seen, counts, grouped = Counter(), Counter(), {}
-    for row in tables['responses'].itertuples():
+    for row in observations.itertuples():
         trace = json.loads(traces[row.response_id])
         key = trace['source_version'], trace['source_file']
         case, index = trace['case_file'], trace['trial_index']
@@ -29799,6 +30048,9 @@ def _imagenet_hard(directory, tables, metadata):
 
 def _imgedit(directory, tables, metadata):
     """Check original tasks, image bytes, judge text, parser omissions and source means."""
+    if 'attempts' in tables:
+        from .testlet_imgedit_audit import verify
+        return verify(directory, tables, metadata)
     import hashlib
     import tarfile
     from zipfile import ZipFile
@@ -30256,7 +30508,7 @@ def _rclicks(directory, tables, metadata):
     for row in tables['subjects'].itertuples():
         features = _features(row.subject_features_extra)
         name = features['native_identifier']
-        _check((row.display_name, features), (name,
+        _check((row.display_name, features), (parameters['models'][name],
             dict(native_identifier=name, algorithm=parameters['models'][name])), 'RClicks original algorithm identity')
         subjects[row.subject_id] = name
     _check(Counter(subjects.values()), Counter({key[2]: 1 for key in native}), 'RClicks complete recorded algorithms')
@@ -30306,6 +30558,8 @@ def _rclicks(directory, tables, metadata):
 
 def _decompile_bench(directory, tables, metadata):
     """Check source records, duplicate aliases, grading inputs and complete outputs."""
+    import hashlib
+    import unicodedata
     import editdistance
     import pyarrow.ipc as ipc
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
@@ -30373,6 +30627,9 @@ def _decompile_bench(directory, tables, metadata):
         criterion = json.loads(item['grading_criterion'])
         _check(criterion, dict(rule=metadata['grading']['rule'], reference_answer=json.dumps({field: record[field]
             for field in ['func', 'func_dep', 'test']}, sort_keys=True)), 'Decompile-Bench full reference and unit tests')
+        original_function = json.dumps({field: record[field] for field in ['func', 'func_dep', 'test']}, sort_keys=True)
+        _check(item['testlet_id'], hashlib.sha256(unicodedata.normalize('NFC', original_function).encode()).hexdigest(),
+            'Decompile-Bench compilation variants share their exact source function, dependencies and tests')
         _check(json.loads(item['verifier']), {'class': 'exact_matcher', 'spec': json.dumps(protocol, sort_keys=True)},
             'Decompile-Bench source-pinned metric implementation')
         # Use native Arrow strings directly, independently of the builder's tables.
@@ -30479,6 +30736,8 @@ def _aegis(directory, tables, metadata):
 
 def _tumlu(directory, tables, metadata):
     import ast
+    import hashlib
+    import unicodedata
     import re
     import pandas as pd
     from pathlib import Path
@@ -30571,6 +30830,10 @@ def _tumlu(directory, tables, metadata):
         _check(response.trial, 1, 'TUMLU one attempt per original record')
         item = items[response.item_id]
         _check(json.loads(item['content']), dict(system=record['system'], user=record['input']), 'TUMLU exact prompts and shuffled choices')
+        testlet = [language, unicodedata.normalize('NFC', record['question']).strip(),
+            sorted(unicodedata.normalize('NFC', choice).strip() for choice in record['choices'])]
+        _check(item['testlet_id'], hashlib.sha256(json.dumps(testlet, ensure_ascii=False).encode()).hexdigest(),
+            'TUMLU common question and choice multiset across recorded shuffles')
         _check(json.loads(item['grading_criterion']), dict(reference_answer=record['answer'], rule=metadata['grading']['rule']), 'TUMLU matching shuffled reference')
         verifier = dict(**metadata['grading']['verifiers']['native'], language=language, answer_keyword=dictionary.get(language))
         _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'}, spec=json.dumps(verifier, sort_keys=True)), 'TUMLU original language-specific grading protocol')
@@ -30917,10 +31180,15 @@ def _threeeed(directory, tables, metadata):
         features['configuration'] = json.loads(features['configuration'])
         run = features['source_run']
         _check(run in configurations, True, '3EED original run identity')
-        _check(subject.display_name, labels['subject'] + ' [' + run + ']', '3EED distinct recorded configuration label')
+        raw_label = labels['subject'] + ' [' + run + ']'
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(raw_label, raw_label)
+        _check(subject.display_name, label, '3EED reviewed configuration label')
         _check(subject.harness, labels['harness'], '3EED harness attribution')
-        _check(features, dict(source_run=run, configuration_member=run + '/config.json',
-            configuration=configurations[run], checkpoint_scope=labels['checkpoint_scope']), '3EED full native run configuration')
+        expected_features = dict(source_run=run, configuration_member=run + '/config.json',
+            configuration=configurations[run], checkpoint_scope=labels['checkpoint_scope'])
+        if label != raw_label:
+            expected_features['source_display_name'] = raw_label
+        _check(features, expected_features, '3EED full native run configuration')
         subjects[subject.subject_id] = run
     _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), '3EED complete separate run configurations')
     items = {}
@@ -30972,10 +31240,23 @@ def _proteininvbench(directory, tables, metadata):
     import numpy as np
     from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle, native_json_value
 
+    expanded = 'attempts' in tables
+    if expanded:
+        from ..build_measurement_tables.validate_measurement_tables import validate_dataset
+        from .testlet_audits import verify_component_results
+        from .testlet_audit_views import attempt_view
+        validate_dataset(tables, context='ProteinInvBench component source audit')
+        observations, traces = attempt_view(tables)
+        children = tables['responses'].groupby('attempt_id').item_id.agg(list).to_dict()
+        assets = tables['assets'].set_index('asset_id').to_dict('index')
+    else:
+        observations = tables['responses']
+        traces = tables['traces'].set_index('response_id').trace.to_dict()
+        assets = {}
     raw=Path(directory)/'raw'
     profile=metadata['grading']['verifiers']['native']
     _check(hashlib.sha256((raw/profile['file']).read_bytes()).hexdigest(),profile['sha256'],'ProteinInvBench original grading notebook')
-    _check(metadata['benchmark']['response_scale'],dict(kind='interval',min=0,max=1,direction='higher_is_better'),
+    _check(metadata['benchmark']['response_scale'],dict(kind='discrete',values=[0,1],direction='higher_is_better') if expanded else dict(kind='interval',min=0,max=1,direction='higher_is_better'),
            'ProteinInvBench recovery scale')
     layouts=dict(StructGNN='finite_padded',GraphTrans='finite_padded',GCA='finite_padded',ProteinMPNN='full',GVP='full',
                  AlphaDesign='finite_compact',PiFold='finite_compact',KWDesign='finite_compact')
@@ -31011,13 +31292,15 @@ def _proteininvbench(directory, tables, metadata):
                     _check(key in inputs,False,'ProteinInvBench unique original backbone')
                     inputs[key]=record
     _check(set(inputs),wanted,'ProteinInvBench every recorded protein has an original backbone')
-    _check(len(tables.get('assets', [])),0,'ProteinInvBench backbone coordinates are complete inline structured inputs')
+    if expanded:
+        verify_component_results(directory, tables=tables)
+    else:
+        _check(len(tables.get('assets', [])),0,'ProteinInvBench backbone coordinates are complete inline structured inputs')
     items={row.item_id:row for row in tables['items'].itertuples()}
     subjects={row.subject_id:row for row in tables['subjects'].itertuples()}
-    traces=tables['traces'].set_index('response_id').trace.to_dict()
     _check(len(traces),len(sources),'ProteinInvBench one complete trace per original prediction')
-    seen=set();used_items=set();used_subjects=set();definitions=set();subject_definitions=set()
-    for row in tables['responses'].itertuples():
+    seen=set();used_items=set();used_subjects=set();definitions=set();subject_definitions=set();used_assets=set()
+    for row in observations.itertuples():
         trace=json.loads(traces[row.response_id])
         key=trace['source_member'],trace['source_row']
         _check(key in seen,False,'ProteinInvBench no repeated or invented original result')
@@ -31051,28 +31334,66 @@ def _proteininvbench(directory, tables, metadata):
         if layouts[model]=='finite_padded':positions=positions+[-1]*(len(entry['seq'])-len(valid))
         expected=[vocab.index(entry['seq'][i]) if i>=0 else 0 for i in positions]
         _check(truth.tolist(),expected,'ProteinInvBench target sequence aligned to original coordinate layout')
-        item=items[row.item_id]
-        content=dict(task=metadata['build']['parameters']['labels']['task'],backbone=native_json_value(entry['coords']))
-        _check(json.loads(item.content),content,'ProteinInvBench full backbone stimulus without target sequence substitution')
-        _check(item.raw_item_id,f'{dataset}/{name}','ProteinInvBench original protein identifier')
         features=dict(dataset=dataset,source_protein=name)
-        _check(_features(item.item_features),features,'ProteinInvBench original input features')
-        reference=dict(amino_acid_sequence=entry['seq'],token_ids=expected,vocabulary=vocab,coordinate_positions=positions)
-        criterion=json.loads(item.grading_criterion)
-        _check(json.loads(criterion['reference_answer']),reference,'ProteinInvBench independent complete reference and layout')
-        _check(criterion['rule'],metadata['grading']['rule'],'ProteinInvBench declared native reduction')
-        verifier=json.loads(item.verifier)
-        _check((verifier['class'],json.loads(verifier['spec'])),('exact_matcher',profile),'ProteinInvBench notebook provenance')
-        _check(pd.isna(item.asset_manifest) or item.asset_manifest == '[]',True,'ProteinInvBench no invented external asset link')
-        definitions.add(json.dumps([content,features,reference,criterion['rule'],verifier],sort_keys=True))
-        used_items.add(row.item_id);used_subjects.add(row.subject_id)
+        if expanded:
+            linked = children[row.attempt_id]
+            _check(len(linked), len(expected), 'ProteinInvBench one observation per native position')
+            selected = set()
+            data=json.dumps(native_json_value(entry['coords']), allow_nan=False).encode()
+            digest=hashlib.sha256(data).hexdigest()
+            for item_id in linked:
+                item = items[item_id]
+                criterion = json.loads(item.grading_criterion)
+                rule = json.loads(criterion['rule'])
+                index = rule['prediction_position']
+                _check(index in range(len(expected)) and index not in selected, True, 'ProteinInvBench unique valid prediction position')
+                selected.add(index)
+                _check(json.loads(criterion['reference_answer']), dict(token_id=expected[index], token=vocab[expected[index]]),
+                    'ProteinInvBench exact position reference')
+                _check(rule, dict(prediction_position=index, coordinate_position=positions[index], preprocessing=layouts[model],
+                    vocabulary=vocab, rule='Exact argmax token match at this native position; coordinate -1 denotes retained padding'),
+                    'ProteinInvBench original position layout and vocabulary')
+                _check((item.raw_item_id, item.testlet_id), (name + '::' + str(index), name), 'ProteinInvBench original protein and position')
+                _check(_features(item.item_features), features, 'ProteinInvBench original input features')
+                _check(json.loads(item.content), dict(task=metadata['build']['parameters']['labels']['task'], backbone_asset='backbone.json'),
+                    'ProteinInvBench backbone stimulus association')
+                verifier=json.loads(item.verifier)
+                _check((verifier['class'], json.loads(verifier['spec'])), ('exact_matcher',profile), 'ProteinInvBench notebook provenance')
+                manifest=json.loads(item.asset_manifest)
+                _check(manifest, [dict(asset_id=digest, path='backbone.json', role='input', media_type='application/json', ordinal=1)],
+                    'ProteinInvBench original complete backbone asset')
+                if digest not in used_assets:
+                    _check(assets[digest]['data'], data, 'ProteinInvBench unchanged backbone bytes')
+                    _check(assets[digest]['byte_size'], len(data), 'ProteinInvBench complete backbone size')
+                    used_assets.add(digest)
+                used_items.add(item_id)
+            used_subjects.add(row.subject_id)
+        else:
+            item=items[row.item_id]
+            content=dict(task=metadata['build']['parameters']['labels']['task'],backbone=native_json_value(entry['coords']))
+            _check(json.loads(item.content),content,'ProteinInvBench full backbone stimulus without target sequence substitution')
+            _check(item.raw_item_id,f'{dataset}/{name}','ProteinInvBench original protein identifier')
+            features=dict(dataset=dataset,source_protein=name)
+            _check(_features(item.item_features),features,'ProteinInvBench original input features')
+            reference=dict(amino_acid_sequence=entry['seq'],token_ids=expected,vocabulary=vocab,coordinate_positions=positions)
+            criterion=json.loads(item.grading_criterion)
+            _check(json.loads(criterion['reference_answer']),reference,'ProteinInvBench independent complete reference and layout')
+            _check(criterion['rule'],metadata['grading']['rule'],'ProteinInvBench declared native reduction')
+            verifier=json.loads(item.verifier)
+            _check((verifier['class'],json.loads(verifier['spec'])),('exact_matcher',profile),'ProteinInvBench notebook provenance')
+            _check(pd.isna(item.asset_manifest) or item.asset_manifest == '[]',True,'ProteinInvBench no invented external asset link')
+            definitions.add(json.dumps([content,features,reference,criterion['rule'],verifier],sort_keys=True))
+            used_items.add(row.item_id);used_subjects.add(row.subject_id)
     _check(seen,set(sources),'ProteinInvBench complete released unperturbed CATH observations')
     _check(used_items,set(items),'ProteinInvBench no extra or unused item definitions')
     _check(used_subjects,set(subjects),'ProteinInvBench no extra or unused configurations')
-    _check(len(items),len(definitions),'ProteinInvBench canonical stimulus and grading definitions')
+    if expanded:
+        _check(used_assets, set(assets), 'ProteinInvBench no extra or missing backbone assets')
+    else:
+        _check(len(items),len(definitions),'ProteinInvBench canonical stimulus and grading definitions')
     _check(len(subjects),len(subject_definitions),'ProteinInvBench complete distinct run configurations')
     return dict(source_responses=len(sources),source_traces=len(sources),source_subjects=len(subjects),source_items=len(items),
-        source_original_proteins=len(inputs),source_assets=0,source_raw_only_collections=raw_only_collections,
+        source_original_proteins=len(inputs),source_assets=len(assets),source_raw_only_collections=raw_only_collections,
         source_raw_only_predictions=raw_only_records)
 
 
@@ -31248,6 +31569,31 @@ def _vhelm(directory, tables, metadata):
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
+    if directory.name == 'llm4ir':
+        metadata = yaml.safe_load((directory / 'metadata.yaml').read_text())
+        if 'assertion_predictions' in metadata['grading']['verifiers']:
+            from .testlet_audits import verify_component_results
+            return verify_component_results(directory, root)
+    from .testlet_audits import SUPPORTED, verify_component_results
+    if directory.name in SUPPORTED and (root / "attempts.parquet").exists():
+        # Keep the full native content/configuration audits for migrated builders.
+        # Component counts alone do not detect changes to stimuli or full traces.
+        full_audits = {
+            'goodai_ltm_benchmark': _goodai_ltm,
+            'wikihow_agent': _wikihow_agent,
+            'infibench': _infibench,
+            'weavebench': _weavebench,
+            'afrieval': _afrieval,
+            'proteininvbench': _proteininvbench,
+        }
+        if directory.name in full_audits:
+            tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
+            metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+            details = full_audits[directory.name](directory, tables, metadata)
+            return dict(details, source_attempts=len(tables['attempts']),
+                source_component_observations=len(tables['responses']), imported_items=len(tables['items']),
+                source_observed_testlets=int(tables['items'].testlet_id.nunique()))
+        return verify_component_results(directory, root)
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':

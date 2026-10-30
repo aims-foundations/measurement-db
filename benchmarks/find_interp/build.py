@@ -103,8 +103,9 @@ class FindInterp(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(archive=parameters["paths"]["interpretations"], attempt=row.attempt,
             metric=row.metric, files=native[row.attempt], source_issues=[row.source_issue] if isinstance(row.source_issue, str) else []),
             ensure_ascii=False, allow_nan=False) for row in measurements.itertuples()]
+        items["testlet_id"] = items.reference_key
         return {"subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": measurements[["response_key", "subject_key", "item_key", "response"]], "traces": traces}
 
 

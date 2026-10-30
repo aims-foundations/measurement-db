@@ -470,6 +470,10 @@ def _swe_live(directory, tables):
 
 def verify_batch3(directory, tables_directory=None):
     directory = Path(directory)
+    root = Path(tables_directory) if tables_directory is not None else directory / 'formatted_tables'
+    if directory.name == 'appworld' and (root / 'attempts.parquet').exists():
+        from .testlet_audits import verify_component_results
+        return verify_component_results(directory, root)
     functions = {
         'appworld': _appworld,
         'algotune': _algotune,

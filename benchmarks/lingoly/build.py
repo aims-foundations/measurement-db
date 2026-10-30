@@ -88,6 +88,7 @@ class LingOly(BenchmarkBuild):
         items = attempts.drop_duplicates(keys).reset_index(drop=True)
         items["item_key"] = items.index.astype(str)
         items["raw_item_id"] = items.source_file + "#" + items.source_key + ":" + items.questionpart_n
+        items["testlet_id"] = "sheet:" + items.overall_question_n.astype(str)
         items["content"] = items.questions
         items["features"] = [dict(context=row.condition, target_part=json.dumps(row.questionpart_n, ensure_ascii=False))
                              for row in items.itertuples()]
@@ -106,7 +107,7 @@ class LingOly(BenchmarkBuild):
             target_part=row.questionpart_n, source_record=row.source_record, reference_record=row.reference_record),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces}
 

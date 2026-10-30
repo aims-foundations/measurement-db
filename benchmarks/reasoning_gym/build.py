@@ -1,6 +1,9 @@
 """Tabulate original Reasoning Gym completions without replacing them by averages."""
 
 import json
+from dataclasses import asdict
+import unicodedata
+import hashlib
 from pathlib import Path
 import sys
 
@@ -9,6 +12,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.benchmarks.reasoning_gym.component_checks import SOURCE_FILES, reference_checks, comparison_outcomes, root_configuration, component_scale
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.scripts.build_measurement_tables import subject_id_for
+from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import item_id_from_content
+from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
 
 
 class ReasoningGym(BenchmarkBuild):
@@ -65,12 +73,14 @@ class ReasoningGym(BenchmarkBuild):
         criteria = records[['expected_answer', 'dataset', 'generator_config', 'git_hash']].to_dict('records')
         items = records[['item_key']].assign(raw_item_id=records.item_key,
             content=[json.dumps(row, ensure_ascii=False, sort_keys=True) for row in stimulus],
-            grading_criterion=[dict(reference_answer=str(row['expected_answer']), rule=self.grading['rule']) for row in criteria],
+            grading_criterion=[dict(reference_answer=str(row['expected_answer']), rule=self.grading['rule'],
+                response_scale=self.grading['verifiers']['components']['aggregate_scale']) for row in criteria],
             verifier=[ExactMatcher(spec=json.dumps({**self.grading['verifiers']['algorithmic'],
                 'dataset': row['dataset'], 'configuration': json.loads(row['generator_config']),
                 'revision': row['git_hash']}, sort_keys=True)) for row in criteria],
             features=records[['dataset', 'category', 'difficulty']].to_dict('records'))
 
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         # 4. Expand individual completions, preserving fractional scores and exceptions.
         expanded = records.explode('completions', ignore_index=True)
         completions = pd.json_normalize(expanded.completions, max_level=0).reindex(
@@ -92,7 +102,44 @@ class ReasoningGym(BenchmarkBuild):
         traces = expanded[['response_key']].assign(
             trace=[json.dumps(row, ensure_ascii=False, sort_keys=True, allow_nan=False)
                    for row in evidence.to_dict('records')])
-        return dict(subjects=subjects, items=items, responses=responses, traces=traces)
+        # 6. Number original attempts after canonical stimulus/configuration merges.
+        identities = {row.item_key: item_id_from_content(self.slug, row.content,
+            features_string(canonicalize_features(row.features)),
+            verifier=json.dumps(dict(**{'class': 'exact_matcher'}, **asdict(row.verifier))),
+            grading_criterion=row.grading_criterion, response_scale={'kind': 'mixed'}) for row in items.itertuples()}
+        models = {row.subject_key: subject_id_for(row.raw_label, features=row.features) for row in subjects.itertuples()}
+        responses['trial'] = responses.groupby([responses.subject_key.map(models), responses.item_key.map(identities),
+            responses.test_condition], sort=False, dropna=False).cumcount() + 1
+
+        # 7. Expose comparisons explicitly performed by the captured native scorers.
+        protocol = self.grading['verifiers']['components']
+        definitions, checklists, source_hashes, root_configs = {}, {}, {}, {}
+        for row in records.loc[records.dataset.isin(SOURCE_FILES)].itertuples():
+            checks = reference_checks(row.dataset, row.expected_answer)
+            checklists[row.item_key] = checks
+            source_path = 'protocol/' + row.git_hash + '/reasoning_gym/' + SOURCE_FILES[row.dataset]
+            if source_path not in source_hashes:
+                source_hashes[source_path] = hashlib.sha256((self.raw_dir / source_path).read_bytes()).hexdigest()
+            if row.dataset == 'polynomial_equations':
+                root_configs[row.item_key] = dict(root_configuration((self.raw_dir / source_path).read_text()), **json.loads(row.generator_config))
+            for component, reference in checks.items():
+                definitions[row.item_key, component] = dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion=dict(reference_answer=json.dumps(reference, ensure_ascii=False, sort_keys=True),
+                        rule=protocol['root_rule'] if row.dataset == 'polynomial_equations' else protocol['rule'],
+                        response_scale=component_scale(protocol, row.dataset, component)),
+                    verifier=ExactMatcher(spec=json.dumps(dict(kind='reconstructed_native_comparison',
+                        dataset=row.dataset, configuration=json.loads(row.generator_config), revision=row.git_hash,
+                        source_file=source_path, source_sha256=source_hashes[source_path], component_id=component), sort_keys=True)))
+        outcomes = []
+        for row in expanded.itertuples():
+            checks = checklists.get(row.item_key, {})
+            failed = row.completions.get('error') is not None
+            flags = (dict.fromkeys(checks, None) if failed else comparison_outcomes(row.dataset,
+                row.completions['model_answer'], row.expected_answer, root_configs.get(row.item_key))) if checks else None
+            for component, grade in (flags or {}).items():
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=grade))
+        return component_tables(dict(subjects=subjects, items=items, responses=responses, traces=traces),
+            pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

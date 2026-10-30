@@ -68,6 +68,7 @@ class AfriMedQA(BenchmarkBuild):
         items = observations.drop_duplicates("item_key").copy()
         items["content"] = items.model_prompt
         items["raw_item_id"] = items.sample_id
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [dict(parameters["item_features"]) for _ in items.index]
         items["grading_criterion"] = items.answer.map(lambda answer: {"reference_answer": answer, "rule": self.grading["rule"]})
         items["verifier"] = ExactMatcher(spec=json.dumps(self.grading["verifiers"]["released_accuracy"], sort_keys=True))
@@ -81,7 +82,7 @@ class AfriMedQA(BenchmarkBuild):
                            for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

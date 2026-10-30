@@ -86,6 +86,7 @@ class Mochi(BenchmarkBuild):
         items['content'] = [json.dumps(dict(instruction=parameters['labels']['instruction'],
             images=[asset['path'] for asset in attachments])) for attachments in items.attachments]
         items['raw_item_id'] = items.dataset + '/' + items.trial
+        items['testlet_id'] = items.raw_item_id
         items['features'] = [dict(dataset=row.dataset, condition=row.condition) for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=str(index), rule=self.grading['rule']) for index in items.oddity_index]
         items['verifier'] = ExactMatcher(spec=json.dumps(self.grading['verifiers']['native'], sort_keys=True))
@@ -106,7 +107,7 @@ class Mochi(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in traces.itertuples()]
         return {
             'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']],
             'traces': traces[['response_key', 'trace']],
         }

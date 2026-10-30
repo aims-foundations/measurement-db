@@ -12,6 +12,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.benchmarks.agc_bench.components import convert
 
 
 class AGCBench(BenchmarkBuild):
@@ -226,12 +227,14 @@ class AGCBench(BenchmarkBuild):
                                       "generation": row.native_record, "grade_status": row.grade_status,
                                       "panel_rating": row.rating_record if isinstance(row.rating_record, dict) else None},
                                      ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
-        return {
+        items["testlet_id"] = items.raw_item_id.str.replace(r"_ttcw_[0-9]+$", "", regex=True)
+        tables = {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }
+        return convert(tables, observations, protocols['canonical_nyt_connections'])
 
 
 if __name__ == "__main__":

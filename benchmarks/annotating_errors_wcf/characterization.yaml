@@ -11,7 +11,7 @@ tables:
     logical_sha256: 8ee0b43e91db73979f6a52395c3540bf6c10e2e9e31de30faa63212cc779b7a3
   items:
     rows: 15344
-    logical_sha256: 0e76b79011297e7031c938b4b775d1a9e80d4e30285576aee2d70c3d59418341
+    logical_sha256: 24f6640a00e60f17f2a9b02b936c1a7d0d6048df1acc59cdc2f184822393d56c
   benchmarks:
     rows: 1
     logical_sha256: ec9d2f030f25186a6c1094ece99ffc7d04a7536224cb65b9a6d9c280ce9fae78
@@ -21,96 +21,96 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 1918
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 15344
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 15344
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 15344
   source_subjects:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 5
   source_rated_generations:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 959
   source_tasks:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 197
   source_unrated_generations:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 26
   source_unrated_empty_outputs:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 17
   source_human_reference_ratings:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 394
   source_changed_display_fields:
     kind: count
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected: 157
   source_grade_histograms:
     kind: aggregate
     origin: derived_from_data
     source: https://github.com/coynestevencharles/annotating-errors-wcf
     locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
-    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
-      teacher identities and unrated-output exclusions.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual teacher
+      identities and unrated-output exclusions.
     expected:
       is_relevant/1: 1906
       is_factual/1: 1844

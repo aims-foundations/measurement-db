@@ -10,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.benchmarks.llm4ir.components import convert
 
 
 class LLM4IR(BenchmarkBuild):
@@ -146,10 +147,12 @@ class LLM4IR(BenchmarkBuild):
             source_metric=row.protocol, source_grade=row.native_grade, output_file=row.output_path,
             output=row.output, processed_assertions=row.assertion_count), ensure_ascii=False, allow_nan=False)
             for row in attempts.itertuples()]
-        return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+        items["testlet_id"] = items.program
+        tables = {"subjects": subjects[["subject_key", "raw_label", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces}
+        return convert(tables, attempts, protocols['execution'])
 
 
 if __name__ == "__main__":

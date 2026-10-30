@@ -41,6 +41,7 @@ class FELM(BenchmarkBuild):
         # 3. Keep the prompt as input; select the assessed output segment in the verifier.
         items = attempts[["item_key", "index", "segment_index", "prompt", "domain"]].copy()
         items["raw_item_id"] = items["index"] + "_" + items.segment_index.astype(str)
+        items["testlet_id"] = items["index"]
         items["content"] = items.prompt
         items["features"] = items.domain.map(parameters["domains"]).to_frame("domain").to_dict("records")
         items["grading_criterion"] = [dict(rule=self.grading["rule"]) for _ in items.index]
@@ -62,7 +63,7 @@ class FELM(BenchmarkBuild):
                 attempts.segmented_response, attempts.native_line, attempts.parent_response_missing)]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response"]],
             "traces": attempts[["response_key", "trace"]],
         }

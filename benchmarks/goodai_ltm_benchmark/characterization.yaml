@@ -1,23 +1,23 @@
 format_version: 1
 tables:
-  traces:
-    rows: 3507
-    logical_sha256: 16f92fe34a7667ca08fc042f7ea745a151587295d124e0f73c0c7b5c3bf66603
-  subjects:
-    rows: 37
-    logical_sha256: e56bccf4fae6626dfb6c676f8dcbce919348dc15e33f9bdc74011c9626059613
-  responses:
-    rows: 3507
-    logical_sha256: b837d8a46e718f2b9b3f5348f5ac396279ae721a765a212cd52d30c6af5409ea
   assets:
     rows: 16
     logical_sha256: 3a5a40d5675bbbf91da1a65003eb9936e66e04f4abf3205f7b8ba249645f28d3
-  items:
-    rows: 452
-    logical_sha256: d1b5bfdea8a66139a806089b9cad72c32839e3388ec202515351f14dc808d9b3
+  attempts:
+    rows: 3507
+    logical_sha256: f473ee9e1dbce26707f3c65cc11e86b682689c1a5631ca5b9c475ea3cc7402b8
   benchmarks:
     rows: 1
-    logical_sha256: 38a3acd6a809ab1b80d6291ed0f12e9665413941d2ea75068d8a3cf3ead1146b
+    logical_sha256: a3ab00d126efef2a7a936d33cfe63a8faaec7ea5dc1ad0111c9b734e26d409ea
+  items:
+    rows: 778
+    logical_sha256: e40272475a529727d9f402fe828c318d760ef1a641137eea40c43232424fd8d3
+  responses:
+    rows: 5766
+    logical_sha256: a175a46977e71dcb15c9bfba928bc72b3c6b001e378cd9c22b7501d381ac8ac4
+  subjects:
+    rows: 37
+    logical_sha256: e56bccf4fae6626dfb6c676f8dcbce919348dc15e33f9bdc74011c9626059613
 source_claims:
   source_subjects:
     kind: count
@@ -33,19 +33,17 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/GoodAI/goodai-ltm-benchmark
     locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
-    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
-      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
-      share one item. Programs are released references, not verified historical runtime snapshots.
-    expected: 452
+    scope: Canonical native criterion definitions plus retained aggregate-only task definitions. Historical references
+      and explicit revised grading contexts remain distinct.
+    expected: 778
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/GoodAI/goodai-ltm-benchmark
     locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
-    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
-      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
-      share one item. Programs are released references, not verified historical runtime snapshots.
-    expected: 3507
+    scope: Expanded native criterion observations plus retained whole-task grades. The original 3,507 recorded task
+      executions remain represented separately by source_attempts.
+    expected: 5766
   source_traces:
     kind: count
     origin: derived_from_data
@@ -136,3 +134,35 @@ source_claims:
       remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
       share one item. Programs are released references, not verified historical runtime snapshots.
     expected: 325
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3507
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 5766
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 778
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 327

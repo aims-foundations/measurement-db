@@ -79,6 +79,7 @@ class CROW(BenchmarkBuild):
         records["item_key"] = records.protocol + "/" + records.instruction.map(lambda text: hashlib.sha256(text.encode()).hexdigest())
         items = records[["item_key", "instruction", "protocol", "task"]].drop_duplicates().rename(columns={"instruction": "content"})
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.item_key.str.split("/", n=1).str[1]
         items["features"] = [dict(task=row.task, grading_protocol=row.protocol,
             prompt_sha256=row.item_key.split("/", 1)[1]) for row in items.itertuples()]
         items["grading_criterion"] = [{"rule": self.grading["rule"]} for _ in items.index]
@@ -100,7 +101,7 @@ class CROW(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }

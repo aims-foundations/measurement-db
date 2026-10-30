@@ -1,7 +1,7 @@
 benchmark:
   description: Released completion outcomes for multi-model teacher–learner conversations grounded in WikiHow tutorials.
   testing_condition: Import the twelve released corrected conversation files, preserving all 171,412 conversations
-    and their completion flags. A subject is the recorded teacher, learner and evaluator configuration; the learner
+    and their completion flags. The eight released rubric scores are separate items within each tutorial testlet; zero defaults and scores outside the declared 1-to-5 range remain ungraded. Complete native values and judge texts are preserved on the execution. A subject is the recorded teacher, learner and evaluator configuration; the learner
     model is its display label. The released configuration files document model aliases and reference settings,
     but the exact historical checkpoint and command-line overrides are not recorded. Completion denotes an emitted
     marker, not independently verified teaching quality. No new conversations or grades are generated.
@@ -24,17 +24,10 @@ benchmark:
   - text
   domain:
   - education
-  response_type: binary
+  response_type: mixed
   response_scale:
-    kind: discrete
-    values:
-    - 0
-    - 1
-    direction: higher_is_better
-    meanings:
-      '0': completion marker absent
-      '1': completion marker present
-  categorical: true
+    kind: mixed
+  categorical: false
   release_date: 2025-07
   release: public
   name: WikiHowAgent
@@ -58,6 +51,7 @@ build:
     layout:
       conversations: conversations/T-*_corrected.json
       configurations: protocol/conf/*.yaml
+      rubrics: protocol/data/evaluation_rubrics.json
     labels:
       harness: WikiHowAgent
 sources:
@@ -72,7 +66,7 @@ sources:
     url: https://github.com/Jiahuan-Pei/WikiHowAgent
     revision: c61e4b0d7ba635956e59753fd59c9db65f289a5e
     files:
-    - match: README\.md|LICENSE|main\.py|config\.py|Agents/evaluator_agent\.py|Agents/teacher_agent\.py|Agents/learner_agent\.py|manager/multiple_agent_manager_workflow\.py|manager/multiple_agent_manager_agentic\.py|utils/post_result_correction\.py|conf/ollama\-deepseek\.yaml|conf/ollama\-gemma\.yaml|conf/ollama\-llama3\.yaml|conf/ollama\-olmo2\.yaml|conf/ollama\-openchat\.yaml|conf/ollama\-phi4\.yaml|conf/ollama\-qwen2\.yaml
+    - match: data/evaluation_rubrics\.json|README\.md|LICENSE|main\.py|config\.py|Agents/evaluator_agent\.py|Agents/teacher_agent\.py|Agents/learner_agent\.py|manager/multiple_agent_manager_workflow\.py|manager/multiple_agent_manager_agentic\.py|utils/post_result_correction\.py|conf/ollama\-deepseek\.yaml|conf/ollama\-gemma\.yaml|conf/ollama\-llama3\.yaml|conf/ollama\-olmo2\.yaml|conf/ollama\-openchat\.yaml|conf/ollama\-phi4\.yaml|conf/ollama\-qwen2\.yaml
       path: protocol/{path}
 grading:
   verifiers:
@@ -86,5 +80,8 @@ grading:
         function: ConversationEvaluator.check_completion
         implementation: int(any("FINISHED" in line or "The tutorial is now complete" in line for line in conversation))
         corrected_release: Import the released flags unchanged; independently compare every flag with its original
-          conversation. Other corrected rubric metrics are preserved in the native trace, not converted into additional
-          outcomes.
+          conversation. The original completion flag is retained alongside the separate released rubric judgments.
+    rubric:
+      kind: published_corrected_rubric
+      rule: Import the corrected native criterion score on its recorded 1-to-5 scale. The correction can produce fractional scores, which remain fractional. Default zeros and out-of-range values have no valid rubric grade; retain their original values and judge text on the attempt.
+      source: https://github.com/Jiahuan-Pei/WikiHowAgent/blob/c61e4b0d7ba635956e59753fd59c9db65f289a5e/utils/post_result_correction.py

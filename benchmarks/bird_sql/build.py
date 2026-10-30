@@ -63,6 +63,7 @@ class BirdSQL(BenchmarkBuild):
         items["raw_item_id"] = items.database_id + ":" + items.index_in_original
         items["content"] = [json.dumps(dict(question=row.question_key, database_id=row.database_id,
             schema=row.schema, evidence=row.evidence), ensure_ascii=False, sort_keys=True) for row in items.itertuples()]
+        items['testlet_id'] = items.database_id
         items["features"] = [dict(database_id=row.database_id, difficulty=row.difficulty,
             source_question_index=row.index_in_original) for row in items.itertuples()]
         items["grading_criterion"] = items.reference_answer.map(
@@ -82,7 +83,7 @@ class BirdSQL(BenchmarkBuild):
             for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }

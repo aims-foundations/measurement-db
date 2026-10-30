@@ -3,6 +3,7 @@
 
 import hashlib
 import json
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -67,6 +68,7 @@ class AlignmentFaking(BenchmarkBuild):
                             for row in items.itertuples()]
         items["item_key"] = items.content.map(lambda text: hashlib.sha256(text.encode()).hexdigest())
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.user_input.map(lambda text: hashlib.sha256(unicodedata.normalize('NFC', text).encode()).hexdigest())
         items["grading_criterion"] = [{"rule": self.grading["rule"]} for _ in items.index]
         items["verifier"] = Judge(spec=json.dumps(self.grading["verifiers"]["alignment_faking"], sort_keys=True),
                                   judge=self.grading["verifiers"]["alignment_faking"]["judge"], judged_by="llm")
@@ -79,7 +81,7 @@ class AlignmentFaking(BenchmarkBuild):
                            for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

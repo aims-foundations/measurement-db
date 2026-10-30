@@ -1,3 +1,4 @@
 - Import 1,965 complete recorded attempts and 1,918 exact-matched detector judgments from the pinned author release; retain 47 ungraded attempts and repeated prompts.
 - Preserve the native clean/uncertain/hallucination categories, full output and judge records, and actual generation prompts; do not infer unavailable model checkpoints or re-run the judge.
 - Independently reconcile every source record, grade, setting and table association; verify a fresh upstream download and reject altered, omitted or misjoined records.
+- Testlet migration (2026-10-29): 1,965 recorded attempts, 55,020 component or retained aggregate observations, and 3,024 canonical items. Every component and its full original input, recorded configuration and trace passed source reconciliation. Characterization records the independently checked counts and complete table fingerprints. Validated locally against the reviewed source and table contracts.

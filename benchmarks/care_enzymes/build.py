@@ -2,6 +2,8 @@
 """Curate CARE's released rankings with its native EC-level-4 grading rule."""
 
 import json
+import hashlib
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -9,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class CARE(BenchmarkBuild):
@@ -133,28 +136,42 @@ class CARE(BenchmarkBuild):
                 raise ValueError("A CARE task lacks a required source input")
             inputs.append(json.dumps({field: record[field] for field in fields}, ensure_ascii=False, sort_keys=True))
         items["content"] = inputs
+        items['testlet_id'] = items.content.map(lambda value: hashlib.sha256(unicodedata.normalize('NFC', value).encode()).hexdigest())
         items["features"] = [dict(task=row.task, input_modality=row.input_mode) for row in items.itertuples()]
         items["grading_criterion"] = [{"reference_answer": reference, "rule": self.grading["rule"]} for reference in items.reference]
         verifier = json.dumps(self.grading["verifiers"]["rank_zero_level_four"], sort_keys=True)
         items["verifier"] = [ExactMatcher(spec=verifier) for _ in range(len(items))]
         observations = observations.merge(items[item_keys + ["item_key"]], on=item_keys, how="left", validate="many_to_one")
+        items['raw_item_id'] = items.testlet_id
 
         # 5. Retain every source cell and rank in valid JSON, including blanks,
         # source positions, original input-bank links and the separate legacy sample.
         observations["test_condition"] = ("collection=" + observations.collection + ";task=" + observations.task +
             ";split=" + observations.split + ";metric=k1_ec_level4")
+        # Several source identifiers can contain the same administered input.
+        # Number its executions before child checks make those aliases converge.
+        observations['testlet_id'] = observations.item_key.map(items.set_index('item_key').testlet_id)
+        observations['trial'] = observations.groupby(['subject_key', 'testlet_id', 'test_condition'], sort=False).cumcount() + 1
         # The shared registrar numbers repeated observations after identical
         # content and grading resolve to the same canonical item.
         traces = observations[["response_key"]].copy()
         traces["trace"] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
             bank_file=row.bank_file, bank_row=int(row.bank_row), record=row.record),
             ensure_ascii=False, separators=(",", ":"), allow_nan=False) for row in observations.itertuples()]
-        return {
+        definitions = [dict(parent_item_key=row.item_key, component_id=str(index),
+            grading_criterion=dict(reference_answer=json.dumps(reference), rule=json.dumps(dict(reference_index=index,
+                rule='Exact released EC-level-4 match against the source-decoded rank-zero candidate list'))),
+            verifier=row.verifier) for row in items.itertuples() for index, reference in enumerate(row.reference.split(';'))]
+        outcomes = pd.DataFrame(dict(parent_response_key=matched.response_key,
+            component_id=matched.groupby('response_key', sort=False).cumcount().astype(str),
+            response=matched._merge.eq('both').astype(float)))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
-            "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
+            "responses": observations[["response_key", "subject_key", "item_key", "trial", "response", "test_condition"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), outcomes)
 
 
 if __name__ == "__main__":

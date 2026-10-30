@@ -3,8 +3,10 @@ benchmark:
   description: Visual 3D block assembly planning with released model outputs, scene images, candidate
     blocks and dependency annotations. This import covers the assembly branch, not aggregate paper rows
     or VQA references without predictions.
-  testing_condition: 'One recorded full-plan output per model and scene. Reconstruct per-scene F1 with
-    the released deterministic checker; these are derived grades, not published grade CSVs. Pose-constrained
+  testing_condition: 'One recorded full-plan output per model and scene. Reconstruct per-reference-block
+    placement checks and the extra-placement count using the released deterministic checker. Each scene
+    is a testlet; preserve both original per-scene F1 assessments on the shared execution. These are
+    derived grades, not published grade CSVs. Pose-constrained
     scoring covers all available scenes; the topology-only condition reuses outputs on source-level-2
     scenes with fewer than seven blocks, so its observations are dependent on the main condition. Items
     retain exact recorded instructions for open models. Other API outputs lack recorded requests: their
@@ -34,12 +36,9 @@ benchmark:
   domain:
   - reasoning
   - general
-  response_type: continuous
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   release_date: '2025-06-04'
   name: PhyBlock
@@ -109,6 +108,21 @@ grading:
     and their harmonic mean, rounded to three decimals as in the native CSV writer. These are not micro-averaged
     paper scores.
   verifiers:
+    components:
+      block:
+        rule: >-
+          Reconstruct the released sequential block matcher. Each reference block
+          scores 1 when successfully placed by the end of the recorded plan and
+          0 otherwise. Preserve the chosen grading condition's geometry and
+          dependency rules. These are deterministic derived checks, not recovered
+          historical per-block judgments or new model executions.
+        response_scale: {kind: discrete, values: [0, 1], direction: higher_is_better}
+      extra_placement_count:
+        rule: >-
+          Count parsed in-range candidate placements that the native matcher does
+          not assign to a reference block. This is its FP error count, on a separate
+          lower-is-better numeric scale; arbitrary candidate positions are not items.
+        response_scale: {kind: interval, min: 0, max: null, direction: lower_is_better}
     pose_constrained:
       kind: derived_deterministic_f1
       source: https://github.com/PhyBlock/PhyBlock/blob/da81ed9cad8184509aadb6f01af83d53e5c9d6fa/evaluate_block_construction.py

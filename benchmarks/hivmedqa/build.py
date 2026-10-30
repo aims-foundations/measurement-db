@@ -146,7 +146,8 @@ class HIVMedQA(BenchmarkBuild):
         traces = judgments[["response_key"] + trace_fields].astype(object)
         traces = traces.where(traces.notna(), None)
         traces["trace"] = [json.dumps(record, ensure_ascii=False, allow_nan=False) for record in traces[trace_fields].to_dict("records")]
-        return {"subjects": subjects[["subject_key", "raw_label", "features"]], "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+        items["testlet_id"] = items.raw_item_id
+        return {"subjects": subjects[["subject_key", "raw_label", "features"]], "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": judgments[["response_key", "subject_key", "item_key", "trial", "response"]],
             "traces": traces[["response_key", "trace"]]}
 

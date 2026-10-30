@@ -9,6 +9,9 @@ benchmark:
     Keep all three detection hint conditions, exploit and patch runs distinct. Items contain the actual initial
     prompt and recorded environment identifiers, with native grading metadata separate. Subjects distinguish recorded
     harness revision, model configuration and phase limit. Claude Code records do not identify a backing model.
+    Final-patch invariant checks and exploit blocking are separate items grouped by repository and bounty.
+    Three native invariant-grader repetitions share one workflow attempt and are identified in the grading condition.
+    Intermediate patch assessments are not endpoint observations. Detection and exploitation retain their workflow verdicts.
     Complete logs retain original timestamps, outputs, tool observations, verifier messages and outcomes. Workflow
     IDs identify released runs; original attempt numbers are unavailable. The historical project files, service
     state and complete execution environments are not reconstructed. No inference or execution.
@@ -35,8 +38,8 @@ benchmark:
     - 0
     - 1
     meanings:
-      '0': The recorded workflow verdict is failure.
-      '1': The recorded workflow verdict is success.
+      '0': The recorded check or retained workflow verdict is failure.
+      '1': The recorded check or retained workflow verdict is success.
     direction: higher_is_better
   release_date: 2025-05
   multi_single_turn: multi_turn

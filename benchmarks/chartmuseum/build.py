@@ -64,6 +64,7 @@ class ChartMuseum(BenchmarkBuild):
         subjects = pd.DataFrame([dict(subject_key=0, raw_label=parameters["subject"]["label"],
                                       features=dict(harness=parameters["subject"]["harness"]))])
         items["raw_item_id"] = parameters["scope"]["split"] + "/" + items.item_key.astype(str)
+        items['testlet_id'] = items.image
         items["features"] = [dict(split=parameters["scope"]["split"], reasoning_type=row.reasoning_type,
             image_source=quote(row.source, safe="/:"), source_image_hash=row.hash) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=answer, rule=self.grading["rule"]) for answer in items.answer]
@@ -80,7 +81,7 @@ class ChartMuseum(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }

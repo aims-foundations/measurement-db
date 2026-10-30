@@ -4,7 +4,9 @@ benchmark:
     LLM outputs; historical grades are unavailable.'
   testing_condition: One released answer per native model label and BEHAVIOR goal-interpretation task. Preserve
     all 2500 attempts without executing a model, simulator or grader. The intended score is per-task goal-condition
-    F1, but the original answer archive contains no judgments; all response grades remain null. These are recorded
+    F1, but the original answer archive contains no judgments. Items identify unique symbolic conditions within
+    each annotated goal, grouped by the original task. Alternative membership and repeated native positions are
+    retained; which alternative was selected and every condition verdict remain unknown. All response grades remain null. These are recorded
     attempts, not a reconstructed scored leaderboard. The legacy builder locally recomputed grades and is not the
     source of published historical judgments. Other EAI modules remain in the untouched original archive, outside
     this curated subset. Literal model labels, including source spelling, are retained; historical request settings
@@ -25,13 +27,12 @@ benchmark:
   - text
   domain:
   - embodied agents
-  response_type: continuous_bounded
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values: [0, 1]
     direction: higher_is_better
-  categorical: false
+  categorical: true
   release_date: 2024-10
   release: public
   granularity: item
@@ -59,6 +60,11 @@ grading:
     of computing or guessing a historical judgment.
   verifiers:
     official_pipeline:
+      component_rule: >-
+        This predicate is a conditional check in the annotated goal. It applies only when the native evaluator selects
+        an alternative containing it. Preserve all alternative and position coordinates, including repeated predicates.
+        Neither historical alternative selections nor condition verdicts were released; applicability and response remain
+        unknown. Do not score every alternative simultaneously or infer failures from missing judgments.
       kind: symbolic_goal_comparison
       source: https://github.com/embodied-agent-interface/embodied-agent-interface/blob/531c62f8df2cb392bdf1907923c76da41cad4fe6/src/behavior_eval/evaluation/goal_interpretation/scripts/evaluate_results.py
       parser: parse_json

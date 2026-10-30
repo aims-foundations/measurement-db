@@ -108,7 +108,8 @@ class RClicks(BenchmarkBuild):
         traces = long[['response_key', 'source_file', 'source_row']].merge(
             records[['source_file', 'source_row', 'native_row']], on=['source_file', 'source_row'], validate='many_to_one')
         traces = traces[['response_key', 'native_row']].rename(columns={'native_row': 'trace'})
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.stimulus_key
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
                     responses=responses, traces=traces)
 
 

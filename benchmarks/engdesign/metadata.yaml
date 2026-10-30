@@ -1,23 +1,25 @@
 benchmark:
   release: public
-  description: Engineering-design tasks with released simulation-based pass/fail judgments. The native
-    release includes single-answer trials and iterative refinement chains.
-  testing_condition: 'Items retain the released task prompt, output-structure source and input images.
-    Single-answer trials and iterative refinement are separate subject configurations. For refinement,
-    test_condition records the native iteration number: successive outcomes belong to one dependent chain,
-    not independent attempts. Import explicit pass flags; an explicit evaluation failure is ungraded.
-    The open subset duplicates the full collection after newline normalization and is not counted twice.
-    Exact API requests, historical harness revisions and the iterative controller are not released. Image
-    order in the original API requests is unrecorded; attachments preserve the task images as a set. The
-    released DeepSeek driver sends only prompt text.'
+  description: Engineering-design tasks with released simulation-based pass/fail judgments. The native release includes
+    single-answer trials and iterative refinement chains.
+  testing_condition: 'Items retain the released task prompt, output-structure source and input images. Single-answer
+    trials and iterative refinement are separate subject configurations. For refinement, test_condition records
+    the native iteration number: successive outcomes belong to one dependent chain, not independent attempts. Import
+    explicit pass flags; an explicit evaluation failure is ungraded. The open subset duplicates the full collection
+    after newline normalization and is not counted twice. Exact API requests, historical harness revisions and the
+    iterative controller are not released. Image order in the original API requests is unrecorded; attachments preserve
+    the task images as a set. The released DeepSeek driver sends only prompt text. Released named checks and rubric
+    subtotals are items grouped by source task. Native point totals and ordinal pass labels retain their scales.
+    A run without any recoverable named check keeps its original task verdict, including null. Infrastructure diagnostics
+    and simulation measurements are retained in evidence.'
   paper_url: https://arxiv.org/abs/2509.16204
   data_source_url: https://github.com/AGI4Engineering/EngDesign
   subject_type: model
   item_type: task
   license: MIT
-  citation: "@inproceedings{guo2025engdesign,\n  title={Toward Engineering AGI: Benchmarking the Engineering\
-    \ Design Capabilities of LLMs},\n  author={Guo, Xingang and Li, Yaxin and Kong, XiangYi and others},\n\
-    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  citation: "@inproceedings{guo2025engdesign,\n  title={Toward Engineering AGI: Benchmarking the Engineering Design\
+    \ Capabilities of LLMs},\n  author={Guo, Xingang and Li, Yaxin and Kong, XiangYi and others},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
   tags:
   - engineering
   - design
@@ -29,17 +31,10 @@ benchmark:
   domain:
   - science
   - reasoning
-  response_type: binary
+  response_type: mixed
   response_scale:
-    kind: discrete
-    values:
-    - 0
-    - 1
-    direction: higher_is_better
-    meanings:
-      '0': The native evaluator records that the design did not pass.
-      '1': The native evaluator records that the design passed.
-  categorical: true
+    kind: mixed
+  categorical: false
   release_date: null
   name: EngDesign
   multi_single_turn: multi_turn
@@ -87,9 +82,9 @@ sources:
     size: 43777898
     sha256: ede9106d4bf49241f9b090071a56e767e71d43ad2fe2386c182cb6eb9f175399
 grading:
-  rule: 'Use the explicit passed field in the published result: true is success, false is failure, and
-    Evaluation failed is an unavailable grade. The released task-specific evaluate.py defines the simulation
-    checks; no simulation or new model call is performed by this import.'
+  rule: 'Use the explicit passed field in the published result: true is success, false is failure, and Evaluation
+    failed is an unavailable grade. The released task-specific evaluate.py defines the simulation checks; no simulation
+    or new model call is performed by this import.'
   verifiers:
     native_pass:
       kind: released_simulation_result
@@ -97,5 +92,780 @@ grading:
       source_template: https://github.com/AGI4Engineering/EngDesign/blob/c8ec338cc5f846d792d93728b00c9448111139e5/tasks/{task}/evaluate.py
       definition_revision: c8ec338cc5f846d792d93728b00c9448111139e5
       historical_run_revision: null
-      historical_run_revision_note: The archived task definition accompanies the released results; a per-run
-        code revision was not recorded.
+      historical_run_revision_note: The archived task definition accompanies the released results; a per-run code
+        revision was not recorded.
+    named_checks:
+      rule: Import the released named check or rubric subtotal using its declared field and scale. Keep missing
+        checks unknown and retain the original task verdict once on the execution. No simulation or model is rerun.
+      tasks:
+        AB_03:
+          approx_comparison_details/vertex_count_match:
+            format: boolean
+          approx_comparison_details/bounding_box_iou:
+            format: points
+            maximum: 1
+          hull_comparison_details/vertex_count_match:
+            format: boolean
+          hull_comparison_details/bounding_box_iou:
+            format: points
+            maximum: 1
+        AM_02:
+          'robot1: Start position correct':
+            format: boolean
+          'robot1: End position correct':
+            format: boolean
+          'robot1: Number of collisions with static obstacles':
+            format: zero_passes
+          'robot1: Number of collisions with walking pedestrians':
+            format: zero_passes
+          'robot1: Over Speed limit':
+            format: false_passes
+          'robot2: Start position correct':
+            format: boolean
+          'robot2: End position correct':
+            format: boolean
+          'robot2: Number of collisions with static obstacles':
+            format: zero_passes
+          'robot2: Number of collisions with walking pedestrians':
+            format: zero_passes
+          'robot2: Over Speed limit':
+            format: false_passes
+        AM_03:
+          Start position correct:
+            format: boolean
+          Hit Goal A:
+            format: boolean
+          Hit Goal B:
+            format: boolean
+          Number of collisions with static obstacles:
+            format: zero_passes
+          Number of collisions with walking pedestrians:
+            format: zero_passes
+          Over Speed limit:
+            format: false_passes
+        AV_02:
+          passband below target attenuation appropriate:
+            format: boolean
+          passband above target attenuation appropriate:
+            format: boolean
+          target frequency attenuation appropriate:
+            format: boolean
+          order value reasonable:
+            format: boolean
+          order and coefficient are properly related:
+            format: boolean
+        AV_03:
+          passband attenuation appropriate:
+            format: boolean
+          stopband attenuation appropriate:
+            format: boolean
+          transition band attenuation appropriate:
+            format: boolean
+          order value reasonable:
+            format: boolean
+          order and coefficient are properly related:
+            format: boolean
+          stopband placement ok:
+            format: boolean
+          decimation value ok:
+            format: boolean
+        CY_03:
+          Can handle no device:
+            format: status
+          Can handle no write buf:
+            format: status
+          Can handle pos out of capacity:
+            format: status
+          Can handle write range out of capacity:
+            format: status
+          Successfully read characters of the specified length:
+            format: status
+          Correctly reads the data:
+            format: status
+          Successfully write characters of the specified length:
+            format: status
+          Correctly acquires and releases the lock:
+            format: status
+          Correctly disables and restores the interrupt:
+            format: status
+          Correctly set up the virtqueue request header:
+            format: status
+          Correctly set up the available virtqueue:
+            format: status
+          Correctly set up the used virtqueue:
+            format: status
+          Correctly notifies the device:
+            format: status
+          Correctly waits for the condition variable:
+            format: status
+          Correctly writes the data:
+            format: status
+          Setting of direct desc[0]:
+            format: status
+          Setting of direct desc[1]:
+            format: status
+          Setting of direct desc[2]:
+            format: status
+        DL_01:
+          Flash_Channel_Count/passed:
+            format: boolean
+          Page_Program_Latency_MSB/passed:
+            format: boolean
+          Chip_No_Per_Channel/passed:
+            format: boolean
+        HC_03:
+          Coefficient a is correct:
+            format: boolean
+          Coefficient b is correct:
+            format: boolean
+          Coefficient c is correct:
+            format: boolean
+          Errors in the fit are within acceptable limits:
+            format: boolean
+        JY_01:
+          S0/within_tolerance:
+            format: boolean
+          S1/within_tolerance:
+            format: boolean
+          S2/within_tolerance:
+            format: boolean
+          S3/within_tolerance:
+            format: boolean
+        KV_02:
+          score_breakdown/lowest_current_valid:
+            format: points
+            maximum: 20
+          score_breakdown/highest_current_safe:
+            format: points
+            maximum: 20
+          score_breakdown/current_ordering_valid:
+            format: points
+            maximum: 20
+          score_breakdown/threshold_range_valid:
+            format: points
+            maximum: 20
+          score_breakdown/threshold_ordering_valid:
+            format: points
+            maximum: 20
+        KV_03:
+          A/correct:
+            format: boolean
+          B/correct:
+            format: boolean
+          C/correct:
+            format: boolean
+          D/correct:
+            format: boolean
+          E/correct:
+            format: boolean
+          F/correct:
+            format: boolean
+          G/correct:
+            format: boolean
+          I/correct:
+            format: boolean
+          J/correct:
+            format: boolean
+        LX_02:
+          A:
+            format: labels
+            values:
+              A is correct: 1
+              A is wrong: 0
+          B:
+            format: labels
+            values:
+              B is correct: 1
+              B is wrong: 0
+          K:
+            format: labels
+            values:
+              K is correct: 1
+              K is wrong: 0
+          L:
+            format: labels
+            values:
+              L is correct: 1
+              L is wrong: 0
+          initial_condition_1:
+            format: pattern
+            field: Stability
+            pattern: i\.c\.\(1\) is (correct|wrong)
+            values:
+              correct: 1
+              wrong: 0
+          initial_condition_2:
+            format: pattern
+            field: Stability
+            pattern: i\.c\.\(2\) is (correct|wrong)
+            values:
+              correct: 1
+              wrong: 0
+          initial_condition_3:
+            format: pattern
+            field: Stability
+            pattern: i\.c\.\(3\) is (correct|wrong)
+            values:
+              correct: 1
+              wrong: 0
+          initial_condition_4:
+            format: pattern
+            field: Stability
+            pattern: i\.c\.\(4\) is (correct|wrong)
+            values:
+              correct: 1
+              wrong: 0
+        LX_03:
+          p1:
+            format: labels
+            values:
+              p1 is correct: 1
+              p1 is wrong: 0
+          p2:
+            format: labels
+            values:
+              p2 is correct: 1
+              p2 is wrong: 0
+          ts:
+            format: labels
+            values:
+              ts is correct: 1
+              ts is wrong: 0
+          N:
+            format: labels
+            values:
+              N is correct: 1
+              N is wrong: 0
+          pm:
+            format: labels
+            values:
+              pm is correct: 1
+              pm is wrong: 0
+          dcgain:
+            format: labels
+            values:
+              DC gain is met: 1
+              DC gain is not met: 0
+          critical:
+            format: labels
+            values:
+              critically damped closed-loop response is met: 1
+              critically damped closed-loop response is not met: 0
+          settlingTime:
+            format: labels
+            values:
+              settling time is met: 1
+              settling time is not met: 0
+          bottomOut:
+            format: labels
+            values:
+              no bottom out is met: 1
+              no bottom out is not met: 0
+        NS_PA_SS_02:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_03:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_04:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_05:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_06:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_07:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_08:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_09:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        NS_PA_SS_10:
+          test0_pass:
+            format: boolean
+          test1_pass:
+            format: boolean
+          test2_pass:
+            format: boolean
+        RK_01:
+          compliance_error:
+            format: pass_label
+            partial: true
+          Dsg_feature:
+            format: pass_label
+            partial: false
+        RK_02:
+          compliance_error:
+            format: pass_label
+            partial: true
+          Dsg_feature:
+            format: pass_label
+            partial: false
+        RK_03:
+          compliance_error:
+            format: pass_label
+            partial: false
+          Dsg_feature:
+            format: pass_label
+            partial: true
+        RK_04:
+          max_stress:
+            format: pass_label
+            partial: true
+          Dsg_feature:
+            format: pass_label
+            partial: false
+        TB_01:
+          sub_scores/dc_gain:
+            format: points
+            maximum: 35
+          sub_scores/ugf:
+            format: points
+            maximum: 15
+          sub_scores/pm:
+            format: points
+            maximum: 15
+          sub_scores/icmr:
+            format: points
+            maximum: 15
+          sub_scores/io_err:
+            format: points
+            maximum: 10
+          sub_scores/idc:
+            format: points
+            maximum: 10
+        TB_02:
+          sub_scores/dc_gain:
+            format: points
+            maximum: 35
+          sub_scores/ugf:
+            format: points
+            maximum: 15
+          sub_scores/pm:
+            format: points
+            maximum: 15
+          sub_scores/icmr:
+            format: points
+            maximum: 15
+          sub_scores/io_err:
+            format: points
+            maximum: 10
+          sub_scores/idc:
+            format: points
+            maximum: 10
+        TB_03:
+          sub_scores/dc_gain:
+            format: points
+            maximum: 20
+          sub_scores/ugf:
+            format: points
+            maximum: 20
+          sub_scores/cmrr:
+            format: points
+            maximum: 20
+          sub_scores/icmr:
+            format: points
+            maximum: 20
+          sub_scores/netlist:
+            format: points
+            maximum: 20
+        TB_04:
+          sub_scores/dc_gain:
+            format: points
+            maximum: 20
+          sub_scores/ugf:
+            format: points
+            maximum: 20
+          sub_scores/cmrr:
+            format: points
+            maximum: 20
+          sub_scores/icmr:
+            format: points
+            maximum: 20
+          sub_scores/netlist:
+            format: points
+            maximum: 20
+        TB_05:
+          sub_scores/dc_gain:
+            format: points
+            maximum: 30
+          sub_scores/bandwidth:
+            format: points
+            maximum: 35
+          sub_scores/vout:
+            format: points
+            maximum: 35
+        XG_02:
+          bandwidth_passed:
+            format: boolean
+          margins_passed:
+            format: boolean
+        XG_07:
+          A_correct:
+            format: boolean
+          B_correct:
+            format: boolean
+          rms_correct:
+            format: boolean
+          peak_correct:
+            format: boolean
+          attenuation_correct:
+            format: boolean
+        XG_08:
+          membership_function_score:
+            format: points
+            maximum: 32
+          rule_list_score:
+            format: points
+            maximum: 26
+            failed_field: rule_list_error
+            failed_value: Rule list is not correct
+          tip1_score:
+            format: points
+            maximum: 25
+            failed_field: tip1_error
+            failed_value: Tip for input 1 is not correct
+          tip2_score:
+            format: points
+            maximum: 25
+            failed_field: tip2_error
+            failed_value: Tip for input 2 is not correct
+        XG_09:
+          mse_pass:
+            format: boolean
+          psnr_pass:
+            format: boolean
+          ssim_pass:
+            format: boolean
+        XG_10:
+          K1_num:
+            format: labels
+            values:
+              correct: 1
+              incorrect: 0
+          K1_den:
+            format: labels
+            values:
+              correct: 1
+              incorrect: 0
+          noise_rejection:
+            format: labels
+            values:
+              fullfilled: 1
+              not fullfilled: 0
+        XG_11:
+          num_passed:
+            format: boolean
+          den_passed:
+            format: boolean
+          stability_passed:
+            format: boolean
+          phase_margin_passed:
+            format: boolean
+          gain_margin_passed:
+            format: boolean
+        XG_12:
+          num_passed:
+            format: boolean
+          den_passed:
+            format: boolean
+          stability_passed:
+            format: boolean
+          phase_margin_passed:
+            format: boolean
+          gain_margin_passed:
+            format: boolean
+        XW_03:
+          create_file:
+            format: boolean
+          create_dir:
+            format: boolean
+          file_not_found:
+            format: boolean
+          not_a_directory:
+            format: boolean
+          file_exists:
+            format: boolean
+        XW_04:
+          delete:
+            format: boolean
+          delete_nested:
+            format: boolean
+          delete_parent:
+            format: boolean
+          fnf_error:
+            format: boolean
+          not_directory_error:
+            format: boolean
+          dir_not_empty_error:
+            format: boolean
+        XY_01:
+          pattern_match:
+            format: boolean
+          visual_match:
+            format: boolean
+        XY_04:
+          color_mapping:
+            format: earned_points
+            maximum: 20
+          display_regions:
+            format: earned_points
+            maximum: 20
+          tetromino_colors:
+            format: earned_points
+            maximum: 20
+          dynamic_modes:
+            format: earned_points
+            maximum: 20
+          bit_slicing:
+            format: earned_points
+            maximum: 10
+          resource_constraints:
+            format: earned_points
+            maximum: 10
+        XY_05:
+          ports_assignment:
+            format: earned_points
+            maximum: 60
+          state_transitions:
+            format: earned_points
+            maximum: 25
+          formatting:
+            format: earned_points
+            maximum: 15
+        XZ_01:
+          path_validity:
+            format: points
+            maximum: 50
+          path_optimality:
+            format: points
+            maximum: 30
+          algorithm_implementation:
+            format: points
+            maximum: 10
+          path_format:
+            format: points
+            maximum: 10
+        XZ_02:
+          path_representation/path_completeness:
+            format: points
+            maximum: 20
+          path_representation/regular_sampling:
+            format: points
+            maximum: 15
+          constraint_validation/obstacle_clearance:
+            format: points
+            maximum: 25
+          constraint_validation/turning_radius:
+            format: points
+            maximum: 25
+          performance_metrics/computation_time:
+            format: points
+            maximum: 5
+          performance_metrics/nodes_explored:
+            format: points
+            maximum: 10
+        XZ_03:
+          path_validity:
+            format: points
+            maximum: 50
+          path_optimality:
+            format: points
+            maximum: 30
+          algorithm_implementation:
+            format: points
+            maximum: 10
+          path_format:
+            format: points
+            maximum: 10
+        XZ_04:
+          path_validity:
+            format: points
+            maximum: 40
+          speed_constraints:
+            format: points
+            maximum: 30
+          path_within_allowed_zone:
+            format: points
+            maximum: 20
+          implementation_details:
+            format: points
+            maximum: 10
+        YJ_01:
+          compliance_error:
+            format: pass_label
+            partial: false
+          volume_fraction_error:
+            format: pass_label
+            partial: false
+        YJ_02:
+          y_hat_shape:
+            format: pass_label
+            partial: false
+          compliance_error:
+            format: pass_label
+            partial: false
+        YJ_03:
+          y_hat_shape:
+            format: pass_label
+            partial: false
+          stress_error:
+            format: pass_label
+            partial: false
+        YZ_02:
+          check_1:
+            format: boolean
+          check_2:
+            format: boolean
+          check_3:
+            format: boolean
+          check_4:
+            format: boolean
+          check_5:
+            format: boolean
+          check_6:
+            format: boolean
+          check_7:
+            format: boolean
+        YZ_03:
+          check_1:
+            format: boolean
+          check_2:
+            format: boolean
+          check_3:
+            format: boolean
+          check_4:
+            format: boolean
+          check_5:
+            format: boolean
+        YZ_04:
+          check_1:
+            format: boolean
+          check_2:
+            format: boolean
+          check_3:
+            format: boolean
+          check_4:
+            format: boolean
+          check_5:
+            format: boolean
+        ZC_01:
+          isStable:
+            format: boolean
+          meetsHinf:
+            format: boolean
+        Ziheng_01:
+          stability_pass:
+            format: boolean
+          rise_time_pass:
+            format: boolean
+          gain_margin_pass:
+            format: boolean
+          phase_margin_pass:
+            format: boolean
+        libin2_01:
+          For Device A and Device B the design is consistent:
+            format: boolean
+          Virtual addresses are 40 bits:
+            format: boolean
+          Page size is power of two:
+            format: boolean
+          Entries per level are powers of two:
+            format: boolean
+          Number of entries matches levels:
+            format: boolean
+          LLM correctly calculate the page_table_memory of Deive A:
+            format: boolean
+          The page_table_memory of the designed Device A meets the specified limit:
+            format: boolean
+          LLM correctly calculate the avg_translation_time of Deive A:
+            format: boolean
+          The avg_translation_time of the designed Device A meets the specified limit:
+            format: boolean
+          LLM correctly calculate the page_table_memory of Deive B:
+            format: boolean
+          The page_table_memory of the designed Device B meets the specified limit:
+            format: boolean
+          LLM correctly calculate the avg_translation_time of Deive B:
+            format: boolean
+          The avg_translation_time of the designed Device B meets the specified limit:
+            format: boolean
+        libin2_02:
+          time_quantum_is_integer:
+            format: boolean
+          case1_avg_waiting_time_correct:
+            format: boolean
+          case1_context_switches_correct:
+            format: boolean
+          case1_quantum_cost_correct:
+            format: boolean
+          case1_combined_cost_is_within_limit:
+            format: boolean
+          case2_avg_waiting_time_correct:
+            format: boolean
+          case2_context_switches_correct:
+            format: boolean
+          case2_quantum_cost_correct:
+            format: boolean
+          case2_combined_cost_is_within_limit:
+            format: boolean
+          case3_avg_waiting_time_correct:
+            format: boolean
+          case3_context_switches_correct:
+            format: boolean
+          case3_quantum_cost_correct:
+            format: boolean
+          case3_combined_cost_is_within_limit:
+            format: boolean
+        libin2_03:
+          cluster_power_of_2:
+            format: boolean
+          cluster_in_range:
+            format: boolean
+          threshold_power_of_2:
+            format: boolean
+          frag_calc_correct:
+            format: boolean
+          frag_meets_requirement:
+            format: boolean
+          meta_calc_correct:
+            format: boolean
+          meta_meets_requirement:
+            format: boolean

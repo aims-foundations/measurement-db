@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 532
-    logical_sha256: f64cdd7e0e6ac111cdd6f298f25f47ce26434a658a9f8355a15a487525f6d49c
+    logical_sha256: 201f4438bbf7f65cd60888c16b3ccc4d64d27296fdf1a4c15492b09172695ba7
+  benchmarks:
+    rows: 1
+    logical_sha256: 27d83cf3b6bac67e34328a9f04f927c20a244b3b4d54ab44e254496cb9dae2ed
+  items:
+    rows: 875
+    logical_sha256: a8ad492a9047a0835fd0f97d3a89981450ffcc1a5b0484df7d6d08a2e3777c8e
+  responses:
+    rows: 2197
+    logical_sha256: 4ea637c23b262f3c5853929d349888d9fefa588fb33d7e31ad646623f8d1f7a4
   subjects:
     rows: 33
     logical_sha256: e68477ba2ff25a61c5c57066e48265392c6a69ce263c07114605bf8e5d2f0215
-  responses:
-    rows: 532
-    logical_sha256: 1b3ad279eca27e1a5c8b7e38b1206db650231acf8cbfe7972a40fd3912be548c
-  items:
-    rows: 429
-    logical_sha256: 64275dc108a327212ee90c396b1225ed6b129cb3ac34920dc63952cc0d5b2c15
-  benchmarks:
-    rows: 1
-    logical_sha256: 6520ff5700506e05f821f509effbedb0dd7ea71ad54b3975dc81ca01d195584f
 source_claims:
   source_responses:
     kind: count
@@ -124,3 +124,35 @@ source_claims:
     scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
       successes and failures.
     expected: 10
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 532
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 2197
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 875
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 40

@@ -55,10 +55,26 @@ jobs:
           assert aligned['columns']==247930 and aligned['canonicalItems']==1483092
           assert aligned['observations']==6119913 and len(aligned['groups'])==200
           assert aligned['scores']['expandedBytes']==6942040
+          audit_root=Path('artifacts/testlet-audit')
+          audit=json.loads((audit_root/'hf-release-receipt.json').read_text())
+          installed=json.loads((audit_root/'installed-preview.json').read_text())
+          assert audit['verified'] and audit['revision']==release['revision']
+          assert installed['revision']==release['revision']
+          assert len(installed['benchmarks'])==audit['benchmarks']
+          catalog=json.loads(Path('website/content/generated/gallery-records.json').read_text())
+          for slug in installed['benchmarks']:
+              report=json.loads((audit_root/'gallery'/slug/'records-validation.json').read_text())['windows']
+              assert report['all_items_indexed'],slug
+              assert report['rows']==catalog[slug]['manifest']['tables']['responses']['rows'],slug
+              if report.get('testlets'):
+                  assert report['exact_testlet_membership'],slug
+              for descriptor in catalog[slug]['manifest']['tables'].values():
+                  if 'parquet' in descriptor:
+                      assert '/resolve/'+release['revision']+'/' in descriptor['parquet']['download'],slug
           for relative,expected in prepared['website_sha256'].items():
               with (Path('website')/relative).open('rb') as stream:
                   assert hashlib.file_digest(stream,'sha256').hexdigest()==expected,relative
-          print('Verified full ProgramBench data, testlet boundaries, and prepared browser assets.')
+          print(f"Verified ProgramBench and {audit['benchmarks']} audited benchmark exports, testlet boundaries, and browser assets.")
           PY
       - name: Test and build the preview
         run: |

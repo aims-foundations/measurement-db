@@ -23,7 +23,8 @@ def builder(tmp_path):
         request = {'model': 'model', 'model_deployment': run, 'prompt': f'{run}: A. left B. right',
                    'temperature': 0, 'max_tokens': 100}
         documents = {
-            'run_spec': {'name': run, 'adapter_spec': {'model': 'model', 'method': 'multiple_choice_joint', 'max_train_instances': 0}},
+            'run_spec': {'name': run, 'scenario_spec': {'class_name': 'fixture', 'args': {}},
+                'adapter_spec': {'model': 'model', 'method': 'multiple_choice_joint', 'max_train_instances': 0}},
             'instances': [{'id': 'same-id', 'input': {'text': 'shared stem'}, 'references': [
                 {'output': {'text': reference}, 'tags': ['correct']}], 'split': 'test'}],
             'display_requests': [{'instance_id': 'same-id', 'train_trial_index': 0, 'request': request}],
@@ -79,10 +80,31 @@ def test_retained_legacy_exports_do_not_enter_the_selected_native_runs(builder):
     assert {json.loads(text)['source_run'] for text in tables['traces'].trace} == {'first', 'second'}
 
 
+def test_testlet_follows_native_input_and_scenario_not_local_instance_id(builder):
+    assert builder.build_tables()['items'].testlet_id.nunique() == 1
+    change(builder, 'instances', lambda rows: rows[0]['input'].update(text='Different question'), run='second')
+    assert builder.build_tables()['items'].testlet_id.nunique() == 2
+    change(builder, 'instances', lambda rows: rows[0]['input'].update(text='shared stem'), run='second')
+    change(builder, 'run_spec', lambda row: row['scenario_spec'].update(class_name='another dataset'), run='second')
+    assert builder.build_tables()['items'].testlet_id.nunique() == 2
+
+
 def test_duplicate_metric_records_do_not_multiply_observations(builder):
     change(builder, 'per_instance_stats', lambda records: records.extend(records[:1]))
     with pytest.raises(ValueError, match='not a one-to-one merge'):
         builder.build_tables()
+
+
+def test_truncated_identical_items_do_not_choose_an_arbitrary_source_parent(builder):
+    change(builder, 'instances', lambda rows: rows[0]['input'].update(text='Different full question'), run='second')
+    for run in ['first', 'second']:
+        change(builder, 'display_requests', lambda rows: rows[0]['request'].update(prompt='Shared truncated prompt'), run=run)
+    # Different gold answers still distinguish the two items.
+    assert builder.build_tables()['items'].testlet_id.notna().all()
+    change(builder, 'instances', lambda rows: rows[0]['references'][0]['output'].update(text='left'), run='second')
+    tables = builder.build_tables()
+    assert tables['items'].testlet_id.isna().all()
+    assert len(tables['responses']) == 2
 
 
 def test_conflicting_grade_exports_fail_before_writing(builder):

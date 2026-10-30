@@ -1,20 +1,20 @@
 format_version: 1
 tables:
+  attempts:
+    rows: 186250
+    logical_sha256: 9e67528cd4e55233fd1f298fe6bd8aac5b98857ce5a462aad54818c68d5a7523
   benchmarks:
     rows: 1
-    logical_sha256: ec8286fbcd614d18af87b8283798732f5493c98c28151e9ea9f351359339c46f
+    logical_sha256: 3edfa3e662a5fd11811049ec521590a471b7fad4c3d771a4d3e074e1c73d0e58
   items:
-    rows: 56181
-    logical_sha256: 6c509717a20c5b6511c788a9045668d310aa490637ac13b2267660de1347ef0e
+    rows: 617736
+    logical_sha256: b36727ddf894e8f6c114ce662d57b81aeefaac176593a51c6c9e31a3f3fb0f20
   responses:
-    rows: 186250
-    logical_sha256: 9a95c13514409f8f933c0ed89c1887412c47d9953fcac60d2d642414144e8b0c
+    rows: 1091023
+    logical_sha256: 1c08d36790f8c591719feda6403f3e7d21543d4b2923d7bebc91320d2114d276
   subjects:
     rows: 14
     logical_sha256: 2ef7afc69577e75c765fc1a710bdbf8245000d9416469d4e0455649fe9f223e7
-  traces:
-    rows: 186250
-    logical_sha256: be1c0f36d8ec8696c59ac8a335f92939711a93be4725cb19816c2b21ef15562e
 source_claims:
   source_subjects:
     kind: count
@@ -106,3 +106,35 @@ source_claims:
       partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
       boundary excess is normalized. The conflicted Grok-named run remains raw-only.
     expected: 5000
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 186250
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 1091023
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 617736
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 12131

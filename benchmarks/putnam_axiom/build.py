@@ -52,9 +52,10 @@ class PutnamAxiom(BenchmarkBuild):
                                      test_condition="rubric=" + responses.rubric)
         subjects = responses[["subject_key"]].drop_duplicates().assign(raw_label=lambda frame: frame.subject_key)
         traces = responses[["response_key", "model_output"]].rename(columns={"model_output": "trace"})
+        items["testlet_id"] = items.problem_id.astype(str)
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces.loc[traces.trace.map(lambda value: isinstance(value, str) and bool(value.strip()))],
         }

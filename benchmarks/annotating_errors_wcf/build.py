@@ -70,6 +70,7 @@ class AnnotatingErrorsWCF(BenchmarkBuild):
                                     + ":" + observations.metric + ":" + observations.user_id)
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.annotation_instance_id
         items["content"] = items.input_prompt.map(lambda prompt: json.dumps(prompt, ensure_ascii=False, sort_keys=True))
         items["features"] = [{"annotation_instance_id": row.annotation_instance_id, "original_id": row.original_id,
                                "cefr_level": row.cefr_level, "language": "en"}
@@ -91,7 +92,7 @@ class AnnotatingErrorsWCF(BenchmarkBuild):
                            for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }

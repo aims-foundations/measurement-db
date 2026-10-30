@@ -10,6 +10,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.das_med_hallucination.specialist_checks import subtype_grades
 
 
 class DASMedicalHallucination(BenchmarkBuild):
@@ -64,6 +66,7 @@ class DASMedicalHallucination(BenchmarkBuild):
         # actually recorded by the run; unavailable checkpoints stay unknown.
         items = records[["item_key", "prompt"]].drop_duplicates().rename(columns={"prompt": "content"})
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.item_key
         items["features"] = items.item_key.map(lambda digest: {"prompt_sha256": digest})
         items["grading_criterion"] = [{"rule": self.grading["rule"]} for _ in range(len(items))]
         items["verifier"] = [Judge(spec=json.dumps(self.grading["verifiers"]["detector"], sort_keys=True),
@@ -90,12 +93,26 @@ class DASMedicalHallucination(BenchmarkBuild):
             judgment=row.native_judgment if isinstance(row.native_judgment, dict) else None,
             trace_scope="released_generation_and_detector_record"), ensure_ascii=False, allow_nan=False)
             for row in records.itertuples()]
-        return {
+        # Each named subtype is a detection item, not a correctness judgment.
+        # The orchestrator's merged category remains in the original execution.
+        protocol = self.grading['verifiers']['detector']
+        definitions = [dict(parent_item_key=row.item_key, component_id=code,
+            grading_criterion=dict(rule=json.dumps(dict(subtype=code, name=name,
+                rule=protocol['subtype_rule']))),
+            verifier=Judge(judged_by='llm', spec=json.dumps(dict(protocol,
+                selected_subtype=code), sort_keys=True)))
+            for row in items.itertuples() for code, name in protocol['subtypes'].items()]
+        outcomes = [dict(parent_response_key=row.response_key, component_id=code, response=grade)
+            for row in records.itertuples()
+            for code, grade in subtype_grades(row.native_judgment if isinstance(row.native_judgment, dict)
+                else None, protocol['subtypes']).items()]
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

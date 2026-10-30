@@ -70,6 +70,7 @@ class MorphKV(BenchmarkBuild):
         items = observations.drop_duplicates(['input', 'criterion']).copy()
         items['item_key'] = range(len(items))
         items['raw_item_id'] = 'bank_' + items.bank_row.astype(str) + ':' + items.kind + ':' + items.block_id
+        items['testlet_id'] = 'bank_' + items.bank_row.astype(str)
         items['content'] = items.input
         items['features'] = [dict(source_benchmark=parameters['labels']['benchmark'], task_type=row.type) for row in items.itertuples(index=False)]
         items['grading_criterion'] = [dict(rule=rule) for rule in items.criterion]
@@ -87,7 +88,7 @@ class MorphKV(BenchmarkBuild):
             kind=row.kind, block_id=row.block_id, native_record=row.native_record), ensure_ascii=False)
             for row in observations.itertuples(index=False)]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=observations[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

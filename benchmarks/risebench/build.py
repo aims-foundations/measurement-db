@@ -12,6 +12,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class RISEBench(BenchmarkBuild):
@@ -153,6 +154,7 @@ class RISEBench(BenchmarkBuild):
         })
         items["features"] = items[["category", "subtask"]].to_dict("records")
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.raw_item_id
         items["item_key"] = items.input_variant + ":" + items.item_key
         observations["input_variant"] = observations.grading_version
         has_video = observations.native_video_request.notna()
@@ -174,13 +176,29 @@ class RISEBench(BenchmarkBuild):
         video_trace_fields = trace_fields + ["native_video_request", "video_source_file", "generated_video_base64"]
         traces.loc[has_video, "trace"] = [json.dumps(row, ensure_ascii=False, allow_nan=False)
                                          for row in observations.loc[has_video, video_trace_fields].to_dict("records")]
-        return {
+        dimensions = ('Reasoning', 'ApprConsistency', 'VisualPlausibility')
+        definitions = [dict(parent_item_key=row.item_key, component_id=name,
+            grading_criterion=dict(reference_answer=row.grading_criterion['reference_answer'],
+                rule=json.dumps(dict(dimension=name, rule='Native 1-5 dimension rating from a successfully parsed judge record',
+                    task_rubric=json.loads(row.grading_criterion['rule'])), ensure_ascii=False, allow_nan=False)),
+            verifier=row.verifier) for row in items.itertuples() for name in dimensions]
+        outcomes = []
+        for row in observations.itertuples():
+            for name in dimensions:
+                grade = row.native_judgment[name] if row.match_log == 'succeed' else None
+                grade = None if grade in ('', None) else grade
+                if grade is not None and grade not in (1, 2, 3, 4, 5):
+                    raise ValueError('Unexpected native RISE dimension rating')
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=name,
+                    response=None if grade is None else float(grade)))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion",
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion",
                             "verifier", "features", "attachments"]],
             "responses": responses,
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

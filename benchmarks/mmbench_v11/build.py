@@ -111,6 +111,7 @@ class MMBenchV11(BenchmarkBuild):
         items['attachments'] = [[dict(data=row.bytes, path=row.path, media_type=row.media_type, role='input')]
             for row in items.itertuples()]
         items['raw_item_id'] = items.item_key.astype(str)
+        items['testlet_id'] = (items.item_key % stride).astype(str)
         items['features'] = [dict(upstream_index=row['item_key'], base_question_index=row['item_key'] % stride,
             circular_rotation=row['item_key'] // stride, split=row['split'], category=row['category'],
             ability=row['l2-category'], source_file=row['source_file'], source_row=row['source_row'],
@@ -193,7 +194,7 @@ class MMBenchV11(BenchmarkBuild):
                 if isinstance(row.supplement_source, str) else None), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', "testlet_id", 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

@@ -11,7 +11,7 @@ tables:
     logical_sha256: 56a5291dd455299cc7adfb52497f9d9761afbaf76503cb8d2851941538332547
   items:
     rows: 356
-    logical_sha256: b8e7599991dcc215f26e9b9f27799336d90061e522e789ca92e014e18688e261
+    logical_sha256: 024eeafba64473675213b745404a0c235598a1b48a5098ceb07427063a8a7bfd
   benchmarks:
     rows: 1
     logical_sha256: 1fbe14aca06fed3f7496406cc927ba84bc33982c8d218934d656e543e72d0c3a
@@ -20,100 +20,89 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 1128
   source_rows:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 282
   source_ids:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 94
   source_prompts:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 89
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 356
   source_configurations:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 3
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 1128
   source_annotated_prompts:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 1
   source_blank_outputs:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 1
   source_unlabeled_extra_cells:
     kind: count
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected: 17
   criterion_successes:
     kind: aggregate
     origin: derived_from_data
     source: https://github.com/stbst1/Nester
-    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
-      \ 2."
-    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
-      blank outputs and the original annotation alongside its clean input.
+    locator: Three historical XLSX files, Sheet1 rows 2–95, columns A–H; paper Section 4.4/Table 2.
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve blank outputs
+      and the original annotation alongside its clean input.
     expected:
       GPT-4/correctness: 90
       GPT-4/explainability: 81

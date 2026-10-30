@@ -2,6 +2,8 @@
 """Curate DORIS-MAE's released Anno-GPT relevance judgments and explanations."""
 
 import json
+import hashlib
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -39,6 +41,10 @@ class DorisMae(BenchmarkBuild):
         annotations["item_key"] = annotations.aspect_id + "__" + annotations.abstract_id.astype(str)
         items = annotations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.item_key
+        # Aspects can be reused across queries; the shared abstract is an
+        # unambiguous stimulus for grouping its separate relevance judgments.
+        items['testlet_id'] = items.original_abstract.map(lambda text: hashlib.sha256(
+            unicodedata.normalize('NFC', text).encode()).hexdigest())
         items["content"] = [parameters["prompt"]["template"].format(req=row.aspect, abstract=row.original_abstract)
             for row in items.itertuples()]
         votes = items.loc[items.human_annotation.notna(), ["item_key", "human_annotation"]].copy()
@@ -64,7 +70,7 @@ class DorisMae(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in annotations.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": annotations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

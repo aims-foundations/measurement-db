@@ -81,6 +81,7 @@ class OSWorld(BenchmarkBuild):
             raise ValueError("OSWorld requires a nonempty recorded or provider task instruction")
         # Run-specific wording takes precedence; changed stimuli remain separate items.
         items = attempts.drop_duplicates(["raw_item_id", "content"]).copy()
+        items['testlet_id'] = items.raw_item_id
         items["item_key"] = range(len(items))
         items["features"] = [dict(domain=row.raw_item_id.split("/", 1)[0], snapshot=row.snapshot,
             definition_provenance=parameters["labels"]["definition_provenance"]) for row in items.itertuples()]
@@ -103,7 +104,7 @@ class OSWorld(BenchmarkBuild):
             media_capture=parameters["labels"]["media_capture"]), ensure_ascii=False, allow_nan=False)
             for row in attempts.loc[has_trace].to_dict("records")]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-                "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+                "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
                 "responses": responses[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
                 "traces": traces}
 

@@ -1,5 +1,6 @@
 """Tabulate every published Lo-Hi prediction without inventing individual grades."""
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -52,6 +53,7 @@ class LoHiDrugDiscovery(BenchmarkBuild):
         items["item_key"] = items.source_file + "#" + items.source_row.astype(str)
         items["raw_item_id"] = items.item_key
         items["content"] = items.smiles
+        items['testlet_id'] = items.smiles.str.normalize('NFC').str.strip().map(lambda text: hashlib.sha256(text.encode()).hexdigest())
         items["features"] = [dict(task=row.task, dataset=row.dataset, input_scope=parameters["labels"]["input_scope"])
             for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=row.reference,
@@ -79,7 +81,7 @@ class LoHiDrugDiscovery(BenchmarkBuild):
             record=row.source_record, grade_status=parameters["labels"]["grade_status"]), allow_nan=False)
             for row in attempts.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces}
 

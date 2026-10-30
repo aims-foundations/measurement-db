@@ -1,16 +1,19 @@
 benchmark:
   description: Selected hybrid computer-use trajectories from the original WeaveBench gallery, with complete published
     task prompts, grading evidence and linked screenshots.
-  testing_condition: One author-selected best hybrid rollout per task, not an unbiased model comparison or the full
-    evaluation sweep. Preserve native model/runtime combinations, published final scores, all gallery steps and
-    screenshots. The gallery lists produced files but does not include their contents or the historical VM/workspace
-    state. Exact model snapshots, inference settings and judge identity are not recorded for each gallery entry;
-    paper and current harness descriptions are references, not reconstructed historical configurations. No model,
-    environment or judge is executed.
+  testing_condition: Each published trajectory-aware judge dimension is an item within its task. Preserve native
+    0–1 values, reasons and missingness without turning partial scores into binary grades. Original task pass/fail,
+    overall score, fabrication flags and the full rollout remain in shared attempts. The mean of dimension scores
+    is not asserted to equal the official aggregate. One author-selected best hybrid rollout per task, not an unbiased
+    model comparison or the full evaluation sweep. Preserve native model/runtime combinations, published final scores,
+    all gallery steps and screenshots. The gallery lists produced files but does not include their contents or the
+    historical VM/workspace state. Exact model snapshots, inference settings and judge identity are not recorded
+    for each gallery entry; paper and current harness descriptions are references, not reconstructed historical
+    configurations. No model, environment or judge is executed.
   paper_url: https://arxiv.org/abs/2606.09426
   data_source_url: https://weavebench.github.io/trajectories/
   subject_type: model
-  item_type: task
+  item_type: judge_dimension_within_agent_task_testlet
   license: 'MIT: WeaveBench''s author repository and dataset card. Preserve LICENSE, NOTICE and original source
     attribution.'
   citation: "@article{weavebench2026,\n  title={WeaveBench: A Long-Horizon, Real-World Benchmark for Computer-Use\
@@ -31,17 +34,13 @@ benchmark:
   domain:
   - agents_and_tool_use
   - software_engineering
-  response_type: binary
+  response_type: continuous_bounded
   response_scale:
-    kind: discrete
-    values:
-    - 0
-    - 1
+    kind: interval
+    min: 0
+    max: 1
     direction: higher_is_better
-    meanings:
-      '0': published final score below 0.80
-      '1': published final score at least 0.80
-  categorical: true
+  categorical: false
   release_date: 2026-06
   release: public
   name: WeaveBench

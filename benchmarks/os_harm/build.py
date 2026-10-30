@@ -83,8 +83,9 @@ class OSHarm(BenchmarkBuild):
             value_vars=list(metrics.assessment), var_name='assessment', value_name='response')
         responses['item_key'] = responses.task_key + '#' + responses.assessment
         responses['response_key'] = responses.execution_path + '#' + responses.assessment
+        items["testlet_id"] = items.category + '/' + items.application + '/' + items.source_task
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response']],
             traces=responses[['response_key', 'trace']])
 

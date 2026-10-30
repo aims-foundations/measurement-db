@@ -61,6 +61,7 @@ class VLRewardBenchBuild(BenchmarkBuild):
         verifier_spec = json.dumps(self.grading["verifiers"]["released_preference"], sort_keys=True)
         items = items.assign(
             item_key=range(len(items)), raw_item_id=items.id.astype(str), content=items.filter_prompt,
+            testlet_id=items.id.astype(str),
             grading_criterion=[{"reference_answer": answer, "rule": self.grading["rule"]}
                                for answer in preferred],
             verifier=ExactMatcher(spec=verifier_spec),
@@ -81,7 +82,7 @@ class VLRewardBenchBuild(BenchmarkBuild):
         traces = responses.loc[responses.trace.map(lambda value: isinstance(value, str)), ["response_key", "trace"]]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

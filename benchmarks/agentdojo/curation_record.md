@@ -7,3 +7,4 @@
 - **Limitations.** Positive grades across the two measures are not a combined agent-performance score. Historical runs do not identify exact task/evaluator versions; captured task declarations can come from later suite versions. Unreleased inference settings remain unknown.
 
 [Metadata and sources](metadata.yaml) · [Characterization](characterization.yaml) · [Checks](../../tests/test_benchmark_datasets.py) · [Builder](build.py)
+- Testlet membership migration (2026-10-29): 1,081 existing item identities link to 132 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. Membership was checked against the complete, previously reviewed canonical item table; this grouping-only change did not rerun the upstream import. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

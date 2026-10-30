@@ -86,8 +86,9 @@ class PRISM(BenchmarkBuild):
         traces = responses[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(source_file=layout['utterances'], dimension=row.dimension,
             utterance=row.native_record, metadata=row.native_metadata), ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+        items["testlet_id"] = items.conversation_id
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition', 'interactors']], traces=traces)
 
 

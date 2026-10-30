@@ -75,8 +75,9 @@ class UltraFeedback(BenchmarkBuild):
             completion_index=int(row.completion_index), aspect=row.aspect, instruction_record=row.instruction_record,
             native_completion=row.native_completion, grade_status=row.grade_status, scope=labels['trace_scope']),
             ensure_ascii=False, allow_nan=False) for row in ratings.itertuples()]
+        items["testlet_id"] = items.raw_item_id
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': ratings[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], 'traces': traces}
 
 

@@ -10,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class TheAgentCompany(BenchmarkBuild):
@@ -26,13 +27,15 @@ class TheAgentCompany(BenchmarkBuild):
         }).rename_axis("subject_key").reset_index()
         subjects["features"] = subjects[["harness"]].to_dict("records")
         paths = sorted(path for run in subjects.subject_key for path in (runs / run / "results").glob("eval_*.json"))
-        scores = pd.json_normalize([json.loads(path.read_text()) for path in paths])
+        evaluations = [json.loads(path.read_text()) for path in paths]
+        scores = pd.json_normalize(evaluations)
         responses = pd.DataFrame({
             "subject_key": [path.parent.parent.name for path in paths],
             "item_key": [path.stem.removeprefix("eval_").removesuffix("-image") for path in paths],
             "response_key": [str(path.relative_to(runs)) for path in paths],
             "earned": pd.to_numeric(scores["final_score.result"]),
             "available": pd.to_numeric(scores["final_score.total"]),
+            "evaluation": evaluations,
         })
         if (not np.isfinite(responses[["earned", "available"]]).all().all()
                 or not responses.available.gt(0).all()
@@ -74,6 +77,7 @@ class TheAgentCompany(BenchmarkBuild):
         task_root = self.raw_dir / layout["tasks"]
         items = items.assign(
             raw_item_id=items.item_key,
+            testlet_id="1.0.0/" + items.item_key,
             content=items.item_key.map(lambda task: (task_root / task / "task.md").read_text().strip()),
             grading_criterion=[{"rule": self.grading["rule"]} for _ in items.index],
             verifier=items.item_key.map(lambda task: ExactMatcher(spec=json.dumps({
@@ -81,12 +85,48 @@ class TheAgentCompany(BenchmarkBuild):
                 "grading_code": (task_root / task / "evaluator.py").read_text(),
             }, sort_keys=True))),
         )
-        return {
+        # 4. Keep each released checkpoint, including its native partial-credit scale.
+        components, outcomes = {}, []
+        for row in responses.itertuples():
+            if not isinstance(row.evaluation, dict):
+                parent = items.loc[items.item_key.eq(row.item_key)].iloc[0]
+                component = "ungraded_task_outcome"
+                components[row.item_key, component] = dict(parent_item_key=row.item_key,
+                    component_id=component, grading_criterion=parent.grading_criterion, verifier=parent.verifier)
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=None))
+                continue
+            checkpoints = row.evaluation.get("checkpoints")
+            if not isinstance(checkpoints, list) or not checkpoints:
+                raise ValueError("A scored task has no released checkpoint results")
+            for index, checkpoint in enumerate(checkpoints, 1):
+                total, earned = checkpoint["total"], checkpoint["result"]
+                if (type(total) is not int or type(earned) not in (int, bool)
+                        or not 0 <= earned <= total):
+                    raise ValueError("Checkpoint credits must be nonnegative integer counts")
+                if total == 0:
+                    continue  # An empty rubric contributes no scored item.
+                component = f"checkpoint:{index}:out-of:{total}"
+                key = row.item_key, component
+                components[key] = dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion={"rule": json.dumps(dict(rule=self.grading["verifiers"]["checkpoint"]["checkpoint_rule"],
+                        checkpoint_index=index, available_credit=total), sort_keys=True)},
+                    verifier=ExactMatcher(spec=json.dumps(dict(
+                        **self.grading["verifiers"]["checkpoint"], checkpoint_index=index,
+                        available_credit=total,
+                        grading_code=(task_root / row.item_key / "evaluator.py").read_text()), sort_keys=True)))
+                outcomes.append(dict(parent_response_key=row.response_key,
+                    component_id=component, response=earned / total))
+        traces = responses[["response_key"]].copy()
+        traces["trace"] = [json.dumps(dict(evaluation=row.evaluation if isinstance(row.evaluation, dict) else None,
+            trajectory=row.trace if isinstance(row.trace, str) else None), ensure_ascii=False, allow_nan=False)
+            for row in responses.itertuples()]
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "trial"]],
-            "traces": responses.loc[responses.trace.notna(), ["response_key", "trace"]],
+            "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(components.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

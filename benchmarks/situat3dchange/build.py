@@ -132,6 +132,8 @@ class Situat3DChange(BenchmarkBuild):
         observations['subject_key'] = labels['subject']
         items = observations.copy()
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = [hashlib.sha256(json.dumps([row.reference_scan, row.scan_id]).encode()).hexdigest()
+            for row in items.itertuples()]
         items['content'] = [labels['content_template'].format(situation=row.situation, instruction=row.instruction) for row in items.itertuples()]
         items['features'] = [dict(task=row.task, input_scope=labels['input_scope'], spatial_context=json.dumps(dict(
             current_scan=row.scan_id, reference_scan=row.reference_scan, brief_situation=row.brief_situation,
@@ -166,7 +168,7 @@ class Situat3DChange(BenchmarkBuild):
             image=dict(archive=layout['images'], member=row.image_member), protocol=row.protocol,
             grade_status='source_grade_unavailable' if pd.isna(row.response) else 'recorded_score',
             grade_scope=labels['grade_scope']), ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'features',
+        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features',
             'attachments', 'grading_criterion', 'verifier']],
             'responses': observations[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 

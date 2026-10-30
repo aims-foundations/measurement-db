@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class Tau2Bench(BenchmarkBuild):
@@ -67,6 +68,7 @@ class Tau2Bench(BenchmarkBuild):
 
         # 4. Keep complete task inputs, policies, tools and grading rules separately.
         items['raw_item_id'] = items.domain + '/' + items.task_id
+        items['testlet_id'] = items.raw_item_id
         items['content'] = [json.dumps(dict(task={key: value for key, value in row.task.items() if key != 'evaluation_criteria'},
             environment_info=row.info['environment_info'],
             user_guidelines=row.info['user_info'].get('global_simulation_guidelines')),
@@ -96,9 +98,54 @@ class Tau2Bench(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, run_timestamp=row.timestamp,
             run_info=row.info, submission=row.submission, simulation=row.simulation, submission_scope=labels['submission_scope']),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        # 7. Import actual checker verdicts, including diagnostics outside the reward basis.
+        # A DB verdict is one check: the release does not report individual field comparisons.
+        checks = {
+            'env_assertions': ('env_assertion', 'env_assertions', 'met', 'ENV_ASSERTION'),
+            'action_checks': ('action', 'actions', 'action_match', 'ACTION'),
+            'nl_assertions': ('nl_assertion', 'nl_assertions', 'met', 'NL_ASSERTION'),
+            'communicate_checks': ('info', 'communicate_info', 'met', 'COMMUNICATE'),
+        }
+        parents = items.set_index('item_key')
+        definitions, outcomes = {}, []
+        for row in attempts.itertuples():
+            parent = parents.loc[row.item_key]
+            criteria = parent.task['evaluation_criteria']
+            reward = row.simulation.get('reward_info') or {}
+            released = []
+            if reward.get('db_check') is not None:
+                released.append(('DB', dict(rule='Released database-match verdict; individual field comparisons are unavailable'),
+                    reward['db_check']['db_match'], None))
+            for field, (identity, task_field, verdict, kind) in checks.items():
+                for check in reward.get(field) or []:
+                    definition = check[identity]
+                    released.append((kind, definition, check[verdict], definition in (criteria.get(task_field) or [])))
+            for kind, definition, verdict, matches_definition in released:
+                if type(verdict) is not bool:
+                    raise ValueError('A tau2 checker verdict is not boolean')
+                rule = dict(checker=kind, criterion=definition,
+                    contributes_to_task_reward=kind in (reward.get('reward_basis') or []),
+                    matches_embedded_task_definition=matches_definition)
+                component = kind + ':' + hashlib.sha256(json.dumps(rule, sort_keys=True).encode()).hexdigest()
+                spec = dict(self.grading['verifiers']['native'],
+                    recorded_harness_revision=parent['info'].get('git_commit'), checker=kind,
+                    evaluation_criteria=criteria)
+                verifier = (Judge(judged_by='llm', spec=json.dumps(spec, sort_keys=True))
+                    if kind in ('NL_ASSERTION', 'COMMUNICATE') else ExactMatcher(spec=json.dumps(spec, sort_keys=True)))
+                definitions[row.item_key, component] = dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion=dict(rule=json.dumps(rule, ensure_ascii=False, sort_keys=True)),
+                    verifier=verifier)
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=int(verdict)))
+            if not released and pd.isna(row.response):
+                # An interrupted simulation still belongs to its task, with an unknown outcome.
+                component = 'ungraded_task_outcome'
+                definitions[row.item_key, component] = dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion=parent.grading_criterion, verifier=parent.verifier)
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=None))
+        tables = {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'trial', 'response', 'test_condition', 'interactors']],
             'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

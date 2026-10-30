@@ -2,6 +2,7 @@
 """Curate released SciGym trajectories and their structural reaction-recovery scores."""
 
 import json
+import hashlib
 from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
@@ -10,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class SciGym(BenchmarkBuild):
@@ -120,12 +122,62 @@ class SciGym(BenchmarkBuild):
                                       "grade_origin": "not_released_not_rerun" if row.native_metric == "ste"
                                                       else "recomputed_from_released_final_model"}, ensure_ascii=False)
                            for row in responses.itertuples()]
-        return {
+        items["testlet_id"] = items.raw_item_id
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "trial"]],
             "traces": traces,
         }
+        return _reaction_items(tables, responses, scores, missing, added)
+
+
+def _reaction_items(tables, observations, scores, missing, added):
+    """Keep one execution, its original metrics, and native reaction comparisons."""
+    parents = tables['items'].loc[tables['items'].item_key.str.endswith(':rms_with_modifiers_f1')].copy()
+    parents['item_key'] = parents.raw_item_id
+    parents['attachments'] = parents.grading_criterion.map(lambda value: [dict(path='reaction-reference.json',
+        data=value['reference_answer'].encode(), role='grading_reference', media_type='application/json')])
+    runs = observations.loc[observations.native_metric.eq('rpm_f1')].copy()
+    runs['response_key'] = runs.run_key
+    runs['item_key'] = runs.biomodel_id
+    metrics = {key: [dict(native_metric=row.native_metric, score=None if pd.isna(row.response) else row.response,
+        grade_origin='not_released_not_rerun' if row.native_metric == 'ste' else 'recomputed_from_released_final_model')
+        for row in group.itertuples()] for key, group in observations.groupby('run_key', sort=False)}
+    traces = pd.DataFrame([dict(response_key=row.run_key, trace=json.dumps(dict(source_rows=row.source_rows,
+        chat_history=row.chat_history, final_model=row.final_model, measurements=metrics[row.run_key]), ensure_ascii=False, allow_nan=False))
+        for row in runs.itertuples()])
+    definitions, outcomes = {}, []
+    protocol = json.loads(tables['items'].iloc[0].verifier.spec)
+    del protocol['native_metric']
+    for row, targets, predictions in zip(scores.itertuples(), missing, added, strict=True):
+        checks = []
+        for signature in sorted(targets):
+            reference = json.dumps(dict(zip(('reactants', 'products', 'modifiers'), signature)), sort_keys=True)
+            name = row.condition + ':reaction:' + hashlib.sha256(reference.encode()).hexdigest()
+            checks.append((name, float(signature in predictions), dict(reference_answer=reference,
+                rule=json.dumps(dict(condition=row.condition, rule='The final model recovers this missing reference reaction under the native species-set comparison.',
+                    reference_asset='reaction-reference.json'), sort_keys=True),
+                response_scale=dict(kind='discrete', values=[0, 1], direction='higher_is_better'))))
+        name = row.condition + ':extra'
+        checks.append((name, float(len(predictions - targets)), dict(reference_answer=None,
+            rule=json.dumps(dict(condition=row.condition, rule='Number of added reaction signatures absent from the missing reference set.',
+                reference_asset='reaction-reference.json'), sort_keys=True),
+            response_scale=dict(kind='interval', min=0, max=None, direction='lower_is_better'))))
+        for name, grade, criterion in checks:
+            definitions[row.biomodel_id, name] = dict(parent_item_key=row.biomodel_id, component_id=name,
+                grading_criterion=criterion, verifier=ExactMatcher(spec=json.dumps(dict(
+                    kind='native_reaction_set_comparison', condition=row.condition, original_protocol=protocol), sort_keys=True)))
+            outcomes.append(dict(parent_response_key=row.run_key, component_id=name, response=grade))
+    ste = tables['items'].loc[tables['items'].item_key.str.endswith(':simulation_trajectory_error')].set_index('raw_item_id')
+    for row in runs.itertuples():
+        original = ste.loc[row.biomodel_id]
+        definitions[row.biomodel_id, 'ste'] = dict(parent_item_key=row.biomodel_id, component_id='ste',
+            grading_criterion=original.grading_criterion, verifier=original.verifier)
+        outcomes.append(dict(parent_response_key=row.run_key, component_id='ste', response=None))
+    return component_tables(dict(subjects=tables['subjects'], items=parents,
+        responses=runs[['response_key', 'subject_key', 'item_key', 'trial', 'response']], traces=traces),
+        pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

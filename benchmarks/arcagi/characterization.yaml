@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 35260
-    logical_sha256: 6eca73f140121d6808bcf2f1de346411df24fffab036e5ccd2fe5f12c0e04560
+    logical_sha256: 8b59c660ab23e64c3aa060afa58af2f6ac82d2b2145d7a04d447ab13317912a9
+  benchmarks:
+    rows: 1
+    logical_sha256: bfbca2299c9dc5c9234fcb17a219245e0a25667383912509f74e2fc0992c2680
+  items:
+    rows: 599
+    logical_sha256: dbf7aecad666421e2faf7c25481ad64ce77ba98dbe0c7353cea5ee679b8e79b0
+  responses:
+    rows: 39646
+    logical_sha256: a372b834222e92190d638ff6505aa9b8ffd78feff87676a09c4c26b203c936b5
   subjects:
     rows: 80
     logical_sha256: 282bf47f9cb76b19b191bac973133f5e59720a72d5c4e2433d589a1815aa5bb4
-  responses:
-    rows: 35260
-    logical_sha256: b9633593866259ec4e94d00dabd2d7aeb5f2629a619e2087af6c8d3608fb2887
-  items:
-    rows: 526
-    logical_sha256: 400e86350062154cb011f70d85c957bdf73562149a336d00a5709f4669d16f48
-  benchmarks:
-    rows: 1
-    logical_sha256: 1a156f0566c7cbce20dfd6e8585d765f54cc33d06c1f310dbf84e25d1c290333
 source_claims:
   source_result_files:
     kind: count
@@ -133,3 +133,35 @@ source_claims:
     scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
       grades remain distinct from published judgments.
     expected: 35260
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 35260
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 39646
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 599
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 514

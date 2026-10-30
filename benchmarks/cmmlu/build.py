@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 """Curate the complete OpenCompass CMMLU predictions with explicit grading provenance."""
 
+import hashlib
 import json
 import sys
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+
+
+def testlet_id(content, cot_instruction):
+    """Remove only the native optional instruction in the prompt header."""
+    header, separator, question = content.partition('\n\n')
+    stimulus = header.removesuffix(' ' + cot_instruction) + separator + question
+    return hashlib.sha256(unicodedata.normalize('NFC', stimulus).strip().encode()).hexdigest()
 
 
 class CMMLU(BenchmarkBuild):
@@ -72,6 +81,7 @@ class CMMLU(BenchmarkBuild):
             prompt_condition=row.prompt_condition) for row in subjects.itertuples()]
         items = attempts.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.category + "/" + items.source_row.astype(str) + "/prompt-" + items.item_key
+        items['testlet_id'] = items.content.map(lambda content: testlet_id(content, labels['cot_instruction']))
         items["features"] = [dict(category=row.category, prompt_condition=row.prompt_condition) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=answer, rule=self.grading["rule"]) for answer in items.gold]
         items["verifier"] = ExactMatcher(spec=json.dumps(protocol, sort_keys=True))
@@ -87,7 +97,7 @@ class CMMLU(BenchmarkBuild):
             for row in attempts.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }

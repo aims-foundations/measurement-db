@@ -2,6 +2,7 @@
 """Curate DQVis's published individual expert reviews without regrading outputs."""
 
 import hashlib
+import unicodedata
 import json
 import sys
 from pathlib import Path
@@ -62,9 +63,10 @@ class DQVis(BenchmarkBuild):
         traces = reviews[["response_key"]].copy()
         traces["trace"] = [json.dumps(dict(source_file=paths["reviews"], source_row=row.source_row,
             record=row.record), ensure_ascii=False, allow_nan=False) for row in reviews.itertuples()]
+        items["testlet_id"] = items.content.map(lambda value: hashlib.sha256(unicodedata.normalize("NFC", value).encode()).hexdigest())
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": reviews[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

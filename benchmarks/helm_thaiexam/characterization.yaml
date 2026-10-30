@@ -5,7 +5,7 @@ tables:
     logical_sha256: 8d7c3f7f64ba6734e1cbf95d5fc5fc91d11be6f8cbc4a4fd3e0c7c09a8fa956e
   items:
     rows: 565
-    logical_sha256: e73183261e21c2116b9a4428194a6b458549469194df7b3a0cdfc1f22eb80484
+    logical_sha256: e1afecacf4e5c2bf0f71784158fc4b2f40642371db45335b335979648d7fbd04
   responses:
     rows: 23730
     logical_sha256: 85913d3192fa35cc1e32ba5f6f31c1e2d7d17a8aba5117dac5c5ec31f7f7e8b3
@@ -20,31 +20,27 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
     expected: 210
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
     expected: 23730
   source_successes:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
     expected: 10990
   source_ungraded:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
     expected: 0

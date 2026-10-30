@@ -104,9 +104,10 @@ class MLRBench(BenchmarkBuild):
             "source_review": row.source_review, "source_generation": row.source_generation,
             "generation": row.generation, "assessment": row.assessment,
         }, ensure_ascii=False), axis=1))
+        items["testlet_id"] = items.task_id.astype(str)
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces[["response_key", "trace"]],
         }

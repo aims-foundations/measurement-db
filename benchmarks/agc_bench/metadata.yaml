@@ -8,7 +8,10 @@ benchmark:
     and panel judgments define separate grading protocols. Aggregate dataset_z, calibrated JRT targets and
     distilled AGC-Judge predictions remain trace metadata. Known invalid ratings and non-grade statistics are
     flagged in traces and have null responses. Exact API configurations and native judge identities are not
-    fully recorded; source run labels are preserved without inventing settings.
+    fully recorded; source run labels are preserved without inventing settings. Each Connections reference
+    group is a binary item, replayed with the pinned native matcher and checked against every released
+    full-wall score. Canonical and panel measurements share one physical generation; all original
+    aggregate scores and rating records remain on that execution.
   paper_url: https://arxiv.org/abs/2607.01152
   data_source_url: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
   subject_type: model

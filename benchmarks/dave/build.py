@@ -81,6 +81,7 @@ class DAVE(BenchmarkBuild):
         items = items.assign(raw_item_id=items.source_item_key, content=items.prompt,
                              grading_criterion=items.reference.map(lambda value: {"reference_answer": value, "rule": self.grading["rule"]}),
                              verifier=ExactMatcher(spec=json.dumps(self.grading["verifiers"]["recorded_choice"], sort_keys=True)))
+        items['testlet_id'] = items.source_item_key
         items["features"] = items[["split", "question_type"]].to_dict("records")
 
         # 5. Read each native media member once; ZIP archives remain unchanged in raw/.
@@ -107,7 +108,7 @@ class DAVE(BenchmarkBuild):
         traces = responses[["response_key"]].assign(trace=responses.response_dict.map(lambda value: json.dumps(value, ensure_ascii=False, sort_keys=True)))
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

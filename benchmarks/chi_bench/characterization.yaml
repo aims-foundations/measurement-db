@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 7700
-    logical_sha256: 19c263c89e1408a6ea7c17f2001feea88fd756374e666c76673675bea3c55e20
+    logical_sha256: 953789f017b4da08fe1c0e701e34c78d26cef435e825e058a232c8e39a578aac
+  benchmarks:
+    rows: 1
+    logical_sha256: 4f127c0098df0c6b9420e5b840e8ac01c10aa18a7479f2bb81bd805c601109cf
+  items:
+    rows: 16335
+    logical_sha256: 74b000c67577ba2bbad2eceef177eb4f05656e4e4f7876a56448841b26cd8e7b
+  responses:
+    rows: 33820
+    logical_sha256: 406c553eded3626dcbfa66b60a2ffb3da9c3dae7568c864c5e1cd22dbacf5b79
   subjects:
     rows: 62
     logical_sha256: 6c270d3b443832c2f68a661880856aeae6e93be5e92372d28fa7f043001c435f
-  responses:
-    rows: 7700
-    logical_sha256: e928985f6955f86e1e67be017894cc067f7a7cd1ec2154d66ec4183056f32e52
-  items:
-    rows: 775
-    logical_sha256: c047f1966efe0f4edbf5abdba34ca05f3b88c396e8470515748ed2dab15780e3
-  benchmarks:
-    rows: 1
-    logical_sha256: 354cf5417e819ad978c4d9b6af76594941e2a3d4f3362d90c7fed4b6f921c1a2
 source_claims:
   source_packets:
     kind: count
@@ -133,3 +133,35 @@ source_claims:
     scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
       revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
     expected: 3675
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 7700
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 33820
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 16335
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 75

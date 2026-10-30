@@ -2,6 +2,7 @@
 
 import ast
 import hashlib
+import unicodedata
 import json
 from pathlib import Path
 import random
@@ -225,8 +226,9 @@ class Wonderbread(BenchmarkBuild):
             sort_keys=True, allow_nan=False) for row in attempts.itertuples()]
         traces = long[['response_key', 'origin']].merge(attempts[['origin', 'trace']], on='origin', validate='many_to_one')
         responses = long[['response_key', 'subject_key', 'item_key', 'response']].assign(test_condition=p['labels']['condition'])
+        items["testlet_id"] = items.context_json.map(lambda value: hashlib.sha256(unicodedata.normalize("NFC", value).encode()).hexdigest())
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             responses=responses, traces=traces[['response_key', 'trace']])
 
 

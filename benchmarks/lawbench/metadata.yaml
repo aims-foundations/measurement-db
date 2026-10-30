@@ -12,6 +12,9 @@ benchmark:
     be negative and is not clipped. Tasks 2-9/2-10 have published aggregate results but no released per-item prediction
     files and receive no fabricated observations. Numeric historical inference settings and exact model revisions
     are unrecorded. Reported reference labels are preserved, including disputed labels in upstream issues.
+    Named reference labels, statutes and entity types in tasks 2-3, 3-1, 3-3 and 2-6 become related items.
+    Preserve binary reference hits, native per-entity text similarity and a separate extra-prediction count.
+    Each execution retains its original combined score and complete source record; native parser quirks remain unchanged.
   paper_url: https://arxiv.org/abs/2309.16289
   data_source_url: https://github.com/open-compass/LawBench
   subject_type: model
@@ -94,6 +97,27 @@ grading:
   rule: Preserve source inputs and references; reconstruct only mathematically per-item metrics with unchanged source
     code. Null denotes an unavailable individual grade.
   verifiers:
+    components:
+      reference_hit:
+        rule: Whether the unchanged native parser includes this required reference label or statute. Retain the original set F1 on the execution; incorrect extra predictions have a separate count.
+        response_scale:
+          kind: discrete
+          values: [0, 1]
+          direction: higher_is_better
+      entity_similarity:
+        rule: Native reading-comprehension F1 for this reference entity type and its extracted prediction; zero when the type is missing. Retain the original combined entity F1 on the execution.
+        response_scale:
+          kind: interval
+          min: 0
+          max: 1
+          direction: higher_is_better
+      extra_prediction_count:
+        rule: Count of distinct labels, statute numbers or entity types extracted by the native parser that are absent from the reference. This count is not a binary correctness flag.
+        response_scale:
+          kind: interval
+          min: 0
+          max: null
+          direction: lower_is_better
     1-1:
       kind: reconstructed_native_deterministic_metric
       metric: ROUGE-L

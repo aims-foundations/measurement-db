@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class CSEDB(BenchmarkBuild):
@@ -59,6 +60,7 @@ class CSEDB(BenchmarkBuild):
         if items.item_key.duplicated().any():
             raise ValueError("CSEDB reuses a case ID with conflicting content or grading")
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.item_key
         items["features"] = items.item_features.map(json.loads)
         items["grading_criterion"] = [{"rule": rule} for rule in items.rubric]
         items["verifier"] = Judge(spec=json.dumps(self.grading["verifiers"]["released_judge"], sort_keys=True), judged_by="llm")
@@ -108,12 +110,30 @@ class CSEDB(BenchmarkBuild):
             source_case=row.source_case, model_field=row.model, source_context=row.source_context,
             source_record=row.source_record, grading_status=row.grading_status),
             ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
-        return {
+        # 6. Dynamic rubrics release one judgment per rule; keep those decisions.
+        definitions, outcomes = [], []
+        for row in items.itertuples():
+            rubric = json.loads(row.rubric)
+            for index, criterion in enumerate(rubric['rules'].get('规则判断列表', []), 1):
+                definitions.append(dict(parent_item_key=row.item_key, component_id=f'criterion:{index}',
+                    grading_criterion={'rule': json.dumps(dict(parent_rubric=rubric,
+                        selected_criterion_index=index, selected_criterion=criterion), ensure_ascii=False, sort_keys=True)},
+                    verifier=Judge(judged_by='llm', spec=json.dumps(dict(
+                        self.grading['verifiers']['released_judge'], selected_criterion_index=index), sort_keys=True))))
+        for row, decisions in zip(records.itertuples(), results):
+            criteria = row.source_record.get('规则判断列表')
+            if not criteria:
+                continue
+            for index in range(1, len(criteria) + 1):
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=f'criterion:{index}',
+                    response=float(decisions[index - 1] == 'yes') if row.grading_status == 'released_grade' else None))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": responses,
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

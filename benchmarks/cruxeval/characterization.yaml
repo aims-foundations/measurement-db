@@ -11,7 +11,7 @@ tables:
     logical_sha256: 01bf1ce725f17e66c5e661a426f7cfa8503b84c3dc88795edb17e6578e5f865f
   items:
     rows: 4000
-    logical_sha256: 0c03faa2c4215199dc890b74fd7f24dc51b9bb045db1601538dccb59faf25200
+    logical_sha256: 86dc51a54543ae83efae5b85f6da3a6ff0bf33dac69e065b7604dcb0d2729b05
   benchmarks:
     rows: 1
     logical_sha256: 0e332ac6f6b7e5a2018dbcdb22b34b25ab0d1cb65c274c163cb7f8a7768ba660
@@ -20,80 +20,80 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 992000
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 4000
   source_subjects:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 31
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 992000
   source_functions:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 800
   source_configurations:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 124
   source_successes:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 389082
   source_failures:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 602918
   source_empty_outputs:
     kind: count
     origin: derived_from_data
     source: https://github.com/facebookresearch/cruxeval/tree/10d71b4ca99f2b6624bef9533ade5a0594ab7716
-    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py
-      and original evaluation/utils_general.py.
-    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify
-      all pass@1/pass@5 summaries without executing generated programs.
+    locator: samples/evaluation_results.zip, samples/model_generations.zip, data/cruxeval.jsonl, prompts.py and
+      original evaluation/utils_general.py.
+    scope: Match every recorded boolean verdict to its original generation, model settings and task; verify all
+      pass@1/pass@5 summaries without executing generated programs.
     expected: 148

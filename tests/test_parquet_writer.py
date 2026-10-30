@@ -47,3 +47,18 @@ def test_invalid_later_batch_does_not_overwrite_existing_file(tmp_path, monkeypa
     with pytest.raises(UnicodeEncodeError):
         writer.write_parquet(data, output)
     assert output.read_bytes() == b"previous release"
+
+
+def test_short_attempts_share_bounded_groups_and_large_answers_stay_isolated(tmp_path):
+    traces = ['α' * 20] * 4 + ['β' * 2000] + ['γ' * 20] * 4
+    data = pd.DataFrame(dict(attempt_id=[f'a{i}' for i in range(len(traces))],
+        benchmark_id='benchmark', subject_id='subject', raw_attempt_id=[str(i) for i in range(len(traces))], trace=traces))
+    output = tmp_path / 'attempts.parquet'
+    writer.write_parquet(data, output, row_group_bytes=500)
+    file = pq.ParquetFile(output)
+    assert file.read().to_pylist() == data.to_dict('records')
+    assert file.num_row_groups < len(data)
+    for index in range(file.num_row_groups):
+        group = file.read_row_group(index)
+        assert group.nbytes <= 500 or group.num_rows == 1
+        assert file.metadata.row_group(index).column(4).statistics is None

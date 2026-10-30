@@ -69,6 +69,7 @@ class DisCo(BenchmarkBuild):
         items["attachments"] = [[dict(data=row.image_bytes, path=row.image_path, media_type="image/png", role="input")]
             if row.mode == "single_image" else [] for row in items.itertuples()]
         items["raw_item_id"] = items["movie"] + "/" + items.frame_type + "/" + items.scene.astype(str) + "/" + items.shot.astype(str) + "/" + items["mode"]
+        items['testlet_id'] = items.raw_item_id.str.rsplit("/", n=1).str[0]
         items["features"] = [dict(query_mode=row.mode, frame_type=row.frame_type,
             input_scope=parameters["input_scope"]["note"]) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=json.dumps(list(answers), ensure_ascii=False),
@@ -89,7 +90,7 @@ class DisCo(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

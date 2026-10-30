@@ -14,7 +14,7 @@ tables:
     logical_sha256: f76a3d28d5d452057f63a2b2447777a664b32c809c5b3d87abda2b062f80bd00
   items:
     rows: 3922
-    logical_sha256: 6df45b3f04be6a81b00958020c7fb5ee06ae09ccde92813a3b1717d78cf129ea
+    logical_sha256: 1498d70f4cb76262a7d72bfac85cd5b0e6596df82e8419b387752a345d7040d2
   benchmarks:
     rows: 1
     logical_sha256: 86d167d0dbbb7f537625f4f8bf79922fc19bdaed22917554199b5f3b6adf5e11
@@ -23,79 +23,71 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://huggingface.co/datasets/gorjanradevski/dave/tree/fd4d94a1d57726b3788dff3616494a70d5864ad8
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 2426
   source_core_records:
     kind: count
     origin: derived_from_data
     source: https://github.com/gorjanradevski/dave/tree/096818b91692f8eef879c264b053078ddac350f1/results
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 19408
   ambiguous_media_records:
     kind: count
     origin: derived_from_data
     source: https://github.com/gorjanradevski/dave/tree/096818b91692f8eef879c264b053078ddac350f1/results
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 160
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/gorjanradevski/dave/tree/096818b91692f8eef879c264b053078ddac350f1/results
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 19248
   source_models:
     kind: count
     origin: derived_from_data
     source: https://github.com/gorjanradevski/dave/tree/096818b91692f8eef879c264b053078ddac350f1/results
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 8
   source_assets:
     kind: count
     origin: derived_from_data
     source: https://huggingface.co/datasets/gorjanradevski/dave/tree/fd4d94a1d57726b3788dff3616494a70d5864ad8
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 4193
   reordered_source_records:
     kind: count
     origin: derived_from_data
     source: https://github.com/gorjanradevski/dave/tree/096818b91692f8eef879c264b053078ddac350f1/results
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 4701
   source_successes:
     kind: count
     origin: derived_from_data
     source: https://github.com/gorjanradevski/dave/tree/096818b91692f8eef879c264b053078ddac350f1/results
-    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media
-      archives.
-    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous
-      bank entries; records with reordered positions are resolved by task content and reference. Assets
-      count unique exact byte payloads.
+    locator: Official multimodal result lists, joined to the pinned gorjanradevski/dave HF bank and media archives.
+    scope: Eight end-to-end models on Epic Kitchens and Ego4D. Excludes 160 responses to 20 ambiguous bank entries;
+      records with reordered positions are resolved by task content and reference. Assets count unique exact byte
+      payloads.
     expected: 6948

@@ -110,6 +110,7 @@ class AlphaSQL(BenchmarkBuild):
             "database_id": row.db_id, "schema": row.schema_record,
             "input_files": [entry["path"] for entry in row.attachments]}, ensure_ascii=False)
             for row in items.itertuples()]
+        items['testlet_id'] = items.db_id
         items["features"] = [{"database_id": row.db_id, "difficulty": row.difficulty} for row in items.itertuples()]
         items["grading_criterion"] = [{"reference_answer": sql, "rule": self.grading["rule"]} for sql in items.SQL]
         items["verifier"] = ExactMatcher(spec=json.dumps(grading, sort_keys=True))
@@ -127,7 +128,7 @@ class AlphaSQL(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

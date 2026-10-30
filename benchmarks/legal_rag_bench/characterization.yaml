@@ -14,7 +14,7 @@ tables:
     logical_sha256: 84825dbfad8ada3291c7ae57568a2fc69d9b52d67dcf45c717a43b7f576992d9
   items:
     rows: 300
-    logical_sha256: 871366e68220d8607d8038d1da87fcda0e35c1f9b1aa4a2cde17927183ca7b98
+    logical_sha256: 20ee9ffdce77e3dceb99797b8b8e415970cc28bd54b37fc1a3fb6efaa23d4e14
   benchmarks:
     rows: 1
     logical_sha256: 198aefdc9a5aa201c15b2cccdd49fc676fce4de4493bdcecdcac6d7595eb911b
@@ -24,72 +24,72 @@ source_claims:
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 1800
   source_answers:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 600
   source_questions:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 100
   source_items:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 300
   source_configurations:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 6
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 1800
   source_retrieved_passages:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 3000
   source_corpus_passages:
     kind: count
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected: 4876
   criterion_successes:
     kind: aggregate
     origin: derived_from_data
     source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
     locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
-    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
-      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence, retrieved
+      passage text, pipeline identities, grading instruments and corpus bytes.
     expected:
       correctness: 489
       groundedness: 549

@@ -2,6 +2,8 @@
 """Tabulate original Preference Dissection choices without reinterpreting them as accuracy."""
 
 import json
+import unicodedata
+import hashlib
 from pathlib import Path
 import sys
 
@@ -42,6 +44,7 @@ class PreferenceDissection(BenchmarkBuild):
         subjects['features'] = [dict(harness=labels['harness'], source_model_label=model)
             for model in subjects.subject_key]
         items = pairs.rename(columns={'source_row': 'item_key'}).copy()
+        items["testlet_id"] = items["query"].map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         items['features'] = [dict(input_scope=labels['input_scope']) for _ in items.index]
         items['grading_criterion'] = [dict(rule=self.grading['rule']) for _ in items.index]
         items['verifier'] = ExactMatcher(spec=json.dumps(self.grading['verifiers']['preference'], sort_keys=True))
@@ -57,7 +60,7 @@ class PreferenceDissection(BenchmarkBuild):
         traces['trace'] = [json.dumps(dict(source_file=source_file, source_row=row.source_row,
             source_model_label=row.subject_key, preference_label=row.preference_label), ensure_ascii=False)
             for row in responses.itertuples()]
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

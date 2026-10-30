@@ -7,8 +7,12 @@ benchmark:
     The Deep Research examples have two passes per question; Wide Research has one.
     Items retain the initial system and user messages recorded with the actual attempt,
     excluding reference answers and later retrieved information from the input.
-    Import the published Deep title-matching judgments and Wide intersection-over-union
-    scores unchanged. Original inference exports retain richer candidate metadata than
+    Deep title-matching judgments remain task-level observations. Each Wide reference
+    paper is a binary retrieval check; its explicitly released hit or miss becomes an
+    item in the search-task testlet. The number of extra references remains a separate
+    lower-is-better numeric item. The original intersection-over-union score and full
+    evaluation record are retained on the execution, not duplicated as another check.
+    Original inference exports retain richer candidate metadata than
     the Deep evaluation copies; traces preserve the original pass and complete evaluation
     context, including search messages, timing, candidate state and auxiliary statistics.
     All released attempts have a recorded judgment. Their model label comes from the
@@ -25,12 +29,9 @@ benchmark:
   tags: [scientific_literature_discovery, research_agents, arxiv_search]
   modality: [text]
   domain: [science, reasoning, agents_and_tool_use]
-  response_type: continuous
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   release_date: '2026-04'
   multi_single_turn: multi_turn
@@ -72,6 +73,7 @@ grading:
   verifiers:
     deep:
       kind: recorded_llm_title_matching
+      aggregate_scale: {kind: discrete, values: [0, 1], direction: higher_is_better}
       source: https://github.com/CherYou/AutoResearchBench/blob/48bf934cc131968311434aa37649cbf32ca53bc0/evaluate/evaluate_deep_search.py
       logic: >-
         Import pass_scores unchanged. The released grader asks an LLM whether candidate
@@ -82,9 +84,30 @@ grading:
         replace recorded judgments with exact string matching or new judge calls.
     wide:
       kind: recorded_arxiv_set_overlap
+      aggregate_scale: {kind: interval, min: 0, max: 1, direction: higher_is_better}
       source: https://github.com/CherYou/AutoResearchBench/blob/48bf934cc131968311434aa37649cbf32ca53bc0/evaluate/evaluate_wide_search.py
       logic: >-
         Import the recorded IoU of normalized predicted and reference arXiv-ID sets,
         rounded to six decimal places. Two empty sets score 1. Use the reference IDs
         recorded by the evaluation, which identifies its ground truth as an external
         file. Preserve fractional values; total_passes is a trial count, not a grade.
+      components:
+        reference:
+          rule: >-
+            A required reference arXiv ID scores 1 when listed in the released hit_ids
+            and 0 when listed in missed_ids. The complete task reference roster comes
+            from gt_arxiv_ids; missing historical verdicts are not inferred from IoU.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: higher_is_better
+        extra_reference_count:
+          rule: >-
+            Count the distinct arXiv IDs in the released extra_ids list. This is a
+            native error count, not a binary grade. The source defines no fixed
+            universe of non-reference papers from which to create individual items.
+          response_scale:
+            kind: interval
+            min: 0
+            max: null
+            direction: lower_is_better

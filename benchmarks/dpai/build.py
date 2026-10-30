@@ -8,6 +8,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class DPAI(BenchmarkBuild):
@@ -59,6 +60,7 @@ class DPAI(BenchmarkBuild):
         # 4. Keep the two information conditions and their different grading scales distinct.
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.item_key
+        items["testlet_id"] = items.task_id
         items["content"] = [json.dumps(dict(problem_statement=row.problem_statement, repo=row.repo,
             base_commit=row.base_commit, phase=row.phase, test_information=(dict(
                 FAIL_TO_PASS=row.FAIL_TO_PASS, PASS_TO_PASS=row.PASS_TO_PASS)
@@ -77,12 +79,34 @@ class DPAI(BenchmarkBuild):
         traces = observations[["response_key", "source_file", "run_id", "task_id", "phase", "record"]].copy()
         traces["trace"] = [json.dumps(row, ensure_ascii=False, allow_nan=False)
             for row in traces.drop(columns="response_key").to_dict("records")]
-        return {
+        # 6. Preserve each named test in its actual post-patch evaluation stage.
+        # Baseline executions precede the model patch and are not model outcomes.
+        definitions, outcomes = {}, []
+        for row in observations.itertuples():
+            for stage in ("all_tests_validation", "all_tests_after_prediction"):
+                evaluation = row.record["evaluations"].get(stage) or {}
+                result = (evaluation.get("data") or {}).get("test_result") or {}
+                for name, test in (result.get("tests") or {}).items():
+                    if test["test_name"] != name or test["status"] not in {"success", "failed", "skipped"}:
+                        raise ValueError("Unknown DPAI test identifier or status")
+                    component = stage + ":" + name
+                    definitions[row.item_key, component] = dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion=dict(rule=json.dumps(dict(test_name=name, evaluation_stage=stage,
+                            phase=row.phase, test_patch=row.test_patch), ensure_ascii=False, sort_keys=True),
+                            response_scale=dict(kind="discrete", values=[0, 1], direction="higher_is_better")),
+                        verifier=ExactMatcher(spec=json.dumps(dict(
+                            self.grading["verifiers"][row.phase]["implementation"],
+                            field="evaluations." + stage + ".data.test_result.tests[...].status",
+                            test_name=name), sort_keys=True)))
+                    outcomes.append(dict(parent_response_key=row.response_key, component_id=component,
+                        response=None if test["status"] == "skipped" else float(test["status"] == "success")))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces[["response_key", "trace"]],
         }
+        return component_tables(tables, pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

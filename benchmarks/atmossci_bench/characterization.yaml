@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 37421
-    logical_sha256: 2c7c155d7bd9de1275f04b29ed5af4d5f4f0a131f68be6ef3d83f488b63e1cf8
+    logical_sha256: 1243fd8d197c1dcf419989789fba778c819efa1e7b61ae208cc5a3f0bd546a66
+  benchmarks:
+    rows: 1
+    logical_sha256: eff0ee56c5301f4e0c75c78e164bce3d5ccd6faf661f703dc6e4ea06c2c4e1e7
+  items:
+    rows: 3036
+    logical_sha256: 36c47bc85db914563f72b99a3c6653811bdd5f5c1687da745c38fdd0530c367f
+  responses:
+    rows: 40931
+    logical_sha256: 56d95c5b01020af1180dd449fb75e1549cdf4b4a0ca440a815b6168052e1cc9b
   subjects:
     rows: 54
     logical_sha256: 7a8b795888aba1352cc3194260a9ee23af692d2ffad89b613330905f4e0cddb0
-  responses:
-    rows: 37421
-    logical_sha256: 96e2ac884bb728fc5c93c2bf0434539057c27a149faf561b4ccacf81eb35bda8
-  items:
-    rows: 2802
-    logical_sha256: 312989834e29d4f823ceb681692dc64d87a6a07f4646a14a7b425004c7e74933
-  benchmarks:
-    rows: 1
-    logical_sha256: 3318b5443645d63598a1244d2c82c5f2ff2c57fce0128f4a8f7db71bc45eddd4
 source_claims:
   source_nonempty_runs:
     kind: count
@@ -205,3 +205,35 @@ source_claims:
     scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
       and ungraded attempts.
     expected: 54
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 37421
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 40931
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3036
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 2038

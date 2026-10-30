@@ -1,8 +1,10 @@
 """Tabulate recorded decompiler outputs using the original edit-similarity rule."""
 
+import hashlib
 import json
 from pathlib import Path
 import sys
+import unicodedata
 
 import editdistance
 import pandas as pd
@@ -63,6 +65,8 @@ class DecompileBench(BenchmarkBuild):
         items['raw_item_id'] = items.split + '/' + items['index'].astype(str)
         items['features'] = items[['split', 'opt', 'language']].to_dict('records')
         references = items[['func', 'func_dep', 'test']].to_dict('records')
+        items['testlet_id'] = [hashlib.sha256(unicodedata.normalize('NFC', json.dumps(row, sort_keys=True)).encode()).hexdigest()
+            for row in references]
         items['grading_criterion'] = [dict(rule=self.grading['rule'], reference_answer=json.dumps(row, sort_keys=True)) for row in references]
         items['verifier'] = ExactMatcher(spec=json.dumps(self.grading['verifiers']['edit_similarity'], sort_keys=True))
         subjects = pd.DataFrame({'subject_key': list(p['systems']), 'raw_label': list(p['systems'].values())})
@@ -74,7 +78,7 @@ class DecompileBench(BenchmarkBuild):
             unique[['record_key', 'source_records']], on='record_key', validate='many_to_one')
         evidence['trace'] = [json.dumps(row, sort_keys=True) for row in evidence[['subject_key', 'prediction', 'source_records']].to_dict('records')]
         return dict(subjects=subjects,
-                    items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+                    items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
                     responses=responses, traces=evidence[['response_key', 'trace']])
 
 

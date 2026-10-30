@@ -10,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ArcAgi(BenchmarkBuild):
@@ -129,7 +130,10 @@ class ArcAgi(BenchmarkBuild):
         subjects["features"] = [dict(parameters["subject"], model_identifier=row.source_model, **json.loads(row.configuration))
                                 for row in subjects.itertuples()]
         items = observations.drop_duplicates("item_key")[["item_key", "task_id", "version", "puzzle"]].copy()
-        items["raw_item_id"] = items.item_key
+        # Historical snapshots may have identical puzzles. Their source alias
+        # remains on the attempt; the raw task coordinate is stable across them.
+        items["raw_item_id"] = items.version + '::' + items.task_id
+        items['testlet_id'] = items.task_id
         items["content"] = items.puzzle.map(lambda puzzle: json.dumps({"train": puzzle["train"],
             "test": [{"input": test["input"]} for test in puzzle["test"]]}, ensure_ascii=False, sort_keys=True))
         items["grading_criterion"] = items.puzzle.map(lambda puzzle: dict(rule=self.grading["rule"],
@@ -141,12 +145,21 @@ class ArcAgi(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(source_files=row.source_files, record=row.record,
             published_results=row.published_results, task_file=row.task_file, grade_origin=row.grade_origin),
             ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
-        return {
+        definitions = [dict(parent_item_key=row.item_key, component_id=str(index),
+            grading_criterion=dict(reference_answer=json.dumps(test['output']), rule=json.dumps(dict(test_grid_index=index,
+                rule='Either of the two released candidate grids must exactly match this test-grid reference'))),
+            verifier=row.verifier) for row in items.itertuples() for index, test in enumerate(row.puzzle['test'])]
+        outcomes = pairs[['response_key', 'pair_index', 'matched']].rename(columns={
+            'response_key': 'parent_response_key', 'pair_index': 'component_id', 'matched': 'response'})
+        outcomes['component_id'] = outcomes.component_id.astype(str)
+        outcomes['response'] = outcomes.response.astype(float)
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), outcomes)
 
 
 if __name__ == "__main__":

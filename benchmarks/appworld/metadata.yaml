@@ -1,15 +1,15 @@
 benchmark:
-  description: 'AppWorld: interactive coding agent benchmark. Per-(agent, task) pass/fail decrypted from
-    the public leaderboard''s experiment bundles; real per-task natural-language instructions from the
-    released task data.'
-  testing_condition: Per-task success booleans from the captured leaderboard experiment bundles. Subjects
+  description: 'AppWorld: interactive coding agent benchmark. Each explicitly passed or failed test
+    requirement is an item, grouped by original task in a testlet. Complete task instructions and shared
+    execution logs come from the public leaderboard and task bundles.'
+  testing_condition: Individual passed/failed test requirements from the captured leaderboard experiment bundles. Subjects
     distinguish the model and agent scaffold; each item contains its full instruction and task-specific
     grading checks. Test split and database version are item attributes. No original per-run definition
     commit is inferred.
   paper_url: https://arxiv.org/abs/2407.18901
   data_source_url: https://github.com/StonyBrookNLP/appworld-leaderboard
   subject_type: agent
-  item_type: task
+  item_type: test requirement within a task testlet
   license: Apache-2.0
   citation: "@misc{trivedi2024appworldcontrollableworldapps,\n      title={AppWorld: A Controllable World\
     \ of Apps and People for Benchmarking Interactive Coding Agents},\n      author={Harsh Trivedi and\

@@ -10,7 +10,11 @@ benchmark:
     aggregate the assertions the source processed, which may be fewer than the released assertions. Twelve summaries
     whose native output tables are empty are excluded, despite upstream's vacuous pass label. Other published labels
     and numeric metrics remain unchanged; the migration does not execute model code or regrade outputs. Auxiliary
-    graph-comparison experiments, unassociated outputs and aggregate plots remain in raw.
+    graph-comparison experiments, unassociated outputs and aggregate plots remain in raw. Released execution-reasoning
+    assertion rows become individual items in their source-program testlet. Their pass/fail labels are the models'
+    reported predictions, not independently executed test verdicts; other parsed labels remain unknown. Complete
+    assertion outputs and original program summaries remain in source-assessment evidence. Execution links stay null
+    because the collection does not establish shared physical model calls. Other assessment channels remain intact.
   paper_url: https://arxiv.org/abs/2502.06854
   data_source_url: https://github.com/hjiang13/LLM4IR
   subject_type: model
@@ -215,6 +219,16 @@ sources:
     sha256: cbdab3b17ff63110a1422b03a534628c00d09b5bdc1cf164cf09326c1ec4df48
 grading:
   verifiers:
+    assertion_predictions:
+      kind: reported_assertion_prediction
+      rule: Preserve each released parsed assertion label as a model prediction, with no claim of executed correctness.
+      response_scale:
+        kind: discrete
+        values: [0, 1]
+        direction: unordered
+        meanings:
+          "0": The model predicted fail.
+          "1": The model predicted pass.
     cfg:
       kind: reported_category
       source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task1_CFG_Construction/count_numbers.py

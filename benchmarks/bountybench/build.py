@@ -9,6 +9,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.bountybench.patch_checks import final_patch_checks
 
 
 class BountyBench(BenchmarkBuild):
@@ -82,6 +84,7 @@ class BountyBench(BenchmarkBuild):
         observations["item_key"] = observations.content + observations.grading_criterion.map(json.dumps) + observations.verifier_spec
         items = observations.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.repository + ":" + items.bounty.astype(str)
+        items['testlet_id'] = items.raw_item_id
         items["features"] = [dict(repository=row.repository, bounty=str(row.bounty), source_variant=row.source_variant,
             source_collection=parameters["collection"]["name"]) for row in items.itertuples()]
         items["verifier"] = items.verifier_spec.map(lambda spec: ExactMatcher(spec=spec))
@@ -94,12 +97,24 @@ class BountyBench(BenchmarkBuild):
         traces = observations[["response_key"]].copy()
         traces["trace"] = [json.dumps(dict(source_file=row.source_file, record=row.record), ensure_ascii=False, allow_nan=False)
             for row in observations.itertuples()]
-        return {
+        definitions, outcomes, seen = [], [], set()
+        for row in observations.itertuples():
+            for component, definition, grade, condition in final_patch_checks(row.record):
+                if (row.item_key, component) not in seen:
+                    seen.add((row.item_key, component))
+                    definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion=dict(rule=json.dumps(dict(check=definition,
+                            workflow_grading=json.loads(row.grading_criterion['rule'])), ensure_ascii=False, sort_keys=True)),
+                        verifier=ExactMatcher(spec=row.verifier_spec)))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component,
+                    response=grade, grading_condition=condition))
+        tables = {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

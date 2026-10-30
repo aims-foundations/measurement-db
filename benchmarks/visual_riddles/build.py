@@ -44,6 +44,7 @@ class VisualRiddles(BenchmarkBuild):
             riddles, on='image_id', how='left', validate='many_to_one').reset_index(drop=True)
         items['item_key'] = items.index
         items['raw_item_id'] = items.image_id + ':' + items.input_mode
+        items['testlet_id'] = items.image_id
         items['content'] = [row.question if row.input_mode == 'image' else json.dumps(
             dict(question=row.question, human_caption=row.human_caption), ensure_ascii=False)
             for row in items.itertuples()]
@@ -77,7 +78,7 @@ class VisualRiddles(BenchmarkBuild):
             source_entry=int(row.source_entry), image_id=row.image_id, native_record=row.native_record),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

@@ -154,21 +154,24 @@ class ProteinInvBenchSourceAuditTests(unittest.TestCase):
 
     def test_native_targets_full_probabilities_and_padding_convention(self):
         result=_proteininvbench(self.directory,self.frames,self.metadata)
-        self.assertEqual(result,dict(source_responses=12,source_traces=12,source_subjects=6,source_items=8,
-            source_original_proteins=4,source_assets=0,source_raw_only_collections=2,source_raw_only_predictions=2))
-        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
-        self.assertIn(float(np.float32(2/3)),self.frames['responses'].response.tolist())
+        self.assertEqual(result,dict(source_responses=12,source_traces=12,source_subjects=6,source_items=len(self.frames['items']),
+            source_original_proteins=4,source_assets=2,source_raw_only_collections=2,source_raw_only_predictions=2))
+        self.assertGreater(self.frames['attempts'].trace.str.len().max(),16000)
+        self.assertEqual(set(self.frames['responses'].response), {0., 1.})
+        self.assertIn(float(np.float32(2/3)), self.frames['attempts'].trace.map(lambda value: json.loads(value)['recorded_task_score']).tolist())
         shuffled={name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
         self.assertEqual(_proteininvbench(self.directory,shuffled,self.metadata),result)
 
     def test_corrupted_tables_fail_complete_original_record_checks(self):
-        cases=['grade','null_grade','subject_link','item_link','content','reference','rule','verifier','features','raw_item_id',
+        cases=['asset_bytes','testlet','grade','null_grade','subject_link','item_link','content','reference','rule','verifier','features','raw_item_id',
                'configuration','condition','trial','trace_title','trace_probabilities','trace_target','trace_vocabulary',
                'source_row','input_member','configuration_member','missing_response','missing_trace','duplicate_trace']
         for case in cases:
             frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
-            responses,items,traces=[frames[name] for name in ['responses','items','traces']]
-            if case=='grade':responses.loc[0,'response']=0.123
+            responses,items,traces=[frames[name] for name in ['responses','items','attempts']]
+            if case=='asset_bytes': frames['assets'].loc[0,'data']=b'wrong backbone'
+            elif case=='testlet': items.loc[0,'testlet_id']='wrong protein'
+            elif case=='grade':responses.loc[0,'response']=0.123
             elif case=='null_grade':responses.loc[0,'response']=None
             elif case=='subject_link':responses.loc[0,'subject_id']=next(x for x in frames['subjects'].subject_id if x!=responses.loc[0,'subject_id'])
             elif case=='item_link':responses.loc[0,'item_id']=next(x for x in items.item_id if x!=responses.loc[0,'item_id'])
@@ -184,10 +187,11 @@ class ProteinInvBenchSourceAuditTests(unittest.TestCase):
             elif case=='condition':responses.loc[0,'test_condition']='different_protocol'
             elif case=='trial':responses.loc[0,'trial']=2
             elif case=='missing_response':frames['responses']=responses.iloc[1:]
-            elif case=='missing_trace':frames['traces']=traces.iloc[1:]
+            elif case=='missing_trace':frames['attempts']=traces.iloc[1:]
             elif case=='duplicate_trace':traces.loc[0,'trace']=traces.loc[1,'trace']
             else:
-                trace=json.loads(traces.loc[0,'trace'])
+                wrapper=json.loads(traces.loc[0,'trace'])
+                trace=json.loads(wrapper['source_trace'])
                 if case=='trace_title':trace['record']['title']='wrong'
                 elif case=='trace_probabilities':trace['record']['pred_probs'][0][0]+=0.0001
                 elif case=='trace_target':trace['record']['true_seq'][0]=99
@@ -195,8 +199,9 @@ class ProteinInvBenchSourceAuditTests(unittest.TestCase):
                 elif case=='source_row':trace['source_row']=999
                 elif case=='input_member':trace['input_member']='wrong input'
                 elif case=='configuration_member':trace['configuration_member']='wrong run'
-                traces.loc[0,'trace']=json.dumps(trace)
-            with self.subTest(case=case),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                wrapper['source_trace']=json.dumps(trace)
+                traces.loc[0,'trace']=json.dumps(wrapper)
+            with self.subTest(case=case),self.assertRaises((AssertionError,ValueError,KeyError,IndexError,RuntimeError)):
                 _proteininvbench(self.directory,frames,self.metadata)
 
     def test_changed_original_input_grader_or_layout_is_rejected(self):
@@ -537,6 +542,7 @@ def get_acc(data, language, normalize=False):
         self.assertEqual(result['source_responses'], 6)
         self.assertEqual(result['source_subjects'], 3)
         self.assertEqual(result['source_items'], 3)
+        self.assertEqual(self.frames['items'].testlet_id.nunique(), 2)
         self.assertEqual(result['source_unavailable_grades'], 1)
         self.assertEqual(result['source_api_error_attempts'], 1)
         self.assertEqual(result['source_empty_result_files'], 1)
@@ -546,13 +552,14 @@ def get_acc(data, language, normalize=False):
         self.assertEqual(_tumlu(self.directory, reordered, self.metadata), result)
 
     def test_corruption_of_associations_grades_or_original_content_is_rejected(self):
-        for case in ['grade', 'missing_grade', 'invented_grade', 'item_link', 'content', 'verifier', 'source_row',
+        for case in ['testlet', 'grade', 'missing_grade', 'invented_grade', 'item_link', 'content', 'verifier', 'source_row',
                      'trace_output', 'prediction', 'grade_status', 'missing_response', 'missing_trace',
                      'trial', 'condition', 'subject_attribution', 'criterion']:
             frames = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
             responses, items, traces = (frames[key] for key in ['responses', 'items', 'traces'])
             available = responses.index[responses.response.notna()][0]
-            if case == 'grade': responses.loc[available, 'response'] = 1 - responses.loc[available, 'response']
+            if case == 'testlet': items.loc[0, 'testlet_id'] = 'wrong-parent'
+            elif case == 'grade': responses.loc[available, 'response'] = 1 - responses.loc[available, 'response']
             elif case == 'missing_grade': responses.loc[available, 'response'] = None
             elif case == 'invented_grade': responses.loc[responses.response.isna(), 'response'] = 0.0
             elif case == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
@@ -1101,13 +1108,18 @@ class ReasoningGymSourceAuditTests(unittest.TestCase):
             self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),'--output',str(output)])
         self.frames={p.stem:pd.read_parquet(p) for p in output.glob('*.parquet')}
 
+    def audit(self, frames):
+        from measurement_db.scripts.curate_benchmarks.testlet_reasoning_audit import verify
+        return verify(self.directory, frames, self.metadata)
+
     def test_complete_records_and_repeats(self):
-        result=_reasoning_gym(self.directory,self.frames,self.metadata)
+        result=self.audit(self.frames)
         self.assertEqual(result,dict(source_subjects=2,source_items=4,source_responses=10,source_traces=10,
             source_runs=2,source_task_files=2,source_ungraded_exceptions=2,source_boundary_roundoff=2,
-            source_partial_rewards=2,source_unattributed_completions=5))
+            source_partial_rewards=2,source_unattributed_completions=5,source_attempts=10,
+            source_component_observations=10,imported_items=4,source_observed_testlets=2))
         shuffled={k:v.iloc[::-1].reset_index(drop=True) for k,v in self.frames.items()}
-        self.assertEqual(_reasoning_gym(self.directory,shuffled,self.metadata),result)
+        self.assertEqual(self.audit(shuffled),result)
         self.assertEqual(self.frames['responses'].trial.max(),4)
 
     def test_changed_tables_are_rejected(self):
@@ -1116,7 +1128,7 @@ class ReasoningGymSourceAuditTests(unittest.TestCase):
             'missing_response','duplicate_response','missing_trace','trace_output','trace_score','trace_error','trace_row','trace_index']
         for change in changes:
             frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
-            responses,subjects,items,traces=[frames[k] for k in ['responses','subjects','items','traces']]
+            responses,subjects,items,traces=[frames[k] for k in ['responses','subjects','items','attempts']]
             if change=='grade':responses.loc[0,'response']=.123
             elif change=='null_to_zero':responses.loc[responses.response.isna(),'response']=0.
             elif change=='grade_to_null':responses.loc[0,'response']=float('nan')
@@ -1135,17 +1147,19 @@ class ReasoningGymSourceAuditTests(unittest.TestCase):
             elif change=='item_features':items.loc[0,'item_features']='dataset=wrong'
             elif change=='missing_response':frames['responses']=responses.iloc[1:]
             elif change=='duplicate_response':frames['responses']=pd.concat([responses,responses.iloc[:1]])
-            elif change=='missing_trace':frames['traces']=traces.iloc[1:]
+            elif change=='missing_trace':frames['attempts']=traces.iloc[1:]
             else:
-                trace=json.loads(traces.loc[0,'trace'])
+                evidence=json.loads(traces.loc[0,'trace'])
+                trace=json.loads(evidence['source_trace'])
                 if change=='trace_row':trace['source_row']=99
                 elif change=='trace_index':trace['completion_index']=99
                 elif change=='trace_output':trace['original_completion']['full_model_response']='wrong'
                 elif change=='trace_score':trace['original_completion']['score']=.99
                 elif change=='trace_error':trace['original_completion']['error']='invented error'
-                traces.loc[0,'trace']=json.dumps(trace)
+                evidence['source_trace']=json.dumps(trace)
+                traces.loc[0,'trace']=json.dumps(evidence)
             with self.subTest(change=change),self.assertRaises((ValueError,KeyError,RuntimeError,IndexError)):
-                _reasoning_gym(self.directory,frames,self.metadata)
+                self.audit(frames)
 
     def test_changed_native_records_are_rejected(self):
         path=self.documents[self.run];original=path.read_text()
@@ -1162,7 +1176,7 @@ class ReasoningGymSourceAuditTests(unittest.TestCase):
             else:row['completions'].pop()
             path.write_text(json.dumps(data))
             with self.subTest(change=change),self.assertRaises((ValueError,KeyError,RuntimeError,IndexError)):
-                _reasoning_gym(self.directory,self.frames,self.metadata)
+                self.audit(self.frames)
         path.write_text(original)
 
     def test_new_identity_conflict_and_nonfinite_rewards_stop_build(self):
@@ -1381,8 +1395,9 @@ class ImgEditAuditTests(unittest.TestCase):
         self.tasks = {'12': dict(id='scene/b.jpg', prompt='Replace the blue cup.', edit_type='replace'),
             '3': dict(id='scene/a.jpg', prompt='Add a green ball.', edit_type='add'),
             '21': dict(id='scene/a.jpg', prompt='Add a red ball.', edit_type='add')}
+        rubric = '\n'.join(name + ': A number from 1 to 5.' for name in ['Compliance', 'Naturalness', 'Integrity'])
         self.inputs = {paths['tasks']: json.dumps(self.tasks).encode(),
-            paths['rubrics']: json.dumps({'replace': 'Replacement rubric: <edit_prompt>', 'add': 'Addition rubric: <edit_prompt>'}).encode(),
+            paths['rubrics']: json.dumps({'replace': 'Replacement rubric: <edit_prompt>\n' + rubric, 'add': 'Addition rubric: <edit_prompt>\n' + rubric}).encode(),
             paths['input_prefix'] + 'scene/a.jpg': b'original first image',
             paths['input_prefix'] + 'scene/b.jpg': b'original second image'}
         with tarfile.open(raw / paths['inputs'], 'w') as archive:
@@ -1410,7 +1425,9 @@ class ImgEditAuditTests(unittest.TestCase):
         observed = _imgedit(self.directory, self.frames, self.metadata)
         self.assertEqual(observed, dict(source_subjects=1, source_items=3, source_responses=3, source_traces=3,
             source_assets=2, source_input_files=2, source_generated_images=3, source_saved_grades=2,
-            source_ungraded_attempts=1, source_aggregate_scores_reconciled=3))
+            source_ungraded_attempts=1, source_aggregate_scores_reconciled=3,
+            source_attempts=3, source_component_observations=9, imported_items=9, source_observed_testlets=3,
+            source_ungraded_components=0))
         shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
         self.assertEqual(_imgedit(self.directory, shuffled, self.metadata), observed)
 
@@ -1421,9 +1438,12 @@ class ImgEditAuditTests(unittest.TestCase):
             'trace_output', 'image_bytes', 'image_attachment']
         for change in changes:
             frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
-            responses, items, subjects, traces = [frames[n] for n in ['responses', 'items', 'subjects', 'traces']]
+            responses, items, subjects, traces = [frames[n] for n in ['responses', 'items', 'subjects', 'attempts']]
             if change == 'grade': responses.loc[responses.response.notna(), 'response'] = 1.0
-            elif change == 'missing_to_failure': responses.loc[responses.response.isna(), 'response'] = 1.0
+            elif change == 'missing_to_failure':
+                index = next(i for i, text in traces.trace.items() if json.loads(text)['recorded_task_score'] is None)
+                record = json.loads(traces.loc[index, 'trace']); record['recorded_task_score'] = 1.0
+                traces.loc[index, 'trace'] = json.dumps(record)
             elif change == 'trial': responses.loc[0, 'trial'] = 2
             elif change == 'subject_link': responses.loc[0, 'subject_id'] = 'unknown_subject'
             elif change == 'item_link': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
@@ -1438,13 +1458,15 @@ class ImgEditAuditTests(unittest.TestCase):
             elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
             elif change == 'missing_response': frames['responses'] = responses.iloc[1:]
             elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
-            elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif change == 'missing_trace': frames['attempts'] = traces.iloc[1:]
             elif change.startswith('trace_'):
-                trace = json.loads(traces.loc[0, 'trace'])
+                attempt = json.loads(traces.loc[0, 'trace'])
+                trace = json.loads(attempt['source_trace'])
                 if change == 'trace_key': trace['source_key'] = 'wrong'
                 elif change == 'trace_text': trace['judge_text'] = trace['judge_text'][:8]
                 else: trace['output']['sha256'] = 'wrong'
-                traces.loc[0, 'trace'] = json.dumps(trace)
+                attempt['source_trace'] = json.dumps(trace)
+                traces.loc[0, 'trace'] = json.dumps(attempt)
             elif change == 'image_bytes': frames['assets'].loc[0, 'data'] = b'different image'
             elif change == 'image_attachment': items.loc[0, 'asset_manifest'] = next(x for x in items.asset_manifest if x != items.loc[0, 'asset_manifest'])
             with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
@@ -1692,7 +1714,7 @@ class InfiBenchAuditTests(unittest.TestCase):
             'completion', 'completion_file', 'completion_row']
         for change in changes:
             frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
-            responses, subjects, items, traces = (frames[name] for name in ['responses', 'subjects', 'items', 'traces'])
+            responses, subjects, items, traces = (frames[name] for name in ['responses', 'subjects', 'items', 'attempts'])
             if change == 'grade': responses.loc[0, 'response'] = 0.7
             elif change == 'clipping': responses.loc[responses.response.gt(1).idxmax(), 'response'] = 1.0
             elif change == 'trial': responses.loc[0, 'trial'] = 99
@@ -1709,18 +1731,20 @@ class InfiBenchAuditTests(unittest.TestCase):
             elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
             elif change == 'drop_response': frames['responses'] = responses.iloc[1:]
             elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
-            elif change == 'drop_trace': frames['traces'] = traces.iloc[1:]
-            elif change == 'duplicate_trace': frames['traces'] = pd.concat([traces, traces.iloc[:1]])
+            elif change == 'drop_trace': frames['attempts'] = traces.iloc[1:]
+            elif change == 'duplicate_trace': frames['attempts'] = pd.concat([traces, traces.iloc[:1]])
             else:
-                value = json.loads(traces.loc[0, 'trace'])
+                wrapper = json.loads(traces.loc[0, 'trace'])
+                value = json.loads(wrapper['source_trace'])
                 field, replacement = {'source_file': ('source_file', 'wrong'), 'source_version': ('source_version', 'wrong'),
                     'source_case': ('case_file', 'wrong'), 'source_trial': ('trial_index', 999),
                     'native_detail': ('native_detail', {}), 'native_score': ('native_score', 99),
                     'completion': ('completion', 'wrong'), 'completion_file': ('completion_file', 'wrong'),
                     'completion_row': ('completion_row', 999)}[change]
                 value[field] = replacement
-                traces.loc[0, 'trace'] = json.dumps(value)
-            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                wrapper['source_trace'] = json.dumps(value)
+                traces.loc[0, 'trace'] = json.dumps(wrapper)
+            with self.subTest(change=change), self.assertRaises((AssertionError, ValueError, KeyError, IndexError, RuntimeError)):
                 _infibench(self.directory, frames, self.metadata)
 
     def test_changed_native_sources_are_detected(self):
@@ -1742,7 +1766,7 @@ class InfiBenchAuditTests(unittest.TestCase):
                 for name, data in files.items():
                     archive.writestr(name, data)
             try:
-                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                with self.subTest(change=change), self.assertRaises((AssertionError, ValueError, KeyError, IndexError, RuntimeError)):
                     _infibench(self.directory, self.frames, self.metadata)
             finally:
                 path.write_bytes(original)
@@ -1751,7 +1775,7 @@ class InfiBenchAuditTests(unittest.TestCase):
         changed = {name: data.replace('Fixture native model', 'Incorrect output') for name, data in self.outputs.items()}
         self.archive_tar(path, changed)
         try:
-            with self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+            with self.assertRaises((AssertionError, ValueError, KeyError, IndexError, RuntimeError)):
                 _infibench(self.directory, self.frames, self.metadata)
         finally:
             path.write_bytes(original)
@@ -1819,7 +1843,7 @@ class IndeterminacyAuditTests(unittest.TestCase):
         changes = ['category', 'invalid_to_zero', 'trial', 'subject_link', 'item_link', 'harness',
             'source_model', 'content', 'raw_id', 'features', 'reference', 'rule', 'scale', 'verifier',
             'condition', 'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace',
-            'source_file', 'source_row', 'source_trial', 'source_format', 'native_category', 'status', 'invented_text']
+            'source_file', 'source_row', 'source_trial', 'source_format', 'native_category', 'status', 'invented_text', 'testlet']
         for change in changes:
             frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
             responses, subjects, items, traces = (frames[name] for name in ['responses', 'subjects', 'items', 'traces'])
@@ -1836,6 +1860,7 @@ class IndeterminacyAuditTests(unittest.TestCase):
             elif change == 'source_model': subjects.loc[0, 'subject_features_extra'] = 'recorded_configuration={}'
             elif change == 'content': items.loc[0, 'content'] = 'wrong'
             elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong:0:FC'
+            elif change == 'testlet': items.loc[0, 'testlet_id'] = 'wrong:0'
             elif change == 'features': items.loc[0, 'item_features'] = 'task=wrong'
             elif change in ['reference', 'rule', 'scale']:
                 value = json.loads(items.loc[0, 'grading_criterion'])
@@ -2653,13 +2678,13 @@ class MasakhaNERAuditTests(unittest.TestCase):
         self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
 
     def test_native_alignment_runs_duplicates_and_long_outputs(self):
-        expected = dict(source_subjects=4, source_items=6, source_traces=20, source_reference_files=2,
+        expected = dict(source_subjects=4, source_items=len(self.frames['items']), source_traces=20, source_reference_files=2,
             source_prediction_files=4, source_responses=20, source_tokens=44, source_successes=17,
             source_digit_normalized_tokens=2)
         self.assertEqual(_afrieval(self.directory, self.frames, self.metadata), expected)
         self.assertEqual(_afrieval(self.directory, {k: v.iloc[::-1].reset_index(drop=True)
             for k, v in self.frames.items()}, self.metadata), expected)
-        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertGreater(self.frames['attempts'].trace.str.len().max(), 16000)
         self.assertEqual(self.frames['responses'].trial.max(), 2)
 
     def test_corrupted_tables_fail(self):
@@ -2670,7 +2695,7 @@ class MasakhaNERAuditTests(unittest.TestCase):
             'embedded_gold']
         for change in changes:
             tables = {key: value.copy(deep=True) for key, value in self.frames.items()}
-            response, item, subject, trace = (tables[key] for key in ['responses', 'items', 'subjects', 'traces'])
+            response, item, subject, trace = (tables[key] for key in ['responses', 'items', 'subjects', 'attempts'])
             if change == 'grade': response.loc[0, 'response'] = 1 - response.loc[0, 'response']
             elif change == 'null_grade': response.loc[0, 'response'] = None
             elif change == 'trial': response.loc[0, 'trial'] = 99
@@ -2690,13 +2715,15 @@ class MasakhaNERAuditTests(unittest.TestCase):
             elif change == 'condition': response.loc[0, 'test_condition'] = 'wrong'
             elif change == 'drop_response': tables['responses'] = response.iloc[1:]
             elif change == 'duplicate_response': tables['responses'] = pd.concat([response, response.iloc[:1]])
-            elif change == 'drop_trace': tables['traces'] = trace.iloc[1:]
-            elif change == 'duplicate_trace': tables['traces'] = pd.concat([trace, trace.iloc[:1]])
+            elif change == 'drop_trace': tables['attempts'] = trace.iloc[1:]
+            elif change == 'duplicate_trace': tables['attempts'] = pd.concat([trace, trace.iloc[:1]])
             else:
-                value = json.loads(trace.loc[0, 'trace'])
+                wrapper = json.loads(trace.loc[0, 'trace'])
+                value = json.loads(wrapper['source_trace'])
                 value[change] = 999 if change == 'source_sentence' else 'wrong'
-                trace.loc[0, 'trace'] = json.dumps(value)
-            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, TypeError, RuntimeError)):
+                wrapper['source_trace'] = json.dumps(value)
+                trace.loc[0, 'trace'] = json.dumps(wrapper)
+            with self.subTest(change=change), self.assertRaises((AssertionError, ValueError, KeyError, IndexError, TypeError, RuntimeError)):
                 _afrieval(self.directory, tables, self.metadata)
 
     def test_invalid_native_alignment_fails(self):
@@ -3642,7 +3669,7 @@ class EmbodiedArchiveAuditTests(unittest.TestCase):
         tables = builder(str(self.directory / "build.py")).build_tables()
         self.assertEqual(len(tables["responses"]), 2)
         self.assertTrue(tables["responses"].response.isna().all())
-        traces = [json.loads(value)["source_record"] for value in tables["traces"].trace]
+        traces = [json.loads(json.loads(value)["source_trace"])["source_record"] for value in tables["attempts"].trace]
         self.assertEqual(traces, [{"identifier": "task-a", "llm_output": "原始答案" * 5000},
                                   {"identifier": "task-b", "llm_output": None}])
 
@@ -3972,7 +3999,7 @@ class WeaveBenchAuditTests(unittest.TestCase):
             row.update(category="WEB", task_prompt="Original problem " + row["task_id"] + "\n" + "p" * 18000,
                 checks="def grade():\n    return 1.0\n# " + "c" * 20000,
                 deliverables=["original deliverable"], files=[["output.txt", 123]], is_hack=i == 3,
-                hack_confidence=1. if i == 3 else 0., dimensions=dict(evidence=dict(score=.9, reason="Native evidence")),
+                hack_confidence=1. if i == 3 else 0., dimensions=dict(evidence=dict(score=None if i == 2 else .9, reason="Native evidence")),
                 steps=[dict(kind="cli", thinking="Full published reasoning\n" + "t" * 22000,
                             action="original action", shot="001.webp", output="original tool output"),
                        dict(kind="note", thinking="Keep published notes too", action=None, shot=None, output=None)])
@@ -4011,7 +4038,7 @@ class WeaveBenchAuditTests(unittest.TestCase):
         self.assertTrue(unknown.normalized_name.isna().all())
         self.assertTrue(unknown.provider.isna().all())
         self.assertTrue(self.tables["responses"].subject_id.isin(subjects.subject_id).all())
-        self.assertEqual(set(self.tables["traces"].response_id), set(self.tables["responses"].response_id))
+        self.assertEqual(set(self.tables["attempts"].attempt_id), set(self.tables["responses"].attempt_id))
 
     def test_audit_rejects_incorrect_registry_attribution(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench
@@ -4019,7 +4046,7 @@ class WeaveBenchAuditTests(unittest.TestCase):
             with self.subTest(column=column):
                 tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
                 tables["subjects"].loc[0, column] = "incorrect attribution"
-                with self.assertRaises(ValueError):
+                with self.assertRaises((AssertionError, ValueError, RuntimeError)):
                     _weavebench(self.directory, tables, self.metadata)
 
     def test_scores_configuration_linkage_checks_screenshots_and_selection_policy(self):
@@ -4046,19 +4073,21 @@ class WeaveBenchAuditTests(unittest.TestCase):
                     criterion["rule"] = json.dumps(rule)
                     tables["items"].loc[0, "grading_criterion"] = json.dumps(criterion)
                 elif change in {"clip", "screenshot", "score"}:
-                    trace = json.loads(tables["traces"].loc[0, "trace"])
+                    wrapper = json.loads(tables["attempts"].loc[0, "trace"])
+                    trace = json.loads(wrapper["source_trace"])
                     if change == "clip":
                         trace["source_record"]["steps"][0]["thinking"] = trace["source_record"]["steps"][0]["thinking"][:16000]
                     elif change == "screenshot":
                         trace["screenshot_members"] = []
                     else:
                         trace["source_record"]["score"] = .99
-                    tables["traces"].loc[0, "trace"] = json.dumps(trace)
+                    wrapper["source_trace"] = json.dumps(trace)
+                    tables["attempts"].loc[0, "trace"] = json.dumps(wrapper)
                 elif change == "selection":
                     tables["responses"].loc[0, "test_condition"] = "unbiased_full_evaluation"
                 else:
                     tables["responses"] = tables["responses"].iloc[1:]
-                with self.assertRaises(ValueError):
+                with self.assertRaises((AssertionError, ValueError, RuntimeError)):
                     _weavebench(self.directory, tables, self.metadata)
 
 
@@ -6375,7 +6404,7 @@ class GoodAILTMNativeAuditTests(unittest.TestCase):
         self.assertTrue(self.frames['responses'].response.eq(4).any())
         self.assertTrue(self.frames['responses'].trial.eq(3).any())
         self.assertFalse(self.frames['items'].content.str.contains('Later prompt quoting').any())
-        self.assertTrue(self.frames['traces'].trace.str.contains('Later prompt quoting').any())
+        self.assertTrue(self.frames['attempts'].trace.str.contains('Later prompt quoting').any())
 
     def test_corrupted_grades_definitions_resources_and_trace_links_are_rejected(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _goodai_ltm, _goodai_ltm_sources
@@ -6388,7 +6417,7 @@ class GoodAILTMNativeAuditTests(unittest.TestCase):
         for change in changes:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
-                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'traces']]
+                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'attempts']]
                 if change == 'score': responses.loc[0, 'response'] = 0.5
                 elif change == 'precision': responses.loc[responses.response.eq(0.0123456789012345), 'response'] = 0.0123456789
                 elif change == 'normalize': responses.loc[responses.response.eq(4), 'response'] = 0.4
@@ -6427,16 +6456,18 @@ class GoodAILTMNativeAuditTests(unittest.TestCase):
                 elif change in ['asset_path', 'asset_role']:
                     value = json.loads(items.loc[0, 'asset_manifest']); value[0]['path' if change == 'asset_path' else 'role'] = 'wrong'
                     items.loc[0, 'asset_manifest'] = json.dumps(value)
-                elif change == 'trace_drop': frames['traces'] = traces.iloc[1:]
+                elif change == 'trace_drop': frames['attempts'] = traces.iloc[1:]
                 else:
                     index = next(i for i, text in enumerate(traces.trace) if ('auto_score' in text) == (change == 'automatic_grade') and (change != 'trace_clip' or len(text) > 16000))
-                    value = json.loads(traces.loc[index, 'trace'])
+                    envelope = json.loads(traces.loc[index, 'trace'])
+                    value = json.loads(envelope['source_trace'])
                     if change == 'trace_clip': value['record']['full_log'][0] = value['record']['full_log'][0][:16000]
                     elif change == 'missing_field': value['record'].pop('extra_original_field')
                     elif change == 'source_file': value['source_file'] = 'wrong.json'
                     elif change == 'automatic_grade': value['record']['auto_score'] = 99
-                    traces.loc[index, 'trace'] = json.dumps(value)
-                with self.assertRaises((ValueError, KeyError)):
+                    envelope['source_trace'] = json.dumps(value)
+                    traces.loc[index, 'trace'] = json.dumps(envelope)
+                with self.assertRaises((ValueError, KeyError, AssertionError)):
                     _goodai_ltm(self.directory, frames, self.metadata, source)
 
     def test_invalid_native_scores_and_wrong_task_definitions_are_rejected(self):
@@ -6735,13 +6766,21 @@ class QatchNativeAuditTests(unittest.TestCase):
                 writer.writeheader(); writer.writerows(rows)
                 archive.writestr(name, stream.getvalue())
 
+    def audit(self, frames, source=None):
+        from measurement_db.scripts.curate_benchmarks.testlet_qatch_audit import verify
+        return verify(self.directory, frames, self.metadata, source=source)
+
     def test_complete_contexts_native_precision_missing_grades_and_separate_protocols(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _qatch
-        self.assertEqual(_qatch(self.directory, self.frames, self.metadata), dict(
+        result = self.audit(self.frames)
+        expected = dict(
             source_subjects=5, source_items=81, source_responses=99, source_traces=99, source_assets=3,
             source_csv_rows=19, source_attempt_records=23, source_unavailable_grades=1,
             source_inapplicable_order_fields=16, source_long_predictions=1, source_empty_predictions=1,
-            source_custom_contexts=3, source_spider_contexts=2))
+            source_custom_contexts=3, source_spider_contexts=2)
+        self.assertEqual({key:result[key] for key in expected}, expected)
+        self.assertEqual(result['source_attempts'], 23)
+        self.assertEqual(result['source_component_observations'], 99)
         self.assertEqual(self.frames['responses'].response.isna().sum(), 1)
         self.assertTrue(self.frames['responses'].response.eq(0.0123456789012345).any())
 
@@ -6756,7 +6795,7 @@ class QatchNativeAuditTests(unittest.TestCase):
         for change in changes:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
-                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'traces']]
+                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'attempts']]
                 if change == 'score': responses.loc[0, 'response'] = 0.75
                 elif change == 'precision': responses.loc[responses.response.eq(0.0123456789012345), 'response'] = 0.0123456789
                 elif change == 'null_to_zero': responses.loc[responses.response.isna(), 'response'] = 0
@@ -6801,8 +6840,8 @@ class QatchNativeAuditTests(unittest.TestCase):
                     elif change == 'source_row': value['source_row'] = 999
                     elif change == 'source_model': value['source_model'] = 'resdsql-large'
                     traces.loc[index, 'trace'] = json.dumps(value)
-                with self.assertRaises((ValueError, KeyError)):
-                    _qatch(self.directory, frames, self.metadata, source)
+                with self.assertRaises((ValueError, KeyError, RuntimeError)):
+                    self.audit(frames, source)
 
     def test_invalid_native_scores_are_flagged(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _qatch_sources
@@ -6829,7 +6868,7 @@ class QatchNativeAuditTests(unittest.TestCase):
     def test_published_wrong_reference_and_sql_output_are_preserved_without_execution(self):
         references = [json.loads(row)['reference_answer'] for row in self.frames['items'].grading_criterion]
         self.assertTrue(any(json.loads(value)['released_target'] == '[[999]]' for value in references))
-        records = [json.loads(value)['record'] for value in self.frames['traces'].trace]
+        records = [json.loads(value)['record'] for value in self.frames['attempts'].trace]
         self.assertTrue(any(row.get('predictions') == 'DROP TABLE t;' for row in records))
         self.assertIn(self.database_bytes, self.frames['assets'].data.tolist())
 
@@ -7113,7 +7152,8 @@ class PKUSafeRLHFNativeAuditTests(unittest.TestCase):
         self.assertEqual(_pku_saferlhf(self.directory, self.frames, self.metadata), dict(
             source_pairs=4, source_subjects=2, source_items=2, source_responses=8, source_traces=8,
             source_distinct_outputs=6, source_safe=4, source_unsafe=4, source_empty_outputs=1,
-            source_category_disagreements=1, source_prompt_variants=3))
+            source_category_disagreements=1, source_prompt_variants=3, source_attempts=8,
+            source_component_observations=152, imported_items=38, source_observed_testlets=2))
         self.assertGreater(self.frames['items'].content.str.len().max(), 16000)
         self.assertTrue(self.frames['responses'].trial.eq(1).all())
         self.assertEqual(self.frames['responses'].test_condition.nunique(), 8)
@@ -7140,14 +7180,19 @@ class PKUSafeRLHFNativeAuditTests(unittest.TestCase):
     def test_wrong_associations_grades_and_truncated_or_rewritten_source_are_rejected(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _pku_saferlhf, _pku_saferlhf_sources
         source = _pku_saferlhf_sources(self.directory, self.metadata)
-        changes = ['grade', 'same_sum_swap', 'subject', 'item', 'prompt', 'rule', 'verifier', 'alias', 'feature',
+        changes = ['testlet', 'attempt_id', 'aggregate', 'grade', 'same_sum_swap', 'subject', 'item', 'prompt', 'rule', 'verifier', 'alias', 'feature',
             'trial', 'condition', 'interactors', 'drop', 'duplicate', 'model', 'configuration', 'extra_subject',
             'scale', 'trace_text', 'empty_text', 'category', 'safety_flag', 'hash', 'source_file', 'source_row', 'side']
         for change in changes:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
-                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
-                if change == 'grade': responses.loc[0, 'response'] = .5
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'attempts']]
+                if change == 'testlet': items.loc[0, 'testlet_id'] = 'wrong-parent'
+                elif change == 'attempt_id': traces.loc[0, 'raw_attempt_id'] = 'wrong-source'
+                elif change == 'aggregate':
+                    value = json.loads(traces.loc[0, 'trace']); value['recorded_task_score'] = 1 - value['recorded_task_score']
+                    traces.loc[0, 'trace'] = json.dumps(value)
+                elif change == 'grade': responses.loc[0, 'response'] = .5
                 elif change == 'same_sum_swap':
                     indices = [responses.index[responses.response.eq(value)][0] for value in [0, 1]]
                     responses.loc[indices, 'response'] = [1., 0.]
@@ -7170,8 +7215,9 @@ class PKUSafeRLHFNativeAuditTests(unittest.TestCase):
                 else:
                     index = 0
                     if change == 'empty_text':
-                        index = next(i for i, value in enumerate(traces.trace) if json.loads(value)['record']['response_1'] == '')
-                    value = json.loads(traces.loc[index, 'trace'])
+                        index = next(i for i, value in enumerate(traces.trace) if json.loads(json.loads(value)['source_trace'])['record']['response_1'] == '')
+                    attempt = json.loads(traces.loc[index, 'trace'])
+                    value = json.loads(attempt['source_trace'])
                     if change == 'trace_text': value['record']['response_0'] = value['record']['response_0'][:16000]
                     elif change == 'empty_text': value['record']['response_1'] = 'Invented output'
                     elif change == 'category': value['record']['response_0_harm_category'] = {}
@@ -7180,8 +7226,9 @@ class PKUSafeRLHFNativeAuditTests(unittest.TestCase):
                     elif change == 'source_file': value['source_file'] = 'other.jsonl'
                     elif change == 'source_row': value['source_row'] = 99
                     else: value['side'] = 1 - value['side']
-                    traces.loc[index, 'trace'] = json.dumps(value)
-                with self.assertRaises((ValueError, KeyError)):
+                    attempt['source_trace'] = json.dumps(value)
+                    traces.loc[index, 'trace'] = json.dumps(attempt)
+                with self.assertRaises((ValueError, KeyError, RuntimeError)):
                     _pku_saferlhf(self.directory, frames, self.metadata, source)
 
 
@@ -8368,6 +8415,9 @@ class WikiHowAgentAuditTests(unittest.TestCase):
         folder=self.directory/'raw/protocol/conf';folder.mkdir(parents=True)
         for name in ['teacher-a','teacher-b','learner-a','learner-b','evaluator']:
             (folder/(name+'.yaml')).write_text(yaml.safe_dump(dict(llm=dict(model=name,temperature=0.),params=dict(note='literal; separator=retained'))))
+        rubrics=self.directory/'raw/protocol/data/evaluation_rubrics.json'
+        rubrics.parent.mkdir()
+        rubrics.write_text(json.dumps({name:dict(role='conversation',reference='no',question=name,rubric=['1 to 5']) for name in ['Clarity','Truthfulness','Engagement','Coherence','Depth','Relevance','Progress','Naturalness']}))
         folder=self.directory/'raw/conversations';folder.mkdir()
         for group, observations in [('a',[(0,1),(0,0),(1,0)]),('b',[(0,0),(1,1)])]:
             rows=[]
@@ -8391,11 +8441,12 @@ class WikiHowAgentAuditTests(unittest.TestCase):
     def test_every_record_and_full_conversation_survives(self):
         expected=dict(source_files=2,source_items=2,source_workflow_configurations=2,distinct_conversation_ids=5,
             source_traces=5,source_responses=5,source_successes=2,source_failures=3,conversations_exceeding_former_trace_cap=1)
-        self.assertEqual(_audit_wikihow_agent(self.directory,self.frames,self.metadata),expected)
-        self.assertEqual(_audit_wikihow_agent(self.directory,{name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()},self.metadata),expected)
+        result=_audit_wikihow_agent(self.directory,self.frames,self.metadata)
+        self.assertEqual({key:result[key] for key in expected},expected)
+        self.assertEqual(_audit_wikihow_agent(self.directory,{name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()},self.metadata),result)
         self.assertEqual(self.frames['items'].content.nunique(),1)
         self.assertEqual(self.frames['responses'].trial.max(),2)
-        self.assertTrue(self.frames['traces'].trace.str.len().gt(100000).any())
+        self.assertTrue(self.frames['attempts'].trace.str.len().gt(100000).any())
 
     def test_corrupt_transformations_fail_even_when_totals_match(self):
         changes=['equal_sum_swap','wrong_subject','wrong_item','drop_record','clip_trace','source_row',
@@ -8403,7 +8454,7 @@ class WikiHowAgentAuditTests(unittest.TestCase):
         for change in changes:
             with self.subTest(change=change):
                 frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
-                responses,items,traces=[frames[name] for name in ['responses','items','traces']]
+                responses,items,traces=[frames[name] for name in ['responses','items','attempts']]
                 if change=='equal_sum_swap':
                     a,b=responses.index[responses.response.eq(0)][0],responses.index[responses.response.eq(1)][0]
                     responses.loc[[a,b],'response']=[1.,0.]
@@ -8417,13 +8468,15 @@ class WikiHowAgentAuditTests(unittest.TestCase):
                     v=json.loads(items.loc[0,'verifier']);v['spec']='{}';items.loc[0,'verifier']=json.dumps(v)
                 elif change=='trial':responses.loc[0,'trial']=0
                 else:
-                    trace=json.loads(traces.loc[0,'trace'])
+                    envelope=json.loads(traces.loc[0,'trace'])
+                    trace=json.loads(envelope['source_trace'])
                     if change=='clip_trace':trace['record']['conversation']=trace['record']['conversation'][:1]
                     elif change=='source_row':trace['source_row']=9999
                     elif change=='drop_rubric':del trace['record']['evaluation']['Other rubric']
                     elif change=='config_association':trace['config_files']=trace['config_files'][::-1]
-                    traces.loc[0,'trace']=json.dumps(trace)
-                with self.assertRaises((ValueError,RuntimeError,KeyError,StopIteration)):
+                    envelope['source_trace']=json.dumps(trace)
+                    traces.loc[0,'trace']=json.dumps(envelope)
+                with self.assertRaises((ValueError,RuntimeError,KeyError,StopIteration,AssertionError)):
                     _audit_wikihow_agent(self.directory,frames,self.metadata)
 
     def test_invalid_flags_and_conflicting_tutorials_fail(self):

@@ -1,5 +1,6 @@
 """Convert AppWorld's official task and leaderboard bundles into linked tables."""
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -9,6 +10,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
 from measurement_db.scripts.curate_benchmarks.appworld_bundle import open_bundle
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class AppWorldBuild(BenchmarkBuild):
@@ -64,7 +66,7 @@ class AppWorldBuild(BenchmarkBuild):
                 features=items.rename(columns={"item_key": "appworld_task_id"})[
                     ["appworld_task_id", "split", "db_version", "datetime"]
                 ].to_dict("records"),
-                raw_item_id=items.item_key, content=items.instruction,
+                raw_item_id=items.item_key, testlet_id=items.item_key, content=items.instruction,
             )
 
         # 3. Each model/scaffold combination is a subject; split belongs to items.
@@ -76,13 +78,37 @@ class AppWorldBuild(BenchmarkBuild):
         )
 
         # 4. Preserve complete log text; missing or empty logs are not traces.
-        traces = responses.loc[responses.trace.fillna("").str.strip().astype(bool), ["response_key", "trace"]]
-        return {
+        traces = responses[["response_key"]].copy()
+        traces["trace"] = [json.dumps(dict(success=bool(row.success), num_tests=int(row.num_tests),
+            passes=row.passes, failures=row.failures, environment_io=row.trace if isinstance(row.trace, str) else None),
+            ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+
+        # 5. Each explicitly passed or failed requirement is one binary item.
+        parents = items.set_index('item_key')
+        definitions, outcomes = {}, []
+        for row in responses.itertuples():
+            if len(row.passes) + len(row.failures) != row.num_tests:
+                raise ValueError('AppWorld result does not enumerate all declared tests')
+            for passed, checks in ((True, row.passes), (False, row.failures)):
+                for check in checks:
+                    requirement = check['requirement']
+                    if not isinstance(requirement, str) or not requirement.strip():
+                        raise ValueError('An AppWorld test has no requirement identity')
+                    component = hashlib.sha256(requirement.encode()).hexdigest()
+                    definitions[row.item_key, component] = dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion={'rule': requirement},
+                        verifier=ExactMatcher(spec=json.dumps(dict(requirement=requirement,
+                            grading_code=parents.loc[row.item_key, 'verifier'].spec,
+                            test_data=json.loads(parents.loc[row.item_key, 'grading_criterion']['rule'])['test_data']),
+                            sort_keys=True)))
+                    outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=float(passed)))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "trial", "response"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

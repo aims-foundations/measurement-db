@@ -1,20 +1,20 @@
 format_version: 1
 tables:
+  attempts:
+    rows: 171412
+    logical_sha256: 1da8e487b887d0d642aa209c6ea1467441e472ba33679b88ecc372f815dd03db
   benchmarks:
     rows: 1
-    logical_sha256: 0aaef82655e83d3185a074483399452e8728365c768583a3bb38730c628e0d90
+    logical_sha256: ce22cf199fb98a4a7f289241e69da73c3405a1395f811a9ca5298cd8151b1ba8
   items:
-    rows: 14287
-    logical_sha256: 6937113e5c365c7ce0a44fbd07b0fce9710192ffc1685daa87823d53889b290c
+    rows: 128583
+    logical_sha256: 04af44e8feef5df75d0e12eb7616d30a2b6cf5aae583c56bf81604208966d4fc
   responses:
-    rows: 171412
-    logical_sha256: dca8c85d71b2a1a2ff75904554cc971cc0acbe3b3c1ca9f9840a64e5ad506a3f
+    rows: 1542708
+    logical_sha256: 225c2bc362b4c24a04ec05c52182444c1ac399b10edb6a6a29dd73f3061374e9
   subjects:
     rows: 12
     logical_sha256: 86ef3ea98a54b71e0036e09896983b92e71b901ebb3d4601abd9c15954e10e4b
-  traces:
-    rows: 171412
-    logical_sha256: e6672e8d8600774944daf6e69778a223a227a02e79638955c25e2c82219ea545
 source_claims:
   source_files:
     kind: count
@@ -97,3 +97,35 @@ source_claims:
     scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
       broader than the subset described in the paper.
     expected: 16
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Jiahuan/WikihowAgentDataset
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 171412
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Jiahuan/WikihowAgentDataset
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 1542708
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Jiahuan/WikihowAgentDataset
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 128583
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Jiahuan/WikihowAgentDataset
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 14287

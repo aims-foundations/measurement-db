@@ -2,6 +2,7 @@
 """Curate original LLMail-Inject endpoint outcomes without executing attacks."""
 
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class LLMailInject(BenchmarkBuild):
@@ -80,6 +82,7 @@ class LLMailInject(BenchmarkBuild):
             columns={"body": "email_body", "position": "released_insertion_position"})
         # Escapes also keep distinct Unicode sequences intact through shared NFC hashing.
         items["content"] = [json.dumps(row, ensure_ascii=True, sort_keys=True) for row in inputs.to_dict("records")]
+        items['testlet_id'] = items.content.map(lambda value: hashlib.sha256(value.encode()).hexdigest())
         items["grading_criterion"] = [{"rule": json.dumps({"attack_objective": task, "success_rule": self.grading["rule"]})}
                                      for task in items.task]
         items["verifier"] = ExactMatcher(spec=json.dumps(self.grading["verifiers"]["objectives"], sort_keys=True))
@@ -91,12 +94,23 @@ class LLMailInject(BenchmarkBuild):
         traces["trace"] = [json.dumps({"source_file": row.source_file, "source_row": row.source_row,
                                       "record": row.native_record}, ensure_ascii=False, allow_nan=False)
                            for row in responses.itertuples()]
-        return {
+        # The five objective flags are released separately. A processing failure
+        # retains null outcomes; it never supplies five inferred negative grades.
+        definitions = [dict(parent_item_key=row.item_key, component_id=name,
+            grading_criterion=dict(rule=json.dumps(dict(objective=name, description=description,
+                attack_objective=row.task), sort_keys=True)),
+            verifier=ExactMatcher(spec=json.dumps(self.grading['verifiers']['objectives'], sort_keys=True)))
+            for row in items.itertuples() for name, description in objectives.items()]
+        outcomes = [dict(parent_response_key=row.response_key, component_id=name,
+            response=None if value is None else float(value)) for row in responses.itertuples()
+            for name, value in (json.loads(row.objectives) or dict.fromkeys(objectives)).items()]
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

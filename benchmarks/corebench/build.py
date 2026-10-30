@@ -1,15 +1,22 @@
 """Join CORE-Bench's released capsule results to its task and grading definitions."""
 
+import ast
+import copy
+import hashlib
 import json
+import math
 import sys
 import tarfile
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
+from scipy.stats import t
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
 from measurement_db.scripts.build_measurement_tables.load_source_files import read_gpg_json
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class CoreBench(BenchmarkBuild):
@@ -65,8 +72,10 @@ class CoreBench(BenchmarkBuild):
             + "\n\nScientific code capsule: " + row.capsule_id + "\nCapsule DOI: " + row.capsule_doi, axis=1)
         items = items.assign(
             raw_item_id=items.item_key,
+            testlet_id=items.capsule_id,
             grading_criterion=items.results.map(lambda values: {
                 "reference_answer": json.dumps(values, ensure_ascii=False, sort_keys=True), "rule": self.grading["rule"],
+                "response_scale": dict(kind="interval", min=0, max=1, direction="higher_is_better"),
             }),
             verifier=ExactMatcher(spec=json.dumps(self.grading["verifiers"]["provider_result"], sort_keys=True)),
             features=items[["difficulty"]].to_dict("records"),
@@ -82,14 +91,59 @@ class CoreBench(BenchmarkBuild):
         responses = observations.assign(
             response_key=observations.source_file + ":" + observations.source_row.astype(str), response=correct / total,
         )
-        traces = responses.loc[responses.result_report.map(lambda report: isinstance(report, dict) and bool(report))]
+        traces = responses.copy()
         traces = traces.assign(trace=traces.result_report.map(lambda report: json.dumps(report, ensure_ascii=False)))
-        return {
+        # 5. Replay only the captured deterministic scoring function. Prefixes retain
+        # its early-abort behavior: evaluating each answer in isolation would change it.
+        source = (root / 'benchmark/evaluations.py').read_text()
+        function = [node for node in ast.parse(source).body if isinstance(node, ast.FunctionDef)
+            and node.name == 'eval_result_json']
+        if len(function) != 1:
+            raise ValueError('The pinned CORE-Bench evaluator is missing')
+        namespace = dict(Dict=dict, np=np, math=math, t=t)
+        exec(compile(ast.Module(body=function, type_ignores=[]), 'evaluations.py', 'exec'), namespace)
+        evaluate = namespace['eval_result_json']
+        components, outcomes = [], []
+        score_fields = ('correct_written_answers', 'correct_vision_answers',
+                        'total_written_questions', 'total_vision_questions')
+        for row in items.itertuples():
+            for question, answer in row.results[0].items():
+                if not isinstance(answer, (int, float, list, str)):
+                    continue
+                component = hashlib.sha256(question.encode()).hexdigest()
+                components.append(dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion=dict(rule=json.dumps(dict(question=question,
+                        rule='Exact replay of the pinned evaluator, preserving reported answer order and early-abort behavior'),
+                        ensure_ascii=False, sort_keys=True),
+                        reference_answer=json.dumps([result[question] for result in row.results], ensure_ascii=False),
+                        response_scale=dict(kind='discrete', values=[0, 1], direction='higher_is_better')),
+                    verifier=ExactMatcher(spec=json.dumps(dict(source=self.grading['verifiers']['provider_result']['source'],
+                        function='eval_result_json', selected_question=question), sort_keys=True))))
+        for row in responses.itertuples():
+            full = evaluate(row.results, copy.deepcopy(row.result_report))
+            if any(full[field] != getattr(row, field) for field in score_fields):
+                continue  # Preserve historical aggregates when exact replay is not established.
+            grades = {key: 0. for key, answer in row.results[0].items() if isinstance(answer, (int, float, list, str))}
+            prefix, previous = {}, 0
+            for question, answer in (row.result_report.items() if isinstance(row.result_report, dict) else []):
+                prefix[question] = answer
+                counts = evaluate(row.results, copy.deepcopy(prefix))
+                correct = counts['correct_written_answers'] + counts['correct_vision_answers']
+                if correct - previous not in (0, 1):
+                    raise ValueError('The evaluator does not produce binary per-question increments')
+                if question in grades:
+                    grades[question] = float(correct - previous)
+                previous = correct
+            for question, grade in grades.items():
+                outcomes.append(dict(parent_response_key=row.response_key,
+                    component_id=hashlib.sha256(question.encode()).hexdigest(), response=grade))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces[["response_key", "trace"]],
         }
+        return component_tables(tables, pd.DataFrame(components), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

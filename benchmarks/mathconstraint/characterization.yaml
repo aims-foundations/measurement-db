@@ -1,34 +1,73 @@
 format_version: 1
 tables:
-  traces:
-    rows: 10583
-    logical_sha256: 4b20a74867044a32f98626463fb79ce6d561968bf8ee6ce7798d316e6110fe81
+  attempts:
+    rows: 11862
+    logical_sha256: b9f2185a2021b846d3547ae4931f2626cd6b2221a217faf82035349bdda8ee4a
+  benchmarks:
+    rows: 1
+    logical_sha256: f83b8873e84474cc3b6d97cc5bbdd917ff11014625e919094a10ab4ed48effd0
+  items:
+    rows: 860
+    logical_sha256: 68c817cc87b1feba8b76b0cb28b3da1efe48acc721b4c9a281187a30c15174fe
+  responses:
+    rows: 20326
+    logical_sha256: 94cace6560495fa860d62bbac050a84775189f90321caa64ce3ca1562feb0143
   subjects:
     rows: 12
     logical_sha256: de04907e43edf07f228ed7053b5d8ec3db6ff02a411aa6cf52ca228bea7b2c9c
-  responses:
-    rows: 11862
-    logical_sha256: a1cb3c37c17ff3a622e6a1e4b0552818496bfe0f0552efc4c45db58ab2ca3d15
-  items:
-    rows: 504
-    logical_sha256: 8e096f3510492c376faaafcf552bc37342909786f26c7a4c3cddc9f244a5e094
-  benchmarks:
-    rows: 1
-    logical_sha256: d53d6d7631f5ff66cc79cd779d9415cfd9174a323a5e02dd18709bb87e0d72d2
 source_claims:
-  source_responses:
+  source_attempts:
     kind: count
     origin: derived_from_data
     source: https://github.com/vireshpati/Math-Constraint
-    locator: Pinned results/*/{easy,hard,hard2}/{no_tools,tools}.json and instance
-      banks
-    scope: Released graded attempts with a matching frozen problem definition.
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
     expected: 11862
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 20326
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 860
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 504
+  source_task_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source task aliases. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 515
+  source_excluded_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source excluded records. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 0
   source_successes:
     kind: count
     origin: derived_from_data
     source: https://github.com/vireshpati/Math-Constraint
-    locator: Pinned results/*/{easy,hard,hard2}/{no_tools,tools}.json and instance
-      banks
+    locator: Pinned results/*/{easy,hard,hard2}/{no_tools,tools}.json and instance banks
     scope: Released graded attempts with a matching frozen problem definition.
     expected: 7640

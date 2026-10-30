@@ -14,6 +14,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.benchmarks.engdesign.checks import read_checks, scale
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class EngDesign(BenchmarkBuild):
@@ -104,6 +106,7 @@ class EngDesign(BenchmarkBuild):
             attachments = images.groupby("item_key").attachment.agg(list)
             items["attachments"] = items.item_key.map(attachments).map(lambda value: value if isinstance(value, list) else [])
             items["raw_item_id"] = items.item_key
+            items['testlet_id'] = items.item_key
             items["grading_criterion"] = [{"rule": json.dumps({"interpretation": self.grading["rule"], "released_evaluator": code})}
                                            for code in items.evaluator]
             specification = self.grading["verifiers"]["native_pass"]
@@ -144,12 +147,37 @@ class EngDesign(BenchmarkBuild):
             traces = responses[["response_key"]].copy()
             traces["trace"] = [json.dumps(row, ensure_ascii=False, allow_nan=False) for row in responses[trace_columns].to_dict("records")]
 
-        return {
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }
+        definitions, outcomes = [], []
+        for item in items.itertuples():
+            checks = self.grading['verifiers']['named_checks']['tasks'].get(item.item_key, {})
+            # A fallback preserves the original verdict, even when it is null.
+            for name, spec in {'task_verdict': {'format': 'boolean'}, **checks}.items():
+                criterion = dict(rule=json.dumps(dict(
+                    interpretation=self.grading['rule'] if name == 'task_verdict' else self.grading['verifiers']['named_checks']['rule'],
+                    selected_check=name, extraction=spec, released_evaluator=item.evaluator), sort_keys=True),
+                    response_scale=scale(spec))
+                definitions.append(dict(parent_item_key=item.item_key, component_id=name,
+                    grading_criterion=criterion, verifier=ExactMatcher(spec=json.dumps(dict(
+                        **json.loads(item.verifier.spec), selected_check=name, extraction=spec), sort_keys=True))))
+        for row in responses.itertuples():
+            checks = self.grading['verifiers']['named_checks']['tasks'].get(row.item_key, {})
+            values = read_checks(row.native_record, checks)
+            selected = {name: values.get(name) for name in checks} if values else {'task_verdict': row.response}
+            outcomes.extend(dict(parent_response_key=row.response_key, component_id=name, response=value)
+                for name, value in selected.items())
+        # Do not publish unused fallback definitions as orphaned items.
+        definitions = pd.DataFrame(definitions)
+        outcomes = pd.DataFrame(outcomes)
+        used = outcomes.merge(responses[['response_key', 'item_key']], left_on='parent_response_key', right_on='response_key')
+        definitions = definitions.merge(used[['item_key', 'component_id']].drop_duplicates(),
+            left_on=['parent_item_key', 'component_id'], right_on=['item_key', 'component_id']).drop(columns='item_key')
+        return component_tables(tables, definitions, outcomes)
 
 
 if __name__ == "__main__":

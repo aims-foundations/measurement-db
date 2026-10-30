@@ -1,6 +1,8 @@
 """Tabulate AEGIS's recorded Mistral responses and original safety annotations."""
 
 import json
+import unicodedata
+import hashlib
 from pathlib import Path
 import sys
 
@@ -46,6 +48,7 @@ class Aegis(BenchmarkBuild):
         keys = ['prompt', 'response_label_source']
         items = attempts[keys + ['id']].drop_duplicates(keys).reset_index(drop=True)
         items['item_key'], items['raw_item_id'] = items.index, items.id
+        items['testlet_id'] = items.prompt.map(lambda text: hashlib.sha256(unicodedata.normalize('NFC', text).encode()).hexdigest())
         items['content'] = items.prompt.map(lambda prompt: json.dumps(dict(prompt=prompt), ensure_ascii=False))
         items['grading_criterion'] = [dict(rule=self.grading['rule']) for _ in items.index]
         items['verifier'] = [Judge(judged_by=protocols[name]['kind'], spec=json.dumps(protocols[name], sort_keys=True))
@@ -58,7 +61,7 @@ class Aegis(BenchmarkBuild):
             source_record=row.source_record), ensure_ascii=False, sort_keys=True, allow_nan=False)
             for row in attempts.itertuples()]
         attempts['test_condition'] = 'upstream_split=' + attempts.split
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'grading_criterion', 'verifier']],
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'grading_criterion', 'verifier']],
             responses=attempts[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']], traces=traces)
 
 

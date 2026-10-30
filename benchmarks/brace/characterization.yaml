@@ -14,7 +14,7 @@ tables:
     logical_sha256: 78457d17407c6d159a6cd44ed80e9a83bcef21d41a4866e10b9b719133be6716
   items:
     rows: 12631
-    logical_sha256: d4f0f2da4af2cd5a7c0861d09b90543166278ccaa3bfdee216d2fbbc718edd69
+    logical_sha256: 35ad43921827893f9941dd8181ab654297062ae93fec031da23c74c7f6c8e97f
   benchmarks:
     rows: 1
     logical_sha256: dfa03e9d13e85e09a2e0612821bf1f7bacf12dac1bd4dee330a39b66850d641c
@@ -23,82 +23,82 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 202096
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 12631
   source_subjects:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 28
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 202096
   source_assets:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 2027
   source_successes:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 171860
   source_tie_predictions:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 10575
   source_changed_annotation_pairs:
     kind: count
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected: 1
   source_correct_by_configuration:
     kind: aggregate
     origin: derived_from_data
     source: https://github.com/inseong00/CAF-Score
-    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
-      official audio files.
-    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
-      native reported accuracies independently reconciled.
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned official
+      audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all native reported
+      accuracies independently reconciled.
     expected:
       audiocaps_hallu/audioflamingo3_laionclap/smoothed: 3565
       audiocaps_hallu/audioflamingo3_laionclap/raw: 3163

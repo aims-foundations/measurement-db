@@ -150,6 +150,55 @@ class UnknownSubject(KeyError):
     """Raised when a raw label doesn't match any registered subject."""
 
 
+def _subject_row(raw_label, features, access_date):
+    feats = _vocab.canonicalize_features(features)
+    for k in feats:
+        cls = _vocab.KEY_CLASS.get(k)
+        if cls not in (None, _vocab.SUBJECT):
+            raise ValueError(
+                f"resolve_subject: {k!r} is a {cls}-class setting per "
+                "normalize_evaluation_settings.py, not a subject feature"
+            )
+    extra = {
+        k: v for k, v in feats.items()
+        if k not in _vocab.SUBJECT_FEATURE_COLUMNS
+    }
+
+    entry = _load_model_registry().get(raw_label)
+
+    # The full row is assembled first: every column below (except
+    # subject_id/display_name, whose normalized form is the hash base)
+    # enters the id, so the id is minted from final content and rows are
+    # never mutated after registration. There is no backfill: a label
+    # whose registry entry appears later, or a different access_date, is
+    # a different subject.
+    row = {
+        "subject_id": None,
+        "display_name": raw_label,
+        "normalized_name": entry["model"] if entry else None,
+        "provider": entry["company"] if entry else None,
+        "release_date": entry.get("release_date") if entry else None,
+        "access_date": access_date,
+        "harness": feats.get("harness"),
+        "reasoning_effort": feats.get("reasoning_effort"),
+        "harness_version": feats.get("harness_version"),
+        "subject_features_extra": _vocab.features_string(extra),
+    }
+    row["subject_id"] = subject_id_from_row(raw_label, row)
+
+    return row
+
+
+def subject_id_for(raw_label: str, *, features: dict | None = None, access_date: str | None = None) -> str:
+    """Compute final subject identity without registering or changing any rows.
+
+    Use this when numbering executions across source aliases before expanding
+    their component observations. Pass the same final features as registration.
+    """
+    with _lock:
+        return _subject_row(raw_label, features, access_date)['subject_id']
+
+
 def resolve_subject(
     raw_label: str,
     *,
@@ -204,51 +253,16 @@ def resolve_subject(
     every other column: the same model observed at two access dates is two
     subjects.
     """
-    feats = _vocab.canonicalize_features(features)
-    for k in feats:
-        cls = _vocab.KEY_CLASS.get(k)
-        if cls not in (None, _vocab.SUBJECT):
-            raise ValueError(
-                f"resolve_subject: {k!r} is a {cls}-class setting per "
-                "normalize_evaluation_settings.py, not a subject feature"
-            )
-    extra = {
-        k: v for k, v in feats.items()
-        if k not in _vocab.SUBJECT_FEATURE_COLUMNS
-    }
-
     global _subjects
     with _lock:
         _ensure_init()
         assert _subjects is not None
-        entry = _load_model_registry().get(raw_label)
-
-        # The full row is assembled first: every column below (except
-        # subject_id/display_name, whose normalized form is the hash base)
-        # enters the id, so the id is minted from final content and rows are
-        # never mutated after registration. There is no backfill: a label
-        # whose registry entry appears later, or a different access_date, is
-        # a different subject.
-        row = {
-            "subject_id": None,
-            "display_name": raw_label,
-            "normalized_name": entry["model"] if entry else None,
-            "provider": entry["company"] if entry else None,
-            "release_date": entry.get("release_date") if entry else None,
-            "access_date": access_date,
-            "harness": feats.get("harness"),
-            "reasoning_effort": feats.get("reasoning_effort"),
-            "harness_version": feats.get("harness_version"),
-            "subject_features_extra": _vocab.features_string(extra),
-        }
-        sid = subject_id_from_row(raw_label, row)
-
+        row = _subject_row(raw_label, features, access_date)
+        sid = row['subject_id']
         if sid in _subjects:
             return sid
         if not auto_register:
             raise UnknownSubject(raw_label)
-
-        row["subject_id"] = sid
         _subjects[sid] = row
         return sid
 

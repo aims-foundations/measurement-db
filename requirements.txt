@@ -25,3 +25,4 @@ proces==0.1.7
 nltk==3.9.1
 editdistance==0.8.1
 apsw==3.53.2.0
+tifffile

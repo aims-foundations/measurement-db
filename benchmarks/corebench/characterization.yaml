@@ -1,45 +1,74 @@
 format_version: 1
 tables:
-  traces:
-    rows: 1454
-    logical_sha256: 1c7aa78caf3be0eeb13d62227e86a640f0b5b2a54a06756028f68ec5b4a3bdee
+  attempts:
+    rows: 1956
+    logical_sha256: 19982d4797377ead940b3ea9ed7de73a8eb8d2f77ecd2645600083e726d137b2
+  benchmarks:
+    rows: 1
+    logical_sha256: 19f9da5885d562d359461d0d87b1efc7ca4da16f70cbfaafbd924e1d35c74e72
+  items:
+    rows: 543
+    logical_sha256: 9c10e73d958a4c976c864b61ea9c7f9798428b9cf165c0580991310cbc4e29f5
+  responses:
+    rows: 3791
+    logical_sha256: f1e199ba16fec80b13cf92a07a46b665ee26f4090baf0c0c146d3856cc905b29
   subjects:
     rows: 11
     logical_sha256: cead4fb832f3ccecb6b50de2106039d6ec46df7dc8ef4fd87112ef63796b09e3
-  responses:
-    rows: 1956
-    logical_sha256: cbe125e96eaf861f0bd9581fc4707490943e99e53c9012139eda6bb25403c96a
-  items:
-    rows: 270
-    logical_sha256: d00cd97713ef866e375e52b6d02f6a9eabcf0d87c0c351f5338492a1a3e47e6e
-  benchmarks:
-    rows: 1
-    logical_sha256: 04f144ac59d14229dcb1f5085de605ce9d5b720d607c2e24abd4e9be1f868623
 source_claims:
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/siegelz/core-bench
-    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg;
-      benchmark/benchmark_prompts.json
-    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve
-      per-run question-accuracy fractions and result_report traces.
+    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg; benchmark/benchmark_prompts.json
+    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve per-run
+      question-accuracy fractions and result_report traces.
     expected: 1956
   source_capsules:
     kind: count
     origin: derived_from_data
     source: https://github.com/siegelz/core-bench
-    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg;
-      benchmark/benchmark_prompts.json
-    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve
-      per-run question-accuracy fractions and result_report traces.
+    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg; benchmark/benchmark_prompts.json
+    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve per-run
+      question-accuracy fractions and result_report traces.
     expected: 90
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/siegelz/core-bench
-    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg;
-      benchmark/benchmark_prompts.json
-    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve
-      per-run question-accuracy fractions and result_report traces.
+    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg; benchmark/benchmark_prompts.json
+    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve per-run
+      question-accuracy fractions and result_report traces.
     expected: 1454
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1956
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3791
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 543
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 90

@@ -58,6 +58,7 @@ class TuluHumanEval(BenchmarkBuild):
             raise ValueError('One source prompt identifier has conflicting text')
         items['item_key'] = items.index
         items['raw_item_id'], items['content'] = items.instance_id, items.prompt
+        items['testlet_id'] = items.instance_id
         items['grading_criterion'] = [dict(rule=self.grading['rule']) for _ in items.index]
         items['verifier'] = [Judge(judge=rater, judged_by='human',
             spec=json.dumps(self.grading['verifiers']['human'], sort_keys=True)) for rater in items.evaluator]
@@ -74,7 +75,7 @@ class TuluHumanEval(BenchmarkBuild):
             observation_scope=labels['observation_scope']), ensure_ascii=False, allow_nan=False)
             for row in ratings.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', "testlet_id", 'content', 'grading_criterion', 'verifier']],
             'responses': ratings[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             'traces': traces}
 

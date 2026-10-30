@@ -10,6 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class WeaveBench(BenchmarkBuild):
@@ -52,6 +53,7 @@ class WeaveBench(BenchmarkBuild):
             settings_status=labels["settings_status"]) for row in subjects.itertuples()]
         items = records.rename(columns={"task_id": "item_key", "task_prompt": "content"}).copy()
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.item_key
         items["features"] = items[["category"]].to_dict("records")
         items["grading_criterion"] = [dict(rule=json.dumps(dict(pass_rule=self.grading["rule"],
             checks=row.checks, deliverables=row.deliverables), ensure_ascii=False)) for row in items.itertuples()]
@@ -74,9 +76,22 @@ class WeaveBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(source_archive=paths["archive"], source_member=row.source_member,
             source_record=row.source_record, screenshot_members=row.screenshot_members), ensure_ascii=False, allow_nan=False)
             for row in records.itertuples()]
-        return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-                "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+        definitions, outcomes = [], []
+        for row in records.itertuples():
+            for dimension, assessment in row.dimensions.items():
+                score = assessment.get('score')
+                if score is not None and (type(score) not in (int, float) or not 0 <= score <= 1):
+                    raise ValueError('Invalid published dimension score')
+                definitions.append(dict(parent_item_key=row.task_id, component_id=dimension,
+                    grading_criterion=dict(rule=json.dumps(dict(dimension=dimension,
+                        rule='Released trajectory-aware judge dimension score', checks=row.checks,
+                        deliverables=row.deliverables), ensure_ascii=False)),
+                    verifier=Judge(spec=json.dumps(self.grading['verifiers']['published_judge'], sort_keys=True), judged_by='llm')))
+                outcomes.append(dict(parent_response_key=row.task_id, component_id=dimension, response=score))
+        tables = {"subjects": subjects[["subject_key", "raw_label", "features"]],
+                "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
                 "responses": responses, "traces": traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

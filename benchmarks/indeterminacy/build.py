@@ -55,6 +55,16 @@ class Indeterminacy(BenchmarkBuild):
         items = definitions.merge(ratings, on=['task', 'item_index'], how='left', validate='many_to_one')
         items['item_key'] = items.task + ':' + items.item_index.astype(str) + ':' + items['format']
         items['raw_item_id'] = items.item_key
+        # A repeated rating row can alias the same stimulus. Both elicitation
+        # formats must share its first source position without merging trials.
+        stimulus_keys = [(row.task, tuple(str(getattr(row, field))
+            for field in tasks.loc[row.task, 'prompt_fields'])) for row in ratings.itertuples()]
+        first_position = {}
+        for key, position in zip(stimulus_keys, ratings.item_index):
+            first_position.setdefault(key, int(position))
+        ratings['testlet_id'] = [key[0] + ':' + str(first_position[key]) for key in stimulus_keys]
+        items = items.merge(ratings[['task', 'item_index', 'testlet_id']],
+            on=['task', 'item_index'], validate='many_to_one')
         items['tokens'] = [tasks.loc[row.task, 'valid_fc_tokens' if row.format == 'FC' else 'valid_rs_tokens']
             for row in items.itertuples()]
         responses = responses.merge(items[['task', 'item_index', 'format', 'item_key', 'tokens']],
@@ -89,7 +99,7 @@ class Indeterminacy(BenchmarkBuild):
             grade_status=row.grade_status, output_text_available=False), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'trial', 'test_condition']], 'traces': traces}
 
 

@@ -2,6 +2,7 @@
 
 import ast
 import base64
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -68,6 +69,8 @@ class MMMUDevVal(BenchmarkBuild):
         items['attachments'] = [[dict(data=base64.b64decode(value, validate=True),
             path=f'image_{index + 1}.jpg', media_type='image/jpeg', role='input')
             for index, value in enumerate(values)] for values in items.image_values]
+        items['testlet_id'] = items.attachments.map(lambda assets: hashlib.sha256(json.dumps([
+            hashlib.sha256(asset['data']).hexdigest() for asset in assets]).encode()).hexdigest() if assets else None)
         items['content'] = [json.dumps(dict(multimedia_elements=[
             dict(content_type='text/plain', text=row.text),
             *[dict(content_type=asset['media_type'], location=asset['path']) for asset in row.attachments]]),
@@ -89,7 +92,7 @@ class MMMUDevVal(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             'subjects': subjects,
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']],
             'traces': traces,
         }

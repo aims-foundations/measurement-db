@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 2500
-    logical_sha256: 69a517a3e80040f6d65a28849a3a4b5104bbfc6aa59535c585e821ea78ca9598
+    logical_sha256: ac6eff25511d342037b5809cb09323995846a7c1eec27430e53db4f748c74454
+  benchmarks:
+    rows: 1
+    logical_sha256: f287f935ccf24b958a15e5efff5dcc96dab0896e2005e95db267a3beca657746
+  items:
+    rows: 1008
+    logical_sha256: 04824ed203619385204c3d85187d70cce6bd9820e72e4f69ef5366cac7900cab
+  responses:
+    rows: 25200
+    logical_sha256: c3d62bc5ea16e23100adc6795ab6fc558a888736340aa19c3ec67f7823f3dbd0
   subjects:
     rows: 25
     logical_sha256: 77910f3ce441be470df2c0881bb666830116d013cf33b0077466208856739e59
-  responses:
-    rows: 2500
-    logical_sha256: afb1bd6fd3fa581c63e04486525d3997bf3b3fbc44feb2ad453dcedca9019b56
-  items:
-    rows: 100
-    logical_sha256: 35c82702f5c115ed40612a67d2f163619a6e640430655b9d48286b5e832c1ed9
-  benchmarks:
-    rows: 1
-    logical_sha256: f4f074a27dbc83f4f4025018850aa028f2911c86d27ef08aa730be14bd79171a
 source_claims:
   source_responses:
     kind: count
@@ -70,3 +70,35 @@ source_claims:
     scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
       Historical grade exports are absent; no grading is executed.
     expected: 0
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 2500
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 25200
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1008
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 100

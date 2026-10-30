@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -49,6 +50,11 @@ class EmojiAttack(BenchmarkBuild):
         attempts["item_key"] = attempts.attack_family + ":" + attempts.input_hash
         items = attempts.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.item_key
+        # Preserve structured query values literally; unavailable queries do not
+        # establish a relationship between otherwise different released inputs.
+        items['testlet_id'] = [hashlib.sha256(unicodedata.normalize('NFC', json.dumps(
+            query if query else json.loads(content), ensure_ascii=False, sort_keys=True)).encode()).hexdigest()
+            for query, content in zip(items['query'], items.content)]
         items["grading_criterion"] = [dict(rule=self.grading["rule"]) for _ in items.index]
         items["verifier"] = [Judge(spec=json.dumps(dict(attack_family=method, **self.grading["verifiers"]["published"]), sort_keys=True))
             for method in items.attack_family]
@@ -67,7 +73,7 @@ class EmojiAttack(BenchmarkBuild):
             for path, row, record in zip(attempts.source_file, attempts.source_row, attempts.native_line)]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "interactors"]],
             "traces": attempts[["response_key", "trace"]],
         }

@@ -1,20 +1,23 @@
 format_version: 1
 tables:
-  traces:
+  assets:
+    rows: 2166
+    logical_sha256: 167a074daf4a6db389f5e27dfa69d51e485b45e9e29f84d8954a982148d07d38
+  attempts:
     rows: 14613
-    logical_sha256: 8c43d13f33777b57a4c52f624ded5270bed4558068ff02c0583de8bddae3bc4d
+    logical_sha256: 33903b5c5d6e12c11836d3950404593219aca59b1f40dd1cde08697b31da3d88
+  benchmarks:
+    rows: 1
+    logical_sha256: 380b6bde5c028be609ff6c8608d7e1e30ef61f5b48cd3a4d978557401e076e3d
+  items:
+    rows: 1473701
+    logical_sha256: f6f5e80c5e8803ba21bf7d204591d3bad62e8729649d0b48569772f1551f9dd1
+  responses:
+    rows: 3912066
+    logical_sha256: bc24fc7de23f2d89270dfa0d521b748d507c309f91bf52423b332606265a9993
   subjects:
     rows: 65
     logical_sha256: f9659bd3fc98ec4e4d4561c563cf6dc258b0ee2638d82c397527e5c93f84b132
-  responses:
-    rows: 14613
-    logical_sha256: 66228e458bf3630941d458b6c2f11d80a4e891eff2907cc972c8ed62a98c60b0
-  items:
-    rows: 2202
-    logical_sha256: 1126841f105374da7b215a31526b53cc387234efb1a7a95ae519a45ef4e1d337
-  benchmarks:
-    rows: 1
-    logical_sha256: 1ff6f520bbb53c1d1b9c784b078e8f8350b9ced8807ad72a09496bf9a80c85c3
 source_claims:
   source_summary_observations:
     kind: count
@@ -176,3 +179,35 @@ source_claims:
       are restored using the original filename rule, preserving original keys in traces. Unassociated evaluation
       logs remain raw-only. Unavailable grades are null.
     expected: 14613
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SWE-bench-Live/submission
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 14613
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SWE-bench-Live/submission
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3912066
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SWE-bench-Live/submission
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 1473701
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SWE-bench-Live/submission
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 2166

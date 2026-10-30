@@ -100,6 +100,9 @@ class GenAILearning(BenchmarkBuild):
         questions["features"] = [dict(phase="gpt", input_scope=parameters["model_features"]["input_scope"]) for _ in questions.index]
         items = pd.concat([items, questions], ignore_index=True)
         items["raw_item_id"] = items.item_key
+        # Standalone GPT prompts and the student practice worksheet refer to
+        # the same native question coordinate; exam questions remain separate.
+        items['testlet_id'] = items.raw_item_id.str.replace('^gpt:', 'practice:', regex=True)
         items["grading_criterion"] = [dict(rule=protocols[phase]["protocol"], response_scale=protocols[phase]["response_scale"]) for phase in items.phase]
         items["verifier"] = [Judge(spec=json.dumps(protocols[phase], sort_keys=True), judged_by="human") for phase in items.phase]
 
@@ -122,7 +125,7 @@ class GenAILearning(BenchmarkBuild):
             for record in model_traces.drop(columns="response_key").to_dict("records")]
         traces = pd.concat([student_traces, model_traces], ignore_index=True)
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "attachments", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "attachments", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces[["response_key", "trace"]]}
 

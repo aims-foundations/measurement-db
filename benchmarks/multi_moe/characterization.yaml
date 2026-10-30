@@ -5,7 +5,7 @@ tables:
     logical_sha256: 70ee622b24b84d7c9210eb30192ee09cbe066e62903cebbc50461250a91bb060
   items:
     rows: 5140
-    logical_sha256: 4bff7423cace8ec44bb68c11fa12f080440b90f3bc339cb33f3925d9d48e3118
+    logical_sha256: 0887c8b5eba6f12a8f4a098d38e721548ab6e80a72c4c2982605a574f0ff8922
   responses:
     rows: 9620
     logical_sha256: 150dd8683444e9df44bb840673ffcb70f3bc455c7e95385c0d019489d123e51d

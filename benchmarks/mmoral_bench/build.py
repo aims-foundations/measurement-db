@@ -37,6 +37,7 @@ class MMOralBench(BenchmarkBuild):
             raise ValueError('A task split repeats an upstream item index')
         items['raw_item_id'] = items.item_key
         items['image_sha256'] = items.image.map(lambda value: hashlib.sha256(base64.b64decode(value, validate=True)).hexdigest())
+        items['testlet_id'] = items.image_sha256
 
         # 2. Verify the analysis study's task mapping, preserving its lossy option export.
         compact = pd.json_normalize(json.loads((self.raw_dir / layout['compact_tasks']).read_text()), max_level=0)
@@ -127,7 +128,7 @@ class MMOralBench(BenchmarkBuild):
             compact_export_missing_options=row.compact_missing_options), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

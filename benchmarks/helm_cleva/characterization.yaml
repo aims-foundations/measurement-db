@@ -5,7 +5,7 @@ tables:
     logical_sha256: 294fa7b64df698eeee0a001dd65678b380acde29485ef4fd66625ad6741c4dc3
   items:
     rows: 7536
-    logical_sha256: 70cb48b77381dbba0de58dc5f90fe317ae595bd3a1299e5f4bfa43ee83ac763e
+    logical_sha256: de6e1e0a88ceb55c02165a3985749361327e215b7c5f6aa97d6eae5bb5251966
   responses:
     rows: 28724
     logical_sha256: 72796832baddb7e9526cf2935a3d90b93e55cde9fb91a0bf40c3f85202512886
@@ -20,24 +20,21 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
     expected: 84
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
     expected: 28724
   source_grade_sums:
     kind: aggregate
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
     expected:
       chinese_bleu_1: 1938.9668934168596
@@ -51,7 +48,6 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
-    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
-      files.
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats files.
     scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
     expected: 2212

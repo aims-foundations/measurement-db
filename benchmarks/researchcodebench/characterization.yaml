@@ -5,7 +5,7 @@ tables:
     logical_sha256: c87ad9380b19fd66e1894a3a4abd13d2d9224b2eac450ac0db289045264b9e70
   items:
     rows: 212
-    logical_sha256: 72bd28f6892d05bbe4eae1c129e9efe36852b7df234f275f0e6da662afd53c30
+    logical_sha256: 79bd6aa7e1281ccc2b710037b64f722a02b7d9c59e2c297efebbce45d717fe45
   responses:
     rows: 6784
     logical_sha256: 76ac5ad6b2fc5db74f29aa0416f8f294a3b76c51c0987e69a851323213e3b62a
@@ -46,8 +46,8 @@ source_claims:
     origin: reported
     source: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
     locator: 'outputs/20llms_greedy/2025-05-12-17-13-20/overall_stats.json: overall_scores.<model>.task_rates.mean'
-    scope: Percentage passed for each of the 32 released model configurations, each over 212 snippets
-      in the headline greedy run; compare 100 times mean(passed).
+    scope: Percentage passed for each of the 32 released model configurations, each over 212 snippets in the headline
+      greedy run; compare 100 times mean(passed).
     expected:
       CLAUDE_3_5_SONNET_2024_10_22: 48.58490566037736
       CLAUDE_3_7_SONNET_2025_02_19: 51.886792452830186

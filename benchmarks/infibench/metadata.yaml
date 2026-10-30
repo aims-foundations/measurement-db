@@ -3,18 +3,22 @@ benchmark:
   version: v2.1; historical v2.0.0 development release
   description: Per-attempt programming-question grades from the author-released InfiBench evaluation logs, including
     three human-answer comparators and the historical two-model development release.
-  testing_condition: One response is one released sampled completion, not the mean of best-of-ten groups used in
-    the published leaderboard. Use native all_scores where available; reconstruct the historical development scores
-    only from original component totals and caps. Preserve scores outside the nominal zero-to-one range without
-    clipping. Items contain original question text and grading definitions; unsaved chat templates and inference
-    settings are not invented. Link raw completions only through exact source filename aliases, case IDs and native
-    within-case row order. Unmatched raw files remain captured, and grading-only traces do not claim to be full
-    conversations. The two releases remain distinct evaluation configurations; independence of their underlying
-    generations is not established. No model or grader execution.
+  testing_condition: Released keyword matches, blank answers, unit tests and similarity assessments become separate
+    items grouped by versioned source question. Native custom-grader points remain a single component when no named
+    subchecks exist. Each item declares its own scale and direction; negative-keyword matches are lower-is-better.
+    Score weights, conditional dependencies, caps, original aggregate scores and complete outputs remain available
+    in the grading definition and shared attempt. No test code or custom grader is executed. One response is one
+    released sampled completion, not the mean of best-of-ten groups used in the published leaderboard. Use native
+    all_scores where available; reconstruct the historical development scores only from original component totals
+    and caps. Preserve scores outside the nominal zero-to-one range without clipping. Items contain original question
+    text and grading definitions; unsaved chat templates and inference settings are not invented. Link raw completions
+    only through exact source filename aliases, case IDs and native within-case row order. Unmatched raw files remain
+    captured, and grading-only traces do not claim to be full conversations. The two releases remain distinct evaluation
+    configurations; independence of their underlying generations is not established. No model or grader execution.
   paper_url: https://arxiv.org/abs/2404.07940
   data_source_url: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
   subject_type: model_or_human_answer_collection
-  item_type: programming_question_and_grading_protocol
+  item_type: check_within_programming_question_testlet
   license: 'Figshare evaluation release: CC BY 4.0. Both captured GitHub code repositories: Apache-2.0. Original
     question and answer sources retain their attribution requirements.'
   citation: "@inproceedings{li2024infibench,\n  title={InfiBench: Evaluating the Question-Answering Capabilities\
@@ -28,12 +32,9 @@ benchmark:
   - text
   domain:
   - code
-  response_type: continuous_unbounded
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: null
-    max: null
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   release_date: '2024-08-15'
   release: public

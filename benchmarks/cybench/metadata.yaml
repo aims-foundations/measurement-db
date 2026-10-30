@@ -33,13 +33,12 @@ benchmark:
   - text
   domain:
   - cybersecurity
-  response_type: fraction
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values: [0, 1]
     direction: higher_is_better
-  categorical: false
+  categorical: true
   release_date: 2024-08
   name: Cybench
   version: arXiv v4 and the released task logs
@@ -79,8 +78,8 @@ sources:
       path: logs/{path}
   - name: paper
     url: https://arxiv.org/html/2408.08926v4
-    size: 6327720
-    sha256: 296a94519f394d4e4a1b4ad9012c13fd22700e3fabe11d96bbc7a225e4100f22
+    size: 6327810
+    sha256: 91239804b141fc1c4dd2f44043db1a6118ec8a9c6612de29fc9fcfb86777229e
     revision: null
     file: paper/cybench-v4.html
   - name: paper_pdf

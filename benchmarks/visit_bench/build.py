@@ -184,8 +184,9 @@ class VisITBench(BenchmarkBuild):
             cached_judgments=r.cached_judgments if isinstance(r.cached_judgments, list) else [],
             unavailable_grading_images=[url for url in r.images if url not in image_bytes], scope=labels['trace_scope']), ensure_ascii=False, allow_nan=False)
             for r in responses.itertuples()]
+        items["testlet_id"] = items.task_key
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'test_condition', 'interactors']], 'traces': traces}
 
 

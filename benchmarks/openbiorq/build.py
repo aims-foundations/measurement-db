@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class OpenBioRQ(BenchmarkBuild):
@@ -24,7 +25,8 @@ class OpenBioRQ(BenchmarkBuild):
         if not items._merge.eq("both").all() or not items.self_contained_question.eq(items.question).all():
             raise ValueError("OpenBioRQ questions and grading rubrics do not match")
         items = items.assign(
-            item_key=items.task_id, raw_item_id=items.task_id, content=items.self_contained_question,
+            item_key=items.task_id, raw_item_id=items.task_id, testlet_id=items.task_id,
+            content=items.self_contained_question,
             grading_criterion=items.apply(lambda row: {
                 "rule": json.dumps({"aggregation": self.grading["rule"], "criteria": row.criteria}, sort_keys=True),
                 "reference_answer": json.dumps(row.gold_answer, ensure_ascii=False, sort_keys=True),
@@ -65,13 +67,39 @@ class OpenBioRQ(BenchmarkBuild):
         )
 
         # 4. Retain each complete native prediction record, including messages and tool responses.
-        traces = responses[["response_key", "source_record"]].rename(columns={"source_record": "trace"})
-        return {
+        traces = responses[["response_key"]].copy()
+        traces["trace"] = [json.dumps(dict(prediction=json.loads(row.source_record),
+            checklist_score=None if pd.isna(row.checklist_score) else row.checklist_score,
+            verdicts=row.verdicts if isinstance(row.verdicts, list) else []),
+            ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+
+        # 5. Preserve individual checklist judgments instead of thresholding their average.
+        protocol = self.grading["verifiers"]["checklist"]
+        definitions = []
+        for row in items.itertuples():
+            for criterion in row.criteria:
+                definitions.append(dict(parent_item_key=row.item_key, component_id=str(criterion["id"]),
+                    grading_criterion=dict(reference_answer=json.dumps(row.gold_answer, ensure_ascii=False, sort_keys=True),
+                        rule=json.dumps(dict(rule=protocol["criterion_rule"], criterion=criterion), ensure_ascii=False, sort_keys=True)),
+                    verifier=Judge(judged_by="llm", spec=json.dumps(dict(protocol,
+                        selected_criterion_id=criterion["id"]), sort_keys=True))))
+        outcomes = []
+        criteria_by_task = items.set_index('item_key').criteria.to_dict()
+        for row in responses.itertuples():
+            verdicts = {verdict['id']: protocol['verdict_values'][verdict['v']]
+                for verdict in row.verdicts} if isinstance(row.verdicts, list) else {}
+            if not set(verdicts) <= {criterion['id'] for criterion in criteria_by_task[row.item_key]}:
+                raise ValueError('A released verdict has no matching rubric criterion')
+            for criterion in criteria_by_task[row.item_key]:
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=str(criterion['id']),
+                    response=verdicts.get(criterion['id'])))
+        tables = {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

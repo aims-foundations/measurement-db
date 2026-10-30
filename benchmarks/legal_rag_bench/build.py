@@ -78,9 +78,10 @@ class LegalRagBench(BenchmarkBuild):
                                       "source_row": row.source_row, "record": row.native_record},
                                      ensure_ascii=False, allow_nan=False)
                            for row in responses.itertuples()]
+        items["testlet_id"] = items.question_id.astype(str)
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "attachments"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

@@ -3,6 +3,8 @@
 
 import ast
 import json
+import hashlib
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -52,6 +54,7 @@ class EngiBench(BenchmarkBuild):
         items = responses.drop_duplicates(["content", "criterion"]).copy()
         items["item_key"] = range(len(items))
         items["raw_item_id"] = "beams2d:example:" + items.design_index.astype(str) + ":" + items.criterion
+        items['testlet_id'] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize('NFC', text).encode()).hexdigest())
         items["grading_criterion"] = [{"rule": json.dumps({"criterion": kind, "rule": parameters["rules"][kind]})}
                                      for kind in items.criterion]
         items["verifier"] = [ExactMatcher(spec=json.dumps({**self.grading["verifiers"]["native_gap"], "criterion": kind}))
@@ -70,7 +73,7 @@ class EngiBench(BenchmarkBuild):
                                      ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import unicodedata
 from zipfile import ZipFile
 
 from cryptography.fernet import Fernet
@@ -14,6 +15,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class TauBench(BenchmarkBuild):
@@ -100,9 +102,13 @@ class TauBench(BenchmarkBuild):
             configuration_scope=labels['configuration_scope']) for row in subjects.itertuples()]
         attempts['response_key'] = attempts.source_file + '::' + attempts.source_row.astype(str)
         items = attempts[['response_key', 'task', 'task_id', 'domain']].rename(columns={'response_key': 'item_key'})
-        items['raw_item_id'] = items.domain + '/' + items.task_id
         items['content'] = items.task.map(lambda task: json.dumps(dict(user_id=task['user_id'], instruction=task['instruction']),
             sort_keys=True, ensure_ascii=False))
+        # Sierra and HAL sometimes assign different IDs to the same stimulus.
+        # Hash the shared input, not the source-specific task/run identifier.
+        items['testlet_id'] = items.domain + '/' + items.content.map(lambda content:
+            hashlib.sha256(unicodedata.normalize('NFC', content).encode()).hexdigest())
+        items['raw_item_id'] = items.testlet_id
         items['features'] = [dict(domain=row.domain, input_scope=labels['input_scope']) for row in items.itertuples()]
         items['grading_criterion'] = items.task.map(lambda task: dict(rule=json.dumps(dict(rule=self.grading['rule'],
             actions=task['actions'], outputs=task['outputs']), sort_keys=True, ensure_ascii=False)))
@@ -129,10 +135,36 @@ class TauBench(BenchmarkBuild):
             run_config=row.run_config if isinstance(row.run_config, dict) else None,
             result=row.native_record, logs=row.logs, task_definition_source=row.task_definition_source),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        # 7. Sierra logs retain database and individual textual-output checks.
+        # HAL exports without those records retain their original overall reward.
+        definitions, outcomes = [], []
+        for row in attempts.itertuples():
+            if not isinstance(row.native_record, dict):
+                continue
+            reward = ((row.native_record.get('info') or {}).get('reward_info') or {}).get('info') or {}
+            checks = []
+            if 'r_actions' in reward:
+                checks.append(('database', dict(reference_actions=row.task['actions'],
+                    expected_database_hash=reward.get('gt_data_hash'),
+                    rule='Recorded final-database match; individual action success is not reported'), reward['r_actions']))
+            for output, met in (reward.get('outputs') or {}).items():
+                if type(met) is not bool or output not in row.task['outputs']:
+                    raise ValueError('A recorded output check disagrees with the task definition')
+                checks.append(('output:' + output, dict(required_output=output,
+                    rule='Recorded presence of the required textual output'), float(met)))
+            for component, rule, grade in checks:
+                if grade not in (0, 1):
+                    raise ValueError('A tau-bench component grade is not binary')
+                definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                    grading_criterion=dict(rule=json.dumps(rule, ensure_ascii=False, sort_keys=True)),
+                    verifier=ExactMatcher(spec=json.dumps(dict(self.grading['verifiers']['native'],
+                        component=component), sort_keys=True))))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=grade))
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'trial', 'response', 'test_condition']],
             'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

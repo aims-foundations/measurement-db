@@ -11,7 +11,7 @@ tables:
     logical_sha256: 3f4c10fcb1d4762791a204cd4c08ee40f1e3640e13c0064273c7af8ff4d423bb
   items:
     rows: 9
-    logical_sha256: c463e2bd465cc98a3ead8e7e0d09c0bfd9fc37d53f3a97daf18b7a0dc457ed1d
+    logical_sha256: dcf25bbdb6838789a96fedc7c9609515a71964afe78b8f169e4690cee6e8b067
   benchmarks:
     rows: 1
     logical_sha256: fc578507407ae436cba8b9c90e4c65d99fe4516b59995d04228d3290652a3946
@@ -22,8 +22,8 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 18
   source_items:
     kind: count
@@ -31,8 +31,8 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 9
   source_conditions:
     kind: count
@@ -40,8 +40,8 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 3
   source_designs:
     kind: count
@@ -49,8 +49,8 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 6
   source_configurations:
     kind: count
@@ -58,8 +58,8 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 2
   source_traces:
     kind: count
@@ -67,8 +67,8 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 18
   source_negative_scores:
     kind: count
@@ -76,6 +76,6 @@ source_claims:
     source: https://github.com/IDEALLab/EngiOpt
     locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
       stdout.'
-    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
-      notebook without executing code.
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete notebook
+      without executing code.
     expected: 4

@@ -83,6 +83,7 @@ class BraveGuard(BenchmarkBuild):
         if items.item_key.duplicated().any():
             raise ValueError("Conflicting reference labels for one trajectory")
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.trajectory_key
         items["trajectory_text"] = items.trajectory_key.map(trajectory_text)
         items["content"] = [json.dumps([
             dict(role="system", content=parameters["system_prompts"][row.subject_key]),
@@ -110,7 +111,7 @@ class BraveGuard(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
         return {
             "subjects": configurations[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "trial", "test_condition"]],
             "traces": traces,
         }

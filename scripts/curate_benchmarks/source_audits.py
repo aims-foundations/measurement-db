@@ -21,6 +21,9 @@ def _json(path):
 def source_observations(directory):
     directory = Path(directory)
     raw, slug = directory / "raw", directory.name
+    from .testlet_audits import SUPPORTED, verify_component_results
+    if slug in SUPPORTED and (directory / 'formatted_tables/attempts.parquet').exists():
+        return verify_component_results(directory)
     if slug.startswith("medhelm_") or slug in {
         "helm_airbench", "helm_anthropic_redteam", "helm_bbq", "helm_bold", "helm_afr", "helm_cleva", "helm_thaiexam",
         "helm_harmbench", "helm_real_toxicity_prompts", "helm_simple_safety_tests", "helm_xstest",
@@ -398,6 +401,7 @@ def verify_helm_upstream(directory, tables_directory=None):
     """
     import ast
     import gzip
+    import hashlib
     import unicodedata
     import yaml
 
@@ -501,12 +505,31 @@ def verify_helm_upstream(directory, tables_directory=None):
                 reference=(references if profile.get("reference_encoding") == "json_array" else references[0] or None)
                           if reference_kind == "gold" else None,
                 extra=item.get("extra_data") or {}, source_input=item["input"]["text"],
+                testlet_id=hashlib.sha256(unicodedata.normalize('NFC', json.dumps(
+                    {'scenario': spec['scenario_spec'], 'input': item['input']},
+                    sort_keys=True, ensure_ascii=False)).encode()).hexdigest(),
                 verifier_spec=verifier_spec, features=features,
                 metric=metric, profile=profile,
                 result=results[key] if results is not None else None,
             )
         if set(grades) - prediction_keys:
             raise ValueError("Native HELM grades lack predictions")
+
+    # Independently detect source questions collapsed by a truncated request.
+    # A single canonical item cannot truthfully name one of several parents.
+    parent_sets = {}
+    native_signatures = {}
+    for identity, native in expected.items():
+        signature = json.dumps(dict(
+            prompt=unicodedata.normalize('NFC', native['request']['prompt']).strip(),
+            reference=native['reference'], extra=native['extra'],
+            verifier=native['verifier_spec'], features=native['features']),
+            ensure_ascii=False, sort_keys=True)
+        native_signatures[identity] = signature
+        parent_sets.setdefault(signature, set()).add(native['testlet_id'])
+    for identity, native in expected.items():
+        if len(parent_sets[native_signatures[identity]]) > 1:
+            native['testlet_id'] = None
 
     subjects = {row["subject_id"]: row for row in pq.read_table(tables_directory / "subjects.parquet").to_pylist()}
     items = {row["item_id"]: row for row in pq.read_table(tables_directory / "items.parquet").to_pylist()}
@@ -533,6 +556,7 @@ def verify_helm_upstream(directory, tables_directory=None):
         checks = {
             "grade": row["response"] == native["grade"],
             "condition": row["test_condition"] == "scenario=" + configuration["scenario"],
+            "source testlet": item['testlet_id'] == native['testlet_id'],
             "model": subject["display_name"] == native["model"],
             "harness": subject["harness"] == "HELM",
             "release": f"helm_release={configuration['release']};" in subject["subject_features_extra"],

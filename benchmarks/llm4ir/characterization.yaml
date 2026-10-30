@@ -1,27 +1,27 @@
 format_version: 1
 tables:
-  traces:
-    rows: 5348
-    logical_sha256: 087249cfa6d15d032be47803ac5fcc8c1ca58f6842c2052807a330ae61502bfc
+  benchmarks:
+    rows: 1
+    logical_sha256: 33350f52654b78be96aa7d1e33bcd8afb3ae51a64a5c69374b608d46c58dd76f
+  items:
+    rows: 3920
+    logical_sha256: 9042a3e906b38f83a5b533ff3227c5c543ddf2de3d58984590f952facf4833f4
+  responses:
+    rows: 15084
+    logical_sha256: 7b2f028dac8423500ed9ded9a9668dc46853daacd4e576350d2014fcc0036f42
   subjects:
     rows: 19
     logical_sha256: ac371ee7ea81dd3b6b25a0ceec17846b839654659aecc9d9e816251472e18317
-  responses:
-    rows: 5348
-    logical_sha256: fb8cc46501af18cd08164484a0fa79513ed87b5f22f10f7165c12ff2aac612ed
-  items:
-    rows: 1804
-    logical_sha256: f8c201458df9075bcb406a0fe3ba466e127983148ff2879bff4ee1b05989a4b3
-  benchmarks:
-    rows: 1
-    logical_sha256: 90cb6035ba8ef5be49b5011e9fc1395bf8e9fa6ee38faafb408278827094d5ad
+  traces:
+    rows: 15084
+    logical_sha256: c3c341649aad297a47b75c24165743e4d393e2e5174b9da5e469cbe3d22f57ee
 source_claims:
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 5348
@@ -29,8 +29,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 19
@@ -38,8 +38,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 1804
@@ -47,8 +47,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 12
@@ -56,8 +56,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 4997
@@ -65,8 +65,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 544
@@ -74,8 +74,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 1148
@@ -83,8 +83,8 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
     expected: 1864
@@ -92,8 +92,64 @@ source_claims:
     kind: count
     origin: derived_from_data
     source: https://github.com/hjiang13/LLM4IR
-    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
-      \ and source-code inputs."
+    locator: Pinned primary CSV tables in data/Task1–Task4, and three DeepSeek execution runs for both IR and source-code
+      inputs.
     scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
       exclusions.
+    expected: 1792
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 0
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 15084
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 3920
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 164
+  source_assertion_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source assertion predictions. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 11364
+  source_unavailable_assertion_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source unavailable assertion labels. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 3290
+  source_assessment_collections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source assessment collections. Original aggregate measurements and physical
+      executions are counted separately from component observations.
     expected: 1792

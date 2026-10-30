@@ -1,6 +1,7 @@
 """Tabulate released scientific tasks and their original endpoint assessments."""
 
 import json
+import hashlib
 from pathlib import Path
 import sys
 
@@ -8,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ScBenchLong(BenchmarkBuild):
@@ -54,6 +56,7 @@ class ScBenchLong(BenchmarkBuild):
         if not rows.expectedAnswer.map(lambda value: json.dumps(value, sort_keys=True)).eq(rows.item_key.map(rules)).all():
             raise ValueError('A native run uses a different grading definition from the released task')
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.item_key
         items['grading_criterion'] = items.item_key.map(rules).map(lambda rule: dict(rule=rule))
         items['verifier'] = [ExactMatcher(spec=json.dumps(self.grading['verifiers']['reported'], sort_keys=True))] * len(items)
         items['features'] = [dict(input_scope=labels['input_scope'], source_data_nodes=json.dumps(nodes)) for nodes in items.data_nodes]
@@ -78,9 +81,25 @@ class ScBenchLong(BenchmarkBuild):
             preview_source=row.preview_source if isinstance(row.preview_source, str) else None,
             native_preview=row.native_preview if isinstance(row.native_preview, dict) else None),
             ensure_ascii=False, allow_nan=False) for row in rows.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+        definitions, outcomes, seen = [], [], set()
+        bank = items.set_index('item_key').to_dict('index')
+        for row in rows.itertuples():
+            for check in row.native_record.get('graderChecks') or []:
+                if type(check['passed']) is not bool:
+                    raise ValueError('A named grader check lacks a binary verdict')
+                component = hashlib.sha256(json.dumps([check['kind'], check['name']]).encode()).hexdigest()
+                if (row.item_key, component) not in seen:
+                    seen.add((row.item_key, component))
+                    definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion=dict(rule=json.dumps(dict(check=check['name'], kind=check['kind'],
+                            rule='Released passed flag for this named grader check',
+                            task_grader=bank[row.item_key]['expectedAnswer']), sort_keys=True)),
+                        verifier=bank[row.item_key]['verifier']))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=float(check['passed'])))
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             'responses': rows[['response_key', 'subject_key', 'item_key', 'trial', 'response']], 'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

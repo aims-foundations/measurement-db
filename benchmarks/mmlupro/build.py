@@ -1,6 +1,8 @@
 """Tabulate MMLU-Pro's original question-level predictions and complete outputs."""
 
 import json
+import unicodedata
+import hashlib
 from pathlib import Path
 import sys
 from urllib.parse import quote
@@ -81,6 +83,7 @@ class MMLUPro(BenchmarkBuild):
         items['content'] = [json.dumps(dict(question=row.question, options=row.options),
             ensure_ascii=False) for row in items.itertuples()]
         items['raw_item_id'] = items.question_id.astype(str)
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         items['features'] = [dict(category=quote(row.category, safe=' /-._'),
             source=quote(row.src, safe=' /-._')) for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=value, rule=self.grading['rule']) for value in items.answer]
@@ -94,7 +97,7 @@ class MMLUPro(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
         return {
             'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', "testlet_id", 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']],
             'traces': traces,
         }

@@ -2,24 +2,26 @@ benchmark:
   release: public
   name: 'CARE: Classification and Retrieval of Enzymes'
   description: Released enzyme-classification and reaction-to-enzyme retrieval predictions from CARE.
-  testing_condition: 'Import all 45 final result files and one separately identified June 2024 legacy sample.
-    Use the released evaluator''s k=1, EC-level-4 statistic: average exact-match credit over the reference
-    EC labels. Missing rank-zero predictions are failures, not absent observations; multi-function enzymes
-    can receive fractional credit. Retain every original column and ranked prediction without truncation. Split-specific
-    reaction models/reference databases are distinct subject configurations. Text-augmented methods receive
-    an EC description derived from the reference class by the upstream protocol; keep these input variants
-    separate. The legacy sample has a resolved original reaction and reference, but its exact prompt mode and
-    API request are unavailable, and its recorded columns were lexically reordered by the historical helper.
-    It is a separate collection, not an additional final-paper replicate. Full model messages, resolved weights/API
-    snapshots, and historical Foldseek structures are not released. No inference, retraining, or subjective
-    judging.'
+  testing_condition: 'Each reference EC label becomes a binary item within its shared input. The native rank-zero
+    candidate parsing, missing-value behavior and complete four-component label comparison remain unchanged. Each
+    original attempt preserves its aggregate reference-label recall and full source row. Import all 45 final result
+    files and one separately identified June 2024 legacy sample. Use the released evaluator''s k=1, EC-level-4 statistic:
+    average exact-match credit over the reference EC labels. Missing rank-zero predictions are failures, not absent
+    observations; multi-function enzymes can receive fractional credit. Retain every original column and ranked
+    prediction without truncation. Split-specific reaction models/reference databases are distinct subject configurations.
+    Text-augmented methods receive an EC description derived from the reference class by the upstream protocol;
+    keep these input variants separate. The legacy sample has a resolved original reaction and reference, but its
+    exact prompt mode and API request are unavailable, and its recorded columns were lexically reordered by the
+    historical helper. It is a separate collection, not an additional final-paper replicate. Full model messages,
+    resolved weights/API snapshots, and historical Foldseek structures are not released. No inference, retraining,
+    or subjective judging.'
   paper_url: https://arxiv.org/abs/2406.15669
   data_source_url: https://github.com/jsunn-y/CARE
   subject_type: model
-  item_type: task
+  item_type: reference_enzyme_label_within_input_testlet
   license: MIT
-  citation: 'CARE: a Benchmark Suite for the Classification and Retrieval of Enzymes (2024). NeurIPS Datasets
-    and Benchmarks; arXiv:2406.15669.'
+  citation: 'CARE: a Benchmark Suite for the Classification and Retrieval of Enzymes (2024). NeurIPS Datasets and
+    Benchmarks; arXiv:2406.15669.'
   tags:
   - enzymes
   - protein_classification
@@ -28,14 +30,16 @@ benchmark:
   - text
   domain:
   - science
-  response_type: continuous_bounded
+  response_type: binary
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
+    kind: discrete
+    values:
+    - 0
+    - 1
     direction: higher_is_better
   release_date: 2024-06
   multi_single_turn: single_turn
+  categorical: true
 build:
   contract_version: 2
   parameters:

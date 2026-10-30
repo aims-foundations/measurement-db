@@ -100,6 +100,7 @@ class AuditingSabotageBench(BenchmarkBuild):
         subjects["features"] = [dict(harness=self.build_parameters["subject"]["harness"], model_identifier=row.model,
             regime=row.regime, identity_note=row.note) for row in subjects.itertuples()]
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = items.sample_id
         items["features"] = items.regime.map(lambda regime: {"regime": regime})
         items["grading_criterion"] = items.target.map(lambda target: {"reference_answer": target, "rule": self.grading["rule"]})
         items["verifier"] = ExactMatcher(spec=json.dumps(self.grading["verifiers"]["detection"], sort_keys=True))
@@ -109,7 +110,7 @@ class AuditingSabotageBench(BenchmarkBuild):
             for row in observations.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

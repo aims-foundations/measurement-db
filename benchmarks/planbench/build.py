@@ -86,6 +86,7 @@ class PlanBench(BenchmarkBuild):
                                for row in records.itertuples()]
         items = records.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.domain + "/instance_" + items.instance_id.astype(str)
+        items["testlet_id"] = items.raw_item_id
         items["features"] = items[["domain", "instance_id"]].to_dict("records")
         items["verifier"] = items.verifier_spec.map(lambda spec: ExactMatcher(spec=spec))
 
@@ -96,7 +97,7 @@ class PlanBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(source_locations=row.source_locations, source_header=row.header,
             source_record=row.source_record), ensure_ascii=False, allow_nan=False) for row in records.itertuples()]
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-                "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+                "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
                 "responses": responses, "traces": traces}
 
 

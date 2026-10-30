@@ -81,6 +81,7 @@ class AgentDojo(BenchmarkBuild):
         if items.prompt.isna().any() or (security & items.injection.ne("none") & items.goal.isna()).any():
             raise ValueError("An AgentDojo run lacks its user prompt or injection goal")
         items = items.assign(
+            testlet_id=items.suite + "::" + items.task,
             raw_item_id=items.suite + "::" + items.task + ("::" + items.injection).where(security, ""),
             content=items.prompt.where(~security, "[user_task] " + items.prompt
                 + ("\n[injection_task] " + items.goal).fillna("")),
@@ -99,7 +100,7 @@ class AgentDojo(BenchmarkBuild):
         traces["trace"] = traces.messages.map(lambda value: json.dumps(value, ensure_ascii=False))
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response", "interactors"]],
             "traces": traces[["response_key", "trace"]],
         }

@@ -87,7 +87,8 @@ class PsychosisBench(BenchmarkBuild):
             dimension=row.dimension, assistant=row.assistant, configuration=row.configuration,
             released_rating=None if pd.isna(row.response) else row.response), ensure_ascii=False)
             for row in measured.itertuples()]
-        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'content', 'features',
+        items["testlet_id"] = items.id
+        return dict(subjects=subjects, items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features',
             'grading_criterion', 'verifier']],
             responses=measured[['response_key', 'subject_key', 'item_key', 'response', 'interactors']], traces=traces)
 

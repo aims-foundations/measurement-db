@@ -61,6 +61,7 @@ class XSTest(BenchmarkBuild):
         definition = ['id', 'prompt', 'type', 'grader']
         items = ratings[definition].drop_duplicates().reset_index(drop=True)
         items['item_key'], items['raw_item_id'], items['content'] = items.index, items.id, items.prompt
+        items['testlet_id'] = items.raw_item_id
         items['grading_criterion'] = [dict(rule=self.grading['rule']) for _ in items.index]
         items['verifier'] = [ExactMatcher(spec=json.dumps(protocols[grader], sort_keys=True)) if protocols[grader]['kind'] == 'deterministic'
             else Judge(judge=protocols[grader].get('model'), judged_by=protocols[grader]['kind'],
@@ -78,7 +79,7 @@ class XSTest(BenchmarkBuild):
             grade_available=pd.notna(row.response), observation_scope=parameters['descriptions']['observation_scope']),
             ensure_ascii=False, allow_nan=False) for row in ratings.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'grading_criterion', 'verifier', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'grading_criterion', 'verifier', 'features']],
             'responses': ratings[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

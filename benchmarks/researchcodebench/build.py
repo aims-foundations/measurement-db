@@ -146,6 +146,7 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
         items = items.assign(
             item_key=items.paper + "::" + items.snippet,
             raw_item_id=items.paper + "::" + items.snippet,
+            testlet_id=items.paper,
             content=header + prompt["code_prefix"] + items.paper.map(context_text).fillna("") + items.masked_code + prompt["code_suffix"],
             grading_criterion=criteria.to_dict("records"), verifier=verifier,
             features=items[["paper"]].to_dict("records")
@@ -166,7 +167,7 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
         traces = responses.loc[responses.trace.notna(), ["response_key", "trace"]]
         return {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

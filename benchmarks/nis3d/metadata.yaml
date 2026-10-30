@@ -1,15 +1,15 @@
 benchmark:
   name: NIS3D
   description: Recorded 3D nuclei segmentation quality on six embryonic microscopy volumes.
-  testing_condition: Import the five published quality metrics for each of six segmentation configurations on six
-    individual image volumes (36 segmentation results assessed five ways, represented by 180 grade rows and 30 volume/grading
-    identities). Grades are the unmodified, rounded values from paper Table 3; no segmentation or grading is rerun.
-    The 36 measured runtimes remain in traces, rather than being treated as segmentation grades. Original TIFF inputs
-    are embedded once as assets; ground-truth and confidence maps remain separate grading references in the captured
-    archive. Thirty original method-output arrays are available for five volumes; MusMusculus_2 arrays are absent.
-    Source filenames associate these arrays with the published experiments; they are not asserted to reproduce the
-    rounded paper scores. Human reference rows and proposed train/test splits are retained in raw but not counted
-    as AI observations. Exact historical software/checkpoint revisions are not released.
+  testing_condition: Keep all 180 original paper quality measurements and their rounded values on the 36 source
+    method-volume records. Where a released prediction array and the pinned native object matcher reproduce all
+    five published metrics to paper precision, expose a binary recovery item and continuous matched IoU item for
+    each reference nucleus, plus the native false-positive count. Confidence weights and source mask labels remain
+    in each grading definition. Preserve the whole-volume weighted IoU separately. Missing or unreconciled output
+    arrays retain only their original published metrics. This replays deterministic comparisons of saved labels;
+    it does not rerun segmentation or infer historical software settings. Thirty saved arrays cover five volumes;
+    MusMusculus_2 arrays are absent. Human reference rows stay outside AI observations. Original microscopy TIFFs
+    remain input assets and ground-truth masks remain grading references.
   paper_url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
   data_source_url: https://zenodo.org/records/11456029
   subject_type: model
@@ -28,12 +28,9 @@ benchmark:
   - image
   domain:
   - biology
-  response_type: continuous
+  response_type: mixed
   response_scale:
-    kind: interval
-    min: 0
-    max: 1
-    direction: higher_is_better
+    kind: mixed
   categorical: false
   release_date: 2023-12
   release: public
@@ -152,6 +149,39 @@ grading:
       name: W-SEG
       field: wSEG
       rule: 'Confidence-weighted instance overlap: sum(GtIoU.*GtVot)/(wTP+FP+wFN).'
+    components:
+      detected:
+        rule: The native mutual best-IoU matcher recovers this reference nucleus after masking low-confidence regions.
+          A missing match is 0; the published IoUThres option is unused. Confidence weight affects the original
+          aggregate, not this binary flag.
+        response_scale:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: higher_is_better
+      iou:
+        rule: Intersection over union for the mutual best native match of this reference nucleus; 0 when no valid
+          mutual match exists. This retains the native continuous overlap, without adding a correctness threshold.
+        response_scale:
+          kind: interval
+          min: 0
+          max: 1
+          direction: higher_is_better
+      false_positives:
+        rule: Count of nonignored predicted nuclei without a mutual best-IoU reference match.
+        response_scale:
+          kind: interval
+          min: 0
+          max: null
+          direction: lower_is_better
+      implementation:
+        source: https://zenodo.org/records/11457793
+        archive: NIS3D_ExperimentResult.zip
+        function: evaluateScore_3
+        lowVotThres: 1
+        label_rule: Fill lowest missing label with highest used label; MATLAB first-label tie rule.
+        gate: All five replayed metrics must match the saved paper rounding before component extraction.
 sources:
   upstream:
   - name: license

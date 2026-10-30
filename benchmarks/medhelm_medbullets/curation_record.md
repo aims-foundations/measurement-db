@@ -3,3 +3,4 @@
 - Checks: every observation reconciled independently with native requests, predictions and per-instance grades; fixed schemas, relationships and storage types validated.
 - Migration: all original model/question-stem/grade observations match exactly. Full request prompts now include the released instructions and answer choices, and previously omitted traces are restored.
 - Limits: the run exports do not identify their harness commit. Captured grader code is an inspected reference, not a claimed execution revision; dataset licensing is not inferred from HELM’s code license.
+- Testlet membership migration (2026-10-29): 298 existing item identities link to 298 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

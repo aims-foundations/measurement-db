@@ -97,9 +97,10 @@ class Brace(BenchmarkBuild):
                                       "record": row.native_pair, "original_annotation": row.original_pair,
                                       "processed_annotation": row.processed_pair}, ensure_ascii=False, allow_nan=False)
                            for row in observations.itertuples()]
+        items["testlet_id"] = items.dataset + '/' + items.file_name
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier", "attachments"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier", "attachments"]],
             "responses": observations[["response_key", "subject_key", "item_key", "response"]],
             "traces": traces,
         }

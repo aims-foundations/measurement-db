@@ -1,20 +1,20 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 10360
-    logical_sha256: 4af0a7ebdf8983e30f295dfcbcb8762850e99b7960f03c43199ced618d11064c
+    logical_sha256: daeed74a857d0ac205a281e0c7c44e3792935c9c5c28328a745017b50727fe37
+  benchmarks:
+    rows: 1
+    logical_sha256: 69569886a9f7925dea88c904a3b929a4e04282fef0a020e199096e86c1d29f9d
+  items:
+    rows: 5872
+    logical_sha256: aad41a86cc2238ff0ad9ffab2c5807456edabb8e2c7d96568af69af2bd9e9e6e
+  responses:
+    rows: 82880
+    logical_sha256: b3760ec3fa638322a1855f84f9bf9e499ed112209cf7ab77d4de2ce0266a5bde
   subjects:
     rows: 14
     logical_sha256: 82e3ed0a8ebc8a6abb379ce8cfbc19593521eff150ae4ff0ae2392b67550acdc
-  responses:
-    rows: 10360
-    logical_sha256: 8436e74d6b4373b55b68128e2f30b65e1ef585d90068b5a1b0f378f82af48f17
-  items:
-    rows: 734
-    logical_sha256: 1f0fe2a8eafbce5648bc3c47881c201ec63815113ba14b1fc55980531b8e2cf4
-  benchmarks:
-    rows: 1
-    logical_sha256: 609f6644dbd1669bb443158586fa4f76e65ef8c9daa4993cece1525cd552e5d7
 source_claims:
   source_responses:
     kind: count
@@ -142,3 +142,35 @@ source_claims:
       functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
       numbers as source metadata.
     expected: 1114
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 10360
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 82880
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 5872
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 734

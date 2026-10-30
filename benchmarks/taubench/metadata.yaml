@@ -2,10 +2,13 @@ benchmark:
   name: tau-bench
   description: Original customer-service tool-agent-user interactions and explicitly attributed third-party HAL
     runs.
-  testing_condition: Preserve original Sierra airline and retail trajectories and every captured HAL airline run,
-    including historical few-shot runs withdrawn from its leaderboard for test-example leakage. Sixteen HAL error
-    strings lack a native grade and remain null; native numeric zeroes are preserved. HAL task IDs have one common
-    complete definition across all captured runs, used to associate error-only records and recorded in their provenance.
+  testing_condition: Released database-match and individual textual-output verdicts are separate binary items
+    grouped by domain/task testlet. Original task rewards and full histories are retained once per attempt; HAL
+    and other aggregate-only exports retain their task-level observations. Missing component verdicts are not
+    inferred. Preserve original Sierra airline and retail trajectories and every captured HAL airline run, including
+    historical few-shot runs withdrawn from its leaderboard for test-example leakage. Sixteen HAL error strings
+    lack a native grade and remain null; native numeric zeroes are preserved. HAL task IDs have one common complete
+    definition across all captured runs, used to associate error-only records and recorded in their provenance.
     No heatmap averages are converted to artificial trials. tau2-bench is curated separately. Historical settings
     and database snapshots are not inferred from current code.
   paper_url: https://arxiv.org/abs/2406.12045

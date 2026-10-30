@@ -7,6 +7,8 @@ from pathlib import Path
 import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.scripts.build_measurement_tables import subject_id_for
 
 
 class REALWebAgents(BenchmarkBuild):
@@ -33,6 +35,7 @@ class REALWebAgents(BenchmarkBuild):
             columns=["prompt", "accuracy", "evalsFailed", "retrievedAnswer"])
         # Convert IDs before pandas can coerce integer IDs with missing values to floats.
         attempts = attempts.assign(
+            native_record=task_rows.tasks.to_numpy(),
             raw_item_id=[str(task["id"]) if task.get("id") is not None else None for task in task_rows.tasks],
             source_model_row=task_rows.source_model_row.to_numpy(),
             website_id=task_rows.website_id.to_numpy(),
@@ -83,6 +86,7 @@ class REALWebAgents(BenchmarkBuild):
         )
         items = items.assign(
             item_key=range(len(items)),
+            testlet_id=items.raw_item_id,
             content=items.prompt.where(items.prompt.fillna("").astype(bool), items.raw_item_id),
             features=items.website_id.map(lambda site: {"website": site} if site else None),
             grading_criterion=rules.map(lambda rule: {"rule": rule}),
@@ -102,22 +106,41 @@ class REALWebAgents(BenchmarkBuild):
         grades = responses.evalsFailed.map(len, na_action="ignore").eq(0).astype(float)
         grades.loc[~has_checks] = pd.to_numeric(responses.loc[~has_checks, "accuracy"]).ge(100).astype(float)
         responses = responses.assign(response=grades)
+        # The provider lists multiple runs under the same model label.
+        labels = subjects.set_index('subject_key').raw_label.map(lambda label: subject_id_for(
+            label, features=self.subject_settings(label, {})))
+        labels = responses.subject_key.map(labels)
+        responses['trial'] = responses.groupby([labels, responses.raw_item_id], sort=False).cumcount() + 1
 
-        # 6. Extract usable traces, preserving the original, unstripped text.
-        has_text = responses.retrievedAnswer.map(lambda answer: isinstance(answer, str))
-        normalized = responses.retrievedAnswer.where(has_text, "").astype("string").str.strip()
-        traces = responses.loc[
-            has_text & ~normalized.isin(["", "Done", "No response"]), ["response_key", "retrievedAnswer"]
-        ].rename(columns={"retrievedAnswer": "trace"})
+        # 6. Preserve both explicit verdict lists and the complete provider record.
+        # Missing check definitions never justify guessing what a check tests.
+        traces = responses[['response_key']].copy()
+        traces['trace'] = responses.native_record.map(lambda record: json.dumps(record, ensure_ascii=False, allow_nan=False))
+        definitions, outcomes, seen = [], [], set()
+        bank = items.set_index('item_key').to_dict('index')
+        for row in responses.itertuples():
+            record = row.native_record
+            passed, failed = set(record.get('evalsPassed') or []), set(record.get('evalsFailed') or [])
+            for name in sorted(passed | failed):
+                if (row.item_key, name) not in seen:
+                    seen.add((row.item_key, name))
+                    definitions.append(dict(parent_item_key=row.item_key, component_id=name,
+                        grading_criterion=dict(rule=json.dumps(dict(check_id=name,
+                            rule='Explicit membership in the provider passed/failed lists; conflicting verdicts remain ungraded',
+                            source_task_checks=row.evals, definition_mapping='Native check ID; individual rule mapping is not asserted'), sort_keys=True)),
+                        verifier=bank[row.item_key]['verifier']))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=name,
+                    response=None if name in passed and name in failed else float(name in passed)))
 
         # Local keys link the frames; the shared builder resolves canonical IDs
         # and numbers trials after aliases have resolved to the same subject/item.
-        return {
+        tables = {
             "subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
-            "responses": responses[["response_key", "subject_key", "item_key", "response"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
+            "responses": responses[["response_key", "subject_key", "item_key", "trial", "response"]],
             "traces": traces,
         }
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

@@ -117,6 +117,7 @@ class InterCode(BenchmarkBuild):
             criteria.append(criterion)
         items['content'], items['grading_criterion'] = content, criteria
         items['raw_item_id'] = items.bank + ':' + items.task_id.astype(str)
+        items['testlet_id'] = items.raw_item_id
         items['features'] = [dict(environment=row.environment, task_bank=row.bank) for row in items.itertuples()]
         items['attachments'] = [resources[row.bank, row.task_id] for row in items.itertuples()]
         items['verifier'] = items.protocol.map(lambda name: ExactMatcher(spec=json.dumps(self.grading['verifiers'][name], sort_keys=True)))
@@ -126,7 +127,7 @@ class InterCode(BenchmarkBuild):
         attempts['trace'] = [json.dumps(dict(source_file=row.source_file, source_record=row.source_record,
             run_metadata=row.run_metadata, record=row.record), ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             responses=attempts[['response_key', 'subject_key', 'item_key', 'response', 'test_condition']],
             traces=attempts[['response_key', 'trace']])
 

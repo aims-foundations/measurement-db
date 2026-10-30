@@ -1,6 +1,8 @@
 """Normalize the ProX release's two checkpoints and nine math evaluation tasks."""
 
 import json
+import unicodedata
+import hashlib
 import sys
 from pathlib import Path
 
@@ -46,6 +48,7 @@ class ProX(BenchmarkBuild):
             verifier=ExactMatcher(spec=json.dumps(self.grading["verifiers"]["math_equal"], sort_keys=True)),
             features=items.task.map(lambda task: {"task": task}),
         )
+        items["testlet_id"] = items.content.map(lambda text: hashlib.sha256(unicodedata.normalize("NFC", text).encode()).hexdigest())
         if items.item_key.duplicated().any():
             raise ValueError("ProX checkpoints disagree on a task's question or reference")
 
@@ -57,7 +60,7 @@ class ProX(BenchmarkBuild):
         traces = responses[["response_key", "code"]].rename(columns={"code": "trace"})
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "grading_criterion", "verifier", "features"]],
             "responses": responses[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

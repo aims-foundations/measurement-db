@@ -2,7 +2,15 @@ benchmark:
   description: 'Adaptive combinatorial-reasoning benchmark: constraint-satisfaction (CSP/SAT) decision
     problems with solver-verified SAT/UNSAT ground truth; 12 models evaluated with and without a sandboxed
     SAT/SMT solver.'
-  testing_condition: split (easy/hard/hard2) x tools (Python SAT/SMT solver) vs no-tools
+  testing_condition: >-
+    Split (easy/hard/hard2) x tools (Python SAT/SMT solver) vs no-tools. Each original
+    problem is a testlet. Its SAT/UNSAT decision is one item; satisfiable problems
+    additionally have a witness-validation item. Preserve the explicit native
+    satisfiability_correct and solution_correct flags, including the grader's
+    failed checks after parsing or execution errors. UNSAT problems have no witness
+    item; the source's vacuous solution_correct=True is retained only as evidence.
+    Each execution retains the original aggregate, complete response, reasoning,
+    tool chain, configuration and validation details.
   paper_url: https://arxiv.org/abs/2605.08498
   data_source_url: https://github.com/vireshpati/Math-Constraint
   subject_type: model
@@ -49,6 +57,16 @@ grading:
   rule: Accept a correct SAT/UNSAT decision and, for a satisfiable instance, a solution passing the benchmark
     constraint validator.
   verifiers:
+    components:
+      satisfiability_correct:
+        rule: Import the native satisfiability_correct flag for the submitted SAT/UNSAT decision.
+      solution_correct:
+        rule: >-
+          For a satisfiable problem, import the native solution_correct flag for
+          the submitted witness, including the source's prerequisite decision,
+          missing-witness, partial-assignment and solver-validation checks. A native
+          false flag remains false; this import does not rerun the solver or infer
+          finer constraint verdicts from its free-text validation_details.
     solver:
       kind: deterministic_constraint_validator
       source: https://github.com/vireshpati/Math-Constraint/tree/687a6d5510f96afdfa7229fc04b230e434e0c792/src/math_constraint
@@ -66,3 +84,5 @@ sources:
       path: hard_instances/{name}
     - match: results/(?P<relative>[^/]+/(?:easy|hard|hard2)/(?:no_tools|tools)\.json)
       path: results/{relative}
+    - match: src/math_constraint/(?P<name>(?:eval|csp_solver|sms_solver|problems)\.py)
+      path: grader/{name}

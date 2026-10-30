@@ -11,7 +11,7 @@ tables:
     logical_sha256: 8561e43aa30934e387c453ef6fb6953ef95d3bd6c62f2df63c6acf0b06d3e686
   items:
     rows: 40
-    logical_sha256: f2d91f4c7d8e010a8d9443a1e42421e279b06382814796e733f5cbe8fb6f4bd3
+    logical_sha256: 30cb5d377591995e97aa74a835b08a794e0e4d7d139c28f55a6973ebb8f9a455
   benchmarks:
     rows: 1
     logical_sha256: 01b718dee376c551fc17be5aaea44ab90ee47cfef5e28c3387bf7d7d1124fcd9
@@ -21,22 +21,19 @@ source_claims:
     origin: derived_from_data
     source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench/vrp_results/data
     locator: Individual route JSON files, excluding aggregate summaries
-    scope: Four named solvers, eight instance definitions, five recorded metrics per
-      route.
+    scope: Four named solvers, eight instance definitions, five recorded metrics per route.
     expected: 32
   source_instances:
     kind: count
     origin: derived_from_data
     source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench/vrp_results/data
     locator: Individual route JSON files, excluding aggregate summaries
-    scope: Four named solvers, eight instance definitions, five recorded metrics per
-      route.
+    scope: Four named solvers, eight instance definitions, five recorded metrics per route.
     expected: 8
   source_metric_observations:
     kind: count
     origin: derived_from_data
     source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench/vrp_results/data
     locator: Individual route JSON files, excluding aggregate summaries
-    scope: Four named solvers, eight instance definitions, five recorded metrics per
-      route.
+    scope: Four named solvers, eight instance definitions, five recorded metrics per route.
     expected: 160

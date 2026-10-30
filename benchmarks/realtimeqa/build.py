@@ -114,6 +114,7 @@ class RealTimeQA(BenchmarkBuild):
         items = attempts.drop_duplicates(keys).copy()
         items["item_key"] = items.index.astype(str)
         items["raw_item_id"] = items.question_id + "#" + items["mode"]
+        items["testlet_id"] = items.question_id
         items["features"] = [dict(question_source=row.question_source, question_url=row.question_url,
             answer_mode=row.mode) for row in items.itertuples()]
         items["grading_criterion"] = items.criterion.map(json.loads)
@@ -131,7 +132,7 @@ class RealTimeQA(BenchmarkBuild):
             for row in attempts.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

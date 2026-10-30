@@ -78,6 +78,7 @@ class NatureBench(BenchmarkBuild):
         if items.content.isna().any():
             raise ValueError('A published result is missing its task description')
         items['raw_item_id'] = items.case_id
+        items['testlet_id'] = items.raw_item_id
         features = items[list(parameters['item_columns'])].rename(columns=parameters['item_columns'])
         features['input_scope'] = parameters['labels']['input_scope']
         items['features'] = features.to_dict('records')
@@ -112,7 +113,7 @@ class NatureBench(BenchmarkBuild):
             columns=parameters['subject_columns']).apply(
                 lambda row: row.dropna().map(lambda value: quote(str(value), safe=' /-._(),:')).to_dict(), axis=1)
         return {'subjects': subjects,
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

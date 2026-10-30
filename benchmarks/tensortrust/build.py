@@ -1,8 +1,10 @@
 """Tabulate the released Tensor Trust game attempts and defense-validation records."""
 
+import hashlib
 import json
 from pathlib import Path
 import sys
+import unicodedata
 
 import pandas as pd
 
@@ -44,6 +46,11 @@ class TensorTrust(BenchmarkBuild):
         items['content'] = [json.dumps(record, ensure_ascii=False, allow_nan=False) for record in
             items[['opening_defense', 'user_input', 'closing_defense']].to_dict('records')]
         items['incomplete'] = items[['opening_defense', 'user_input', 'closing_defense']].isna().any(axis=1)
+        items['testlet_id'] = [hashlib.sha256(json.dumps([
+            unicodedata.normalize('NFC', row.opening_defense), unicodedata.normalize('NFC', row.closing_defense)],
+            ensure_ascii=False).encode()).hexdigest()
+            if isinstance(row.opening_defense, str) and isinstance(row.closing_defense, str) else None
+            for row in items.itertuples()]
         # Unknown input fragments must not make unrelated withheld tasks collapse together.
         items['features'] = [dict(unavailable_input_source=row.response_key) if row.incomplete else {}
             for row in items.itertuples()]
@@ -59,7 +66,7 @@ class TensorTrust(BenchmarkBuild):
         attempts['trace'] = [json.dumps(dict(source_file=row.source_file, record=row.source_record),
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
-            items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            items=items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=attempts[['response_key', 'subject_key', 'item_key', 'response']],
             traces=attempts[['response_key', 'trace']])
 

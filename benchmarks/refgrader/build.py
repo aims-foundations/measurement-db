@@ -1,6 +1,8 @@
 """Tabulate original RefGrader requests, judgments and additional samples."""
 
 import json
+import hashlib
+import unicodedata
 import re
 import sys
 from pathlib import Path
@@ -108,6 +110,8 @@ class RefGrader(BenchmarkBuild):
         items = cells.drop_duplicates("identity").copy()
         items["item_key"] = items.cell_key.astype(str)
         items["raw_item_id"] = items.dataset + ":" + items.problem_id + ":" + items.student_id + ":" + items.workflow
+        items['testlet_id'] = items.problem_data.map(lambda record: hashlib.sha256(
+            unicodedata.normalize('NFC', record['problem_statement']).encode()).hexdigest())
         items["features"] = [dict(dataset=row.dataset, workflow=row.workflow, prompt_source=row.prompt_file)
                              for row in items.itertuples()]
         items["verifier"] = [Judge(spec=json.dumps(self.grading["verifiers"]["reported"], sort_keys=True)) for _ in items.index]
@@ -157,7 +161,7 @@ class RefGrader(BenchmarkBuild):
             ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces,
         }

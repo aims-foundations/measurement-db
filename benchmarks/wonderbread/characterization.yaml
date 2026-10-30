@@ -8,7 +8,7 @@ tables:
     logical_sha256: 83a01f568c2f84d64231b92474a60ab2acb52267f4fe6b929966934b9df8b275
   items:
     rows: 9091
-    logical_sha256: a8885ecde361000343a50a83c6d1ce2941dd7276fedcc5fee51a6abdf4ba8c90
+    logical_sha256: c8403c96a6b1111ea0fabae30232ada6170b16fe53e97a2ac3c27efcdfa318a0
   responses:
     rows: 21231
     logical_sha256: de98f10c714b23bef0826ef6c1abc9caaa9664e10294d52b4cdb83e6e5e8a99c

@@ -119,7 +119,8 @@ class KrisBench(BenchmarkBuild):
             judge=row.judge, metric=row.metric, native_record=row.native_record, grade_status=row.grade_status,
             annotation_file=row.annotation_file, annotation=row.annotation, output=row.output), ensure_ascii=False, allow_nan=False)
             for row in responses.itertuples()]
-        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
+        items["testlet_id"] = items.raw_item_id
+        return {'subjects': subjects, 'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

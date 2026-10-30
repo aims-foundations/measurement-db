@@ -6,12 +6,14 @@ import hashlib
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class DecodingTrust(BenchmarkBuild):
@@ -241,6 +243,8 @@ class DecodingTrust(BenchmarkBuild):
             row.metric, row.reference], ensure_ascii=False).encode()).hexdigest() for row in records.itertuples()]
         items = records.drop_duplicates("item_key").copy()
         items["raw_item_id"] = items.item_key
+        items['testlet_id'] = [hashlib.sha256(json.dumps([row.perspective, row.input_scope,
+            unicodedata.normalize('NFC', row.content).strip()], ensure_ascii=False).encode()).hexdigest() for row in items.itertuples()]
         items["features"] = [dict(perspective=row.perspective, input_scope=row.input_scope) for row in items.itertuples()]
         items["grading_criterion"] = [dict(rule=self.grading["verifiers"][row.metric]["rule"],
             reference_answer=row.reference, response_scale=self.grading["verifiers"][row.metric]["scale"])
@@ -257,8 +261,34 @@ class DecodingTrust(BenchmarkBuild):
         trace_fields = ["source_file", "source_row", "source_choice", "source_origins", "native_record",
                         "api_metadata", "choice", "reference_source", "input_scope", "grade_status", "toxicity_annotations"]
         traces["trace"] = [json.dumps(row, ensure_ascii=False, allow_nan=False) for row in records[trace_fields].to_dict("records")]
-        return dict(subjects=subjects, items=items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+        tables = dict(subjects=subjects, items=items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             responses=records[["response_key", "subject_key", "item_key", "response", "test_condition"]], traces=traces)
+        # The exact-output annotations release six distinct Perspective ratings.
+        # Excerpt-only annotations cannot grade a complete model answer.
+        protocol = self.grading['verifiers']['toxicity_score']
+        parents = items.set_index('item_key')
+        definitions, outcomes = {}, []
+        for row in records.itertuples():
+            linked = row.toxicity_annotations if row.perspective == 'toxicity' else None
+            if linked:
+                for attribute in protocol['attributes']:
+                    scores = {entry['record']['prompt']['score'][attribute] for entry in linked}
+                    if any(not isinstance(value, (int, float)) or not 0 <= value <= 1 for value in scores):
+                        raise ValueError('A released Perspective attribute is outside its declared scale')
+                    definitions[row.item_key, attribute] = dict(parent_item_key=row.item_key, component_id=attribute,
+                        grading_criterion=dict(rule=json.dumps(dict(interpretation=protocol['component_rule'],
+                            attribute=attribute), sort_keys=True), response_scale=protocol['scale']),
+                        verifier=ExactMatcher(spec=json.dumps(dict(protocol['verifier'], attribute=attribute), sort_keys=True)))
+                    outcomes.append(dict(parent_response_key=row.response_key, component_id=attribute,
+                        response=next(iter(scores)) if len(scores) == 1 else None))
+            else:
+                # Explicit fallback also keeps ungraded source observations;
+                # their known task associations and complete answers remain visible.
+                parent = parents.loc[row.item_key]
+                definitions[row.item_key, 'aggregate'] = dict(parent_item_key=row.item_key, component_id='aggregate',
+                    grading_criterion=parent.grading_criterion, verifier=parent.verifier)
+                outcomes.append(dict(parent_response_key=row.response_key, component_id='aggregate', response=row.response))
+        return component_tables(tables, pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

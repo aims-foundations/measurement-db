@@ -9,6 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class ResearchClawBench(BenchmarkBuild):
@@ -53,6 +54,7 @@ class ResearchClawBench(BenchmarkBuild):
         if items.content.isna().any():
             raise ValueError('A recorded attempt lacks its published task instruction')
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.item_key
         items['features'] = [dict(domain=key.split('_')[0], input_scope=labels['input_scope']) for key in items.item_key]
         items['grading_criterion'] = items.checklist.map(lambda checklist: dict(rule=json.dumps(
             dict(rule=grading['rule'], published_checklist=checklist), ensure_ascii=False)))
@@ -103,9 +105,29 @@ class ResearchClawBench(BenchmarkBuild):
             exported_output=row.exported_output if isinstance(row.exported_output, list) else None,
             exported_files=row.exported_files if isinstance(row.exported_files, list) else None),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
+        # 5. Import the released criterion scores without changing their 0–100 scale.
+        components, outcomes = [], []
+        rubrics = items.set_index('item_key').checklist.to_dict()
+        for row in items.itertuples():
+            for index, criterion in enumerate(row.checklist):
+                components.append(dict(parent_item_key=row.item_key, component_id=str(index),
+                    grading_criterion=dict(rule=json.dumps(dict(criterion=criterion,
+                        criterion_index=index, instruction=grading['verifiers']['reported']['criterion_rule']),
+                        ensure_ascii=False, sort_keys=True)),
+                    verifier=Judge(judged_by='llm', spec=json.dumps(dict(grading['verifiers']['reported'],
+                        criterion_index=index), sort_keys=True))))
+        for row in detailed.itertuples():
+            for criterion in row.native_detail['score']['items']:
+                published = rubrics[row.item_key][criterion['index']]
+                if (criterion['content'], criterion['weight'], criterion['type']) != (
+                        published['content'][:200], published['weight'], published['type']):
+                    raise ValueError('A recorded criterion differs from the published rubric')
+                outcomes.append(dict(parent_response_key=row.response_key,
+                    component_id=str(criterion['index']), response=criterion['score']))
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'attachments', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
+        return component_tables(tables, pd.DataFrame(components), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

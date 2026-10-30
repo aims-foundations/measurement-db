@@ -1,26 +1,21 @@
 benchmark:
   name: MMDocRAG
-  description: MMDocRAG tests whether models can answer questions about documents by weaving retrieved text
-    and images into a cited answer, which a judge model rates for fluency, citation quality, coherence, reasoning
-    and factuality.
-  testing_condition: 'test_condition is the run config "{mode}/quotes{N}": mode is "pure-text" (quotes as text
-    input) or "multimodal" (quotes as interleaved text+image for VLMs), and N (15 or 20) is the number of retrieved
-    quotes given as context. Items are individual questions (q_id); response is the per-item LLM-as-judge answer-quality
-    score (mean of Fluency, Citation Quality, Text-Image Coherence, Reasoning Logic, Factuality) normalized
-    to [0, 1] (divided by 5). The judge is gpt-4o-2024-08-06 for pure-text answers and the same model given
-    the cited images for multimodal answers, prompted with prompt_bank/evaluation_answer.txt; each dimension
-    is graded 0-5, where 0 is "completely fails to meet the requirement" and is the grade an empty or failed
-    answer receives. Responses are left unobserved (None) for the 0.04% of rows whose judge output did not
-    yield all five dimensions.'
+  description: MMDocRAG tests whether models can answer questions about documents by weaving retrieved text and
+    images into a cited answer, which a judge model rates for fluency, citation quality, coherence, reasoning and
+    factuality.
+  testing_condition: Each released quality dimension is an item within its source-question testlet. Import the native
+    0–5 dimension value, without averaging or thresholding. Invalid or missing dimensions have no inferred grade.
+    Preserve the original normalized aggregate, complete judge record and available answer in a shared attempt.
+    Test conditions retain modality and number of retrieved quotes.
   paper_url: https://openreview.net/forum?id=W4b3v9jx1p
   data_source_url: https://github.com/MMDocRAG/MMDocRAG
   subject_type: model
-  item_type: task
+  item_type: quality_dimension_within_question_testlet
   license: CC-BY-NC-4.0
-  citation: "@inproceedings{dong2025mmdocrag,\n  title={Benchmarking Retrieval-Augmented Multimodal Generation\
-    \ for Document Question Answering},\n  author={Dong, Kuicai and Chang, Yujing and Huang, Shijie and Wang,\
-    \ Yasheng and Tang, Ruiming and Liu, Yong},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n\
-    \  year={2025},\n}"
+  citation: "@inproceedings{dong2025mmdocrag,\n  title={Benchmarking Retrieval-Augmented Multimodal Generation for\
+    \ Document Question Answering},\n  author={Dong, Kuicai and Chang, Yujing and Huang, Shijie and Wang, Yasheng\
+    \ and Tang, Ruiming and Liu, Yong},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n\
+    }"
   tags:
   - multimodal_rag
   - document_qa
@@ -34,36 +29,12 @@ benchmark:
   - general
   - reasoning
   multi_single_turn: single_turn
-  response_type: fraction
+  response_type: continuous_bounded
   response_scale:
-    kind: discrete
-    values:
-    - 0
-    - 0.04
-    - 0.08
-    - 0.12
-    - 0.16
-    - 0.2
-    - 0.24
-    - 0.28
-    - 0.32
-    - 0.36
-    - 0.4
-    - 0.44
-    - 0.48
-    - 0.52
-    - 0.56
-    - 0.6
-    - 0.64
-    - 0.68
-    - 0.72
-    - 0.76
-    - 0.8
-    - 0.84
-    - 0.88
-    - 0.92
-    - 0.96
-    - 1
+    kind: interval
+    min: 0
+    max: 5
+    direction: higher_is_better
   categorical: false
   release_date: 2025-12
   release: public

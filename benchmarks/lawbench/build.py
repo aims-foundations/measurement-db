@@ -1,5 +1,6 @@
 """Tabulate every released LawBench prediction using its recorded input."""
 
+import hashlib
 import importlib
 import importlib.metadata
 import json
@@ -7,6 +8,7 @@ import multiprocessing
 import os
 import sys
 import tempfile
+import unicodedata
 import zipfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -14,7 +16,9 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.build_base import BenchmarkBuild, Judge, ExactMatcher
+from measurement_db.benchmarks.lawbench.components import TASKS, component_scores, load_native_tools
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
 
 
 class LawBench(BenchmarkBuild):
@@ -52,6 +56,7 @@ class LawBench(BenchmarkBuild):
                     max_workers=int(parameters["runtime"]["workers"]),
                     mp_context=multiprocessing.get_context("spawn")) as workers:
 
+                    tools = load_native_tools(archive, prefix)
                     # 2. Read complete records, then apply the native scalar score.
                     files = sorted(name for name in archive.namelist()
                         if name.startswith(prefix + "predictions/") and name.endswith(".json"))
@@ -106,6 +111,9 @@ class LawBench(BenchmarkBuild):
         items = attempts[keys + ["source_file", "source_key"]].drop_duplicates(subset=keys).reset_index(drop=True)
         items["item_key"] = items.index.astype(str)
         items["raw_item_id"] = items.source_file + "#" + items.source_key
+        items["testlet_id"] = [hashlib.sha256(json.dumps([row.task,
+            unicodedata.normalize("NFC", row.content).strip()], ensure_ascii=False).encode()).hexdigest()
+            for row in items.itertuples()]
         items["features"] = [dict(task=row.task, recorded_prompt_setting=row.setting,
             input_scope=parameters["labels"]["input_scope"]) for row in items.itertuples()]
         items["grading_criterion"] = [dict(reference_answer=json.dumps(row.refr, ensure_ascii=False),
@@ -122,10 +130,36 @@ class LawBench(BenchmarkBuild):
         traces["trace"] = [json.dumps(dict(source_file=row.source_file, source_key=row.source_key,
             source_record=row.source_record, grade_status=row.grade_status), ensure_ascii=False, allow_nan=False)
             for row in attempts.itertuples()]
-        return {"subjects": subjects[["subject_key", "raw_label", "features"]],
-            "items": items[["item_key", "raw_item_id", "content", "features", "grading_criterion", "verifier"]],
+        tables = {"subjects": subjects[["subject_key", "raw_label", "features"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "features", "grading_criterion", "verifier"]],
             "responses": attempts[["response_key", "subject_key", "item_key", "response", "test_condition"]],
             "traces": traces}
+
+        # 6. Preserve named label/entity checks behind native set-valued metrics.
+        definitions, outcomes = {}, []
+        original_items = items.set_index("item_key").to_dict("index")
+        for row in attempts.itertuples():
+            checks = component_scores(row.task, row.source_record, tools) if row.task in TASKS else []
+            if not checks and pd.isna(row.response):
+                # An unavailable whole-task judgment still identifies its execution.
+                checks = [dict(component_id="ungraded_task_outcome", kind="unknown", reference=None, response=None)]
+            for check in checks:
+                key = row.item_key, check["component_id"]
+                if key not in definitions:
+                    original = original_items[row.item_key]
+                    if check["kind"] == "unknown":
+                        criterion, verifier = original["grading_criterion"], original["verifier"]
+                    else:
+                        protocol = self.grading["verifiers"]["components"][check["kind"]]
+                        criterion = dict(reference_answer=json.dumps(check["reference"], ensure_ascii=False),
+                            rule=protocol["rule"], response_scale=protocol["response_scale"])
+                        verifier = ExactMatcher(spec=json.dumps(dict(native_metric=self.grading["verifiers"][row.task],
+                            component_id=check["component_id"], component=protocol), sort_keys=True))
+                    definitions[key] = dict(parent_item_key=row.item_key, component_id=check["component_id"],
+                        grading_criterion=criterion, verifier=verifier)
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=check["component_id"],
+                    response=check["response"]))
+        return component_tables(tables, pd.DataFrame(definitions.values()), pd.DataFrame(outcomes))
 
 
 if __name__ == "__main__":

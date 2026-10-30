@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import sys
+import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -261,6 +262,12 @@ class SGrades(BenchmarkBuild):
         items = attempts.drop_duplicates('item_key').copy()
         items['raw_item_id'] = items.dataset + '::' + items.source_id
         items['content'] = 'Question: ' + items.question + '\n\nStudent answer: ' + items.answer
+        # Grading variants and student answers share their original question.
+        # A missing question cannot establish a shared stimulus.
+        items['testlet_id'] = [hashlib.sha256(json.dumps([
+            row.dataset.removesuffix('_2way').removesuffix('_3way'),
+            unicodedata.normalize('NFC', row.question).strip()], ensure_ascii=False).encode()).hexdigest()
+            if row.question.strip() else None for row in items.itertuples()]
         items['features'] = [dict(dataset=row.dataset, input_scope=labels['input_scope']) for row in items.itertuples()]
         items['grading_criterion'] = [dict(reference_answer=row.gold if pd.notna(row.gold) else None,
             rule=self.grading['verifiers'][row.grading_kind]['rule']) for row in items.itertuples()]
@@ -295,7 +302,7 @@ class SGrades(BenchmarkBuild):
             reference_records=row.reference_records if isinstance(row.reference_records, list) else []),
             ensure_ascii=False, allow_nan=False) for row in trace_data.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'response']], 'traces': traces}
 
 

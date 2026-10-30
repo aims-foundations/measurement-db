@@ -1,6 +1,8 @@
 """Convert C-SEO's released citation comparisons into item-level measurements."""
 
 import json
+import hashlib
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -92,6 +94,8 @@ class CSEOBench(BenchmarkBuild):
         })
         content[["target_before", "target_after"]] = content[["target_before", "target_after"]].astype(int)
         items = pd.DataFrame({"item_key": observations.index, "raw_item_id": None})
+        items['testlet_id'] = observations.prompt_baseline.map(lambda text:
+            hashlib.sha256(unicodedata.normalize('NFC', text).encode()).hexdigest())
         items["content"] = content.to_json(orient="records", lines=True, force_ascii=False).split("\n")[:-1]
         items["features"] = observations[["domain", "method", "adoption"]].to_dict("records")
         items["grading_criterion"] = [{"rule": self.grading["rule"]}] * len(items)

@@ -1,81 +1,106 @@
 format_version: 1
 tables:
-  traces:
+  attempts:
     rows: 17250
-    logical_sha256: 42da93f78450dc5912f2ee4f5830b42bd234b6645e3dc2aba264731e8b9fe669
+    logical_sha256: b4c901c045f3dca744b96bafd690d5e2460e4a30f14e297a62d9cc1ad8d901be
+  benchmarks:
+    rows: 1
+    logical_sha256: b0aa286305de2fd58c58e8bda896b8f38a632590a5905ee52db3f012cfd810bf
+  items:
+    rows: 5297
+    logical_sha256: e1090f6671129927bb982da1aad3eea7dcb7a512bf86220297251afd333ce5dc
+  responses:
+    rows: 79455
+    logical_sha256: 2c95fb8746cee0ed891131338f1b732ec26f98dc68efad19c59266a20b90e2ad
   subjects:
     rows: 15
     logical_sha256: 48cf5f8c68aaaf3c841b2e97f643136e7f10d6ff78c0671f35064ea6a41f7518
-  responses:
-    rows: 17250
-    logical_sha256: 8fea321bbdf7adc6f4df4d5eda26082eac5c2e3f28c1e09164eb14e817a92bd7
-  items:
-    rows: 1150
-    logical_sha256: c42b2e1ad6a453932edb6a34ce6b683e3b7487e23bc9deae4b62cb4f590979c3
-  benchmarks:
-    rows: 1
-    logical_sha256: 1adde531407f0f6dd0455adc63685a28800849b8040d2105ac2e2e8aa204bd98
 source_claims:
   source_responses:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 17250
   source_items:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 1150
   source_subjects:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 15
   source_traces:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 17250
   source_ungraded:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 17250
   source_missing_outputs:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 7
   source_scoring_questions:
     kind: count
     origin: derived_from_data
     source: https://github.com/thu-coai/ComplexBench/tree/749f4575d5dc981182ecaebb8c292b2a61213cf3
-    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation
-      pipeline.
-    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no
-      new grading or inference.
+    locator: All fifteen llm_generations/*.jsonl files, data/data_final.json, and the published evaluation pipeline.
+    scope: Independently reconcile complete released records, task content, rubrics and missing grades; no new grading
+      or inference.
     expected: 5297
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/ComplexBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 17250
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/ComplexBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 79455
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/ComplexBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 5297
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/ComplexBench
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 1150

@@ -112,6 +112,7 @@ class HLEBuild(BenchmarkBuild):
         items["protocol"], items["item_key"] = "supai", "supai:" + items.id
         items = pd.concat([items, deepwriter[["id", "question", "answer", "item_key"]].assign(image="", protocol="deepwriter")], ignore_index=True)
         items["raw_item_id"] = items.id
+        items['testlet_id'] = items.id
         images = items.loc[items.image.ne(""), ["item_key", "image"]].copy()
         images[["media_type", "base64"]] = images.image.str.extract(r"^data:([^;]+);base64,(.*)$")
         if images.base64.isna().any():
@@ -143,7 +144,7 @@ class HLEBuild(BenchmarkBuild):
         # 6. Return linked tables; the shared writer enforces IDs, scales and relationships.
         columns = ["response_key", "subject_key", "item_key", "trial", "response"]
         return {"subjects": subjects,
-            "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
+            "items": items[["item_key", "raw_item_id", "testlet_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
             "responses": pd.concat([responses[columns], deepwriter[columns]], ignore_index=True),
             "traces": pd.concat(trace_tables, ignore_index=True)}
 

@@ -12,6 +12,8 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.curate_benchmarks.testlet_tables import component_tables
+from measurement_db.benchmarks.infibench.component_grades import released_checks
 
 
 class InfiBench(BenchmarkBuild):
@@ -125,12 +127,14 @@ class InfiBench(BenchmarkBuild):
         # 4. Preserve full task text, original grading rules and recorded subject context.
         items = responses.drop_duplicates('item_key').copy()
         items['raw_item_id'] = items.item_key
+        items['testlet_id'] = items.item_key
         items['content'] = items.prompt
         items['features'] = [dict(language=row.lang, question_type=row.type, source_version=row.version,
             input_scope=parameters['labels']['input_scope']) for row in items.itertuples()]
         items['grading_criterion'] = [dict(rule=json.dumps(dict(instruction=self.grading['rule'],
             source_definition=row.config, dependencies=row.dependencies, full_score=row.full_score),
-            ensure_ascii=False, sort_keys=True)) for row in items.itertuples()]
+            ensure_ascii=False, sort_keys=True), response_scale=dict(kind='interval', min=None,
+                max=None, direction='higher_is_better')) for row in items.itertuples()]
         items['verifier'] = [ExactMatcher(spec=json.dumps(self.grading['verifiers'][version], sort_keys=True))
             for version in items.version]
         subjects['features'] = [dict(harness=parameters['labels']['harness'], source_version=row.version,
@@ -146,9 +150,21 @@ class InfiBench(BenchmarkBuild):
             completion_file=None if pd.isna(row.completion_file) else row.completion_file,
             completion_row=None if pd.isna(row.completion_row) else int(row.completion_row)),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
-        return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
-            'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
+        definitions, outcomes, seen = [], [], set()
+        for row in responses.itertuples():
+            for component, definition, grade, scale in released_checks(row.config, row.detail):
+                if (row.item_key, component) not in seen:
+                    seen.add((row.item_key, component))
+                    definitions.append(dict(parent_item_key=row.item_key, component_id=component,
+                        grading_criterion=dict(rule=json.dumps(dict(selected_check=definition,
+                            complete_grading=row.config['grading'], dependencies=row.dependencies),
+                            sort_keys=True, ensure_ascii=False), response_scale=scale),
+                        verifier=ExactMatcher(spec=json.dumps(self.grading['verifiers'][row.version], sort_keys=True))))
+                outcomes.append(dict(parent_response_key=row.response_key, component_id=component, response=grade))
+        tables = {'subjects': subjects[['subject_key', 'raw_label', 'features']],
+            'items': items[['item_key', 'raw_item_id', 'testlet_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': responses[['response_key', 'subject_key', 'item_key', 'response', 'trial', 'test_condition']], 'traces': traces}
+        return component_tables(tables, pd.DataFrame(definitions), pd.DataFrame(outcomes))
 
 
 if __name__ == '__main__':

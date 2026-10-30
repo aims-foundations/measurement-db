@@ -3,3 +3,4 @@
 - Checks: all 42,000 observations independently reconciled with native files; prior model/question-stem/grade records match exactly after applying the old thresholds. 3,902 formerly thresholded fractional grades are now preserved.
 - Traces: include every completion from the native request result. The stored grade remains a request-level fraction; individual completion grades are not inferred.
 - Limits: the releases do not record the executed harness commit. Linked grader code is an inspected reference; its code license is not assumed to cover the dataset.
+- Testlet membership migration (2026-10-29): 2,006 existing item identities link to 1,000 shared source tasks or stimuli. All original item fields, grades, other tables and source-count claims remain unchanged. The complete native source audit and canonical table comparison passed. Only the item-table fingerprint changes. Validated locally against the reviewed source and table contracts.

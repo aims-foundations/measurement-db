@@ -1,20 +1,20 @@
 format_version: 1
 tables:
+  attempts:
+    rows: 699042
+    logical_sha256: c4654f416dabd0eb9d66186124be460926efa8d50f42bb55a1b1bca4e68f964c
   benchmarks:
     rows: 1
-    logical_sha256: d02cf431523bbeca1041e71b4b5048bc8413836ad6107e2def721bfe341679fa
+    logical_sha256: 1629f97df2790c2da9d9222839abc5e5771db81784fe2f7597943bd79130eed8
   items:
-    rows: 369
-    logical_sha256: f43650431aaf2c12803ee664890a840811096391713c65abd1d293f731de43df
+    rows: 717
+    logical_sha256: 86d25b6120aa0fa54e7a2a42914be7c3b64a2e0b22a47db3df94d570ff00963d
   responses:
-    rows: 699042
-    logical_sha256: c5b5f6574a1aac8498450fe507892711bc16472f67d47ba291c39354396f057c
+    rows: 1362168
+    logical_sha256: 3ccac86aca46f71b1973220f7eaf505780fd9ef77303525528c4de5201ef4f31
   subjects:
     rows: 121
     logical_sha256: 272868a4dc2448de50d1838817bb3d31ffa0d908b21d3f2d23c83a5716f3f8ed
-  traces:
-    rows: 699042
-    logical_sha256: b8a319893eb6b96dc85b09a59fe15ab8645e6441b0fb09a3fef8c31c24265e9b
 source_claims:
   source_result_files:
     kind: count
@@ -43,9 +43,9 @@ source_claims:
     locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
       reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
       are pinned independently in metadata.
-    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
-      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
-    expected: 369
+    scope: Canonical component grading definitions plus retained task-level observations where no finer native result
+      is released. All original sampled completions and summary reconciliation remain intact.
+    expected: 717
   source_responses:
     kind: count
     origin: derived_from_data
@@ -126,3 +126,35 @@ source_claims:
     scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
       arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
     expected: 2
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source attempts. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 699042
+  source_component_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source component observations. Original aggregate measurements and physical
+      executions are counted separately from component observations.
+    expected: 1362168
+  imported_items:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled imported items. Original aggregate measurements and physical executions are
+      counted separately from component observations.
+    expected: 717
+  source_observed_testlets:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: Pinned raw records and full native/component source audit
+    scope: Independently reconciled source observed testlets. Original aggregate measurements and physical executions
+      are counted separately from component observations.
+    expected: 369
