@@ -1,0 +1,7 @@
+# Onlycodes SWE-bench Mini curation record
+
+- **Coverage.** All 1,800 released SWE-bench Mini attempts in `paper/data/raw/all_results.csv` at the authors' paper tag `93740e5`: Claude Code (claude-sonnet-4-6, 2.1.139) and Codex CLI (gpt-5.5, 0.130.0) × baseline, bash_only and code_only × 100 tasks × 3 seeds. Grades match the CSV row for row, and per-arm pass rates equal the authors' `paired_marginals.csv`. No agent was re-run.
+- **Curation decisions.** The arm is the `tool_mode` subject feature; the released label `onlycode` becomes `code_only`. Seeds are trials. Content is the task YAML's `problem_statement`; harness prompt wrappers are not stored. Reference answers are SWE-bench gold patches (62 Verified, 38 full), taken only where repository, base commit and held-out test patch match exactly. The verifier records the task's `test_cmd`, test patch and per-task pytest arguments from `harness.py`. The two pre-agent source seed patches are attachments.
+- **Limitations.** Grading runs only each task's `test_cmd`, not full SWE-bench FAIL_TO_PASS/PASS_TO_PASS lists. Baseline runs predate the authors' tool-surface pin (#334); Codex restrictions add a prompt directive. Whether each seed patch applied, and the exact code revision of each run, are not recorded. Per-run logs are not released, so there are no traces.
+
+Sources and grading are documented in [metadata.yaml](metadata.yaml); reviewed counts and checks are in [characterization.yaml](characterization.yaml) and [shared dataset checks](../../tests/test_benchmark_datasets.py).

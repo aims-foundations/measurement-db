@@ -1,0 +1,89 @@
+benchmark:
+  name: Onlycodes SWE-bench Mini
+  description: 'Onlycodes SWE-bench Mini: the modification-regime suite of the Onlycodes three-arm tool-surface
+    ablation of coding agents. Each task is a SWE-bench issue (verified-mini: 50 SWE-bench Verified Django and
+    Sphinx instances; datasci-mini: 50 instances from scikit-learn, matplotlib, xarray, sympy, seaborn and
+    astropy); the agent edits the repository and is graded by held-out tests applied after it exits. This
+    build ingests the authors'' released per-attempt results for Claude Code (claude-sonnet-4-6) and Codex
+    CLI (gpt-5.5) under the baseline, bash_only and code_only tool surfaces, emitting a binary PASS=1/FAIL=0
+    response per (agent, arm, task, seed).'
+  testing_condition: 'Six agent configurations: Claude Code (claude-sonnet-4-6; Claude Code 2.1.139) and Codex
+    CLI (gpt-5.5; codex-cli 0.130.0), each under three tool surfaces: baseline (native tools), bash_only (shell
+    plus read-only browsing; edit primitives disabled) and code_only (a single execute_code MCP tool; released
+    as onlycode). The model is the subject label; the harness, its version and the tool surface land in subject
+    features, so all of them make up subject identity. Claude Code restrictions use --tools and
+    --disallowedTools; Codex restrictions use config.toml feature flags plus a prompt directive, because its
+    apply_patch tool has no feature flag. response is 1 for a released PASS verdict and 0 for FAIL. The three
+    seeds per (agent, arm, task) are separate trials. No test_condition.'
+  paper_url: https://arxiv.org/abs/2607.10569
+  data_source_url: https://github.com/hyang0129/onlycodes
+  subject_type: agent
+  item_type: task
+  license: unknown; no license file in the pinned Onlycodes repository, and none declared on the pinned
+    SWE-bench dataset cards.
+  citation: "@misc{yang2026onlycodes,\n  title={When Does Restricting a Coding Agent to execute\\_code Help?\
+    \ A Regime $\\times$ Agent-Design Ablation},\n  author={Yang, Hong and Yu, Qi and Desell, Travis},\n\
+    \  year={2026},\n  eprint={2607.10569},\n  archivePrefix={arXiv},\n  primaryClass={cs.SE},\n}"
+  tags:
+  - software_engineering
+  - agent
+  - swe
+  - tool_use
+  - code_execution
+  - ablation
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: '2026-07-12'
+  release: withheld
+  release_reason: The builder, tables and curation record await maintainer review.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+sources:
+  upstream:
+  - url: https://github.com/hyang0129/onlycodes
+    revision: 93740e588a7a7b5d36c66931768532fa724db903
+    name: results
+    files:
+    - match: paper/data/raw/all_results\.csv
+      path: all_results.csv
+  - url: https://github.com/hyang0129/onlycodes
+    revision: 93740e588a7a7b5d36c66931768532fa724db903
+    name: tasks
+    files:
+    - match: problems/swe/swebench-(?:verified|datasci)-mini/[^/]+\.yaml
+      path: tasks/{path}
+    - match: patches/[^/]+\.patch
+      path: tasks/{path}
+  - url: https://github.com/hyang0129/onlycodes
+    revision: 93740e588a7a7b5d36c66931768532fa724db903
+    name: harness
+    files:
+    - match: swebench/[^/]+\.py
+      path: harness/{path}
+  - url: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified
+    revision: c104f840cc67f8b6eec6f759ebc8b2693d585d4a
+    name: swebench_verified
+    files:
+    - match: data/test-00000-of-00001\.parquet
+      path: swebench_verified.parquet
+  - url: https://huggingface.co/datasets/princeton-nlp/SWE-bench
+    revision: e48e2bd1e9fecd5bbd641e9414ac59da9f2e69f6
+    name: swebench_full
+    files:
+    - match: data/test-00000-of-00001\.parquet
+      path: swebench_full.parquet
