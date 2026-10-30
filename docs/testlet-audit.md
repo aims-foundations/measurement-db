@@ -265,3 +265,5 @@ The machine-readable [ledger](testlet-audit.json) lists every benchmark, evidenc
 - All prepared matrix exports cover their complete item tables and preserve exact testlet memberships. Large item and answer records have independently checked bounded previews.
 - Fresh native-source audits cover 42 grouping-only benchmarks. The other 123 grouping changes were checked against complete previously reviewed canonical tables without rerunning upstream imports.
 - SWE-Together and FrontierOR retain their previous data because their upstream snapshots changed. Aggregate-only source cases retain native scores where individual outcomes cannot be established.
+
+The [preview deployment](https://github.com/aims-foundations/measurement-db/actions/runs/40992013711) passed. All 62 gallery tests and TypeScript checks passed. Live browser checks covered the catalog and 11 benchmark pages, including testlet headers, exact item/answer retrieval, phone widths, and navigation through a 447 MB source record in bounded parts. Production was unchanged.
