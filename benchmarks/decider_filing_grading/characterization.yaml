@@ -1,0 +1,64 @@
+format_version: 1
+tables:
+  subjects:
+    rows: 4
+    logical_sha256: 61ae62419596d267ec3ce596c2ad885a1a0229330d934e6d2c7a9835c24c4a8e
+  items:
+    rows: 179
+    logical_sha256: 0edc0b98950a94367cba1ae68e9d69291030d0d215a37e38dc2e8f3700ac64ab
+  benchmarks:
+    rows: 1
+    logical_sha256: c8cffbdbb0dd5aeb0ff18f11b2b86d758eeffe5c826667c2894f9fe9af496c9a
+  responses:
+    rows: 575
+    logical_sha256: d505f66ffcd33d51ca463c7d157bce9543b2f2c5ec5d1f02f6eb630e82fb7c5e
+  traces:
+    rows: 575
+    logical_sha256: 5b991ffa2039dc0e8a4bae378f680362b727d36c980de455e15c81b87607e2d4
+source_claims:
+  released_items:
+    kind: count
+    origin: derived_from_data
+    source: https://atlas7.app/data/decider-filing-grading-release.json
+    locator: items array of the pinned release file
+    scope: AITrailblazer Decider corpus, locked finals v4; distinct SEC filing accessions
+    expected: 179
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://atlas7.app/data/decider-filing-grading-release.json
+    locator: items[].grades (pass_c, pass_r, iris_remediation, human_lock) in the pinned release file
+    scope: "Every recorded verdict: 179 Pass C + 179 Pass R + 38 remediation + 179 locked finals"
+    expected: 575
+  pass_c_verdict_distribution:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://atlas7.app/data/decider-filing-grading-release.json
+    locator: items[].grades.pass_c.verdict in the pinned release file
+    scope: Pass C verdicts over all 179 items, counted on the three-value scale (zero counts included)
+    expected: {SIGNAL: 31, NO SIGNAL: 145, ABSTAIN: 3}
+    absolute_tolerance: 0
+  pass_r_verdict_distribution:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://atlas7.app/data/decider-filing-grading-release.json
+    locator: items[].grades.pass_r.verdict in the pinned release file
+    scope: Pass R verdicts over all 179 items, counted on the three-value scale (zero counts included)
+    expected: {SIGNAL: 22, NO SIGNAL: 155, ABSTAIN: 2}
+    absolute_tolerance: 0
+  iris_remediation_verdict_distribution:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://atlas7.app/data/decider-filing-grading-release.json
+    locator: items[].grades.iris_remediation.verdict in the pinned release file
+    scope: Iris remediation verdicts over the 38 re-graded items, counted on the three-value scale (zero counts included)
+    expected: {SIGNAL: 10, NO SIGNAL: 28, ABSTAIN: 0}
+    absolute_tolerance: 0
+  human_lock_verdict_distribution:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://atlas7.app/data/decider-filing-grading-release.json
+    locator: items[].grades.human_lock.verdict in the pinned release file
+    scope: Locked final verdicts (finals v4) over all 179 items, counted on the three-value scale (zero counts included)
+    expected: {SIGNAL: 20, NO SIGNAL: 157, ABSTAIN: 2}
+    absolute_tolerance: 0
