@@ -1074,18 +1074,6 @@ export function MatrixViewer({
       : (pin?.row ?? -1);
   const subjectId2 = pin?.subjectId2 ?? null;
 
-  const observation =
-    pin?.key ??
-    (pin
-      ? bundle.matrices[imageKey]?.keys?.[pin.row * effNItems + pin.col]
-      : null) ??
-    null;
-  const answerQuery = JSON.stringify({
-    keys: [observation, pin?.key2 ?? null],
-    reference: pin?.keyRef ?? (pin ? bundle.matrices[imageKey]?.keyRef : null),
-    index: pin?.keyIndex ?? (pin ? pin.row * effNItems + pin.col : 0),
-    item: itemId,
-  });
   useEffect(() => {
     if (!itemId) return;
     const controller = new AbortController();
@@ -1101,57 +1089,108 @@ export function MatrixViewer({
     return () => controller.abort();
   }, [dataUrl, itemId]);
 
+  /* A pinned cell names its observation either inline (`key`, or the
+     matrix's own `keys`) or by reference: a page of keys plus an index, read
+     on click. The reference wins when there is one, as the trace lookup always
+     did; it is resolved once and serves both the condition shown and the
+     answers. */
+  const inlineKeys: (ObservationKey | null)[] = [
+    pin?.key ??
+      (pin
+        ? bundle.matrices[imageKey]?.keys?.[pin.row * effNItems + pin.col]
+        : null) ??
+      null,
+    pin?.key2 ?? null,
+  ];
+  const keyReference =
+    pin?.keyRef ?? (pin ? bundle.matrices[imageKey]?.keyRef : null) ?? null;
+  // Read only when something needs it: the answer, or the condition line.
+  const keysId =
+    keyReference && itemId && (hasTraces || conditions)
+      ? JSON.stringify([
+          keyReference,
+          pin?.keyIndex ?? (pin ? pin.row * effNItems + pin.col : 0),
+          itemId,
+        ])
+      : null;
+  const [resolvedKeys, setResolvedKeys] = useState<{
+    id: string;
+    keys: (ObservationKey | null)[];
+  } | null>(null);
+  const keysPending = keysId !== null && resolvedKeys?.id !== keysId;
+  const keys = keysId
+    ? keysPending
+      ? [null, null]
+      : resolvedKeys!.keys
+    : inlineKeys;
   useEffect(() => {
-    if (!hasTraces) return;
-    const query = JSON.parse(answerQuery) as {
-      keys: (ObservationKey | null)[];
-      reference?: string | null;
-      index: number;
-      item: string | null;
-    };
+    if (!keysId) return;
+    const [reference, index, item] = JSON.parse(keysId) as [
+      string,
+      number,
+      string,
+    ];
     const controller = new AbortController();
-    const resolveKeys = async () => {
-      if (!query.reference || !query.item) return query.keys;
-      const cells = await readCellData<CellKeys>(
-        dataUrl,
-        "keys",
-        query.reference,
-        controller.signal,
-      );
-      if (!cells) throw new Error("Could not load observation keys.");
-      const keys = [
-        observationKey(cells, query.index, query.item),
-        observationKey(cells, query.index, query.item, true),
-      ];
-      if (!controller.signal.aborted)
+    void readCellData<CellKeys>(dataUrl, "keys", reference, controller.signal)
+      .then((cells) => {
+        if (!cells) throw new Error("Could not load observation keys.");
+        const found = [
+          observationKey(cells, index, item) ?? null,
+          observationKey(cells, index, item, true) ?? null,
+        ];
+        if (controller.signal.aborted) return;
+        setResolvedKeys({ id: keysId, keys: found });
         setPin((current) =>
-          current &&
-          current.keyRef === query.reference &&
-          current.keyIndex === query.index
+          current && current.keyRef === reference && current.keyIndex === index
             ? {
                 ...current,
-                subjectId: keys[0]?.[0] ?? current.subjectId,
-                subjectId2: keys[1]?.[0] ?? current.subjectId2,
+                subjectId: found[0]?.[0] ?? current.subjectId,
+                subjectId2: found[1]?.[0] ?? current.subjectId2,
               }
             : current,
         );
-      return keys;
+      })
+      .catch((error: Error) => {
+        if (controller.signal.aborted) return;
+        setDataError(error.message);
+        setResolvedKeys({ id: keysId, keys: [null, null] });
+      });
+    return () => controller.abort();
+  }, [dataUrl, keysId]);
+
+  const observation = keys[0];
+  /* The clicked observation's own condition. The dropdown selection (`sel`)
+     only matches the cell for clicks on the per-condition matrix: a pick from
+     the observation strip carries no row condition, so `sel` kept the default
+     slice and the panel named another run's condition. */
+  const cellCondition = observation?.[2]
+    ? observation[2]
+        .split(";")
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .join(" · ")
+    : null;
+  const answerQuery = JSON.stringify({ keys, pending: keysPending });
+  useEffect(() => {
+    if (!hasTraces) return;
+    const { keys: wanted, pending } = JSON.parse(answerQuery) as {
+      keys: (ObservationKey | null)[];
+      pending: boolean;
     };
-    void resolveKeys()
-      .then((keys) =>
-        Promise.all(
-          keys.map(async (key) => {
-            if (!key) return null;
-            const answer = await readCellData<{ trace: string | null }>(
-              dataUrl,
-              "answer",
-              key,
-              controller.signal,
-            );
-            return answer?.trace ?? null;
-          }),
-        ),
-      )
+    if (pending) return;
+    const controller = new AbortController();
+    void Promise.all(
+      wanted.map(async (key) => {
+        if (!key) return null;
+        const answer = await readCellData<{ trace: string | null }>(
+          dataUrl,
+          "answer",
+          key,
+          controller.signal,
+        );
+        return answer?.trace ?? null;
+      }),
+    )
       .then((texts) => {
         if (!controller.signal.aborted) {
           setDirectAnswers({ key: answerQuery, texts });
@@ -1550,7 +1589,10 @@ export function MatrixViewer({
                   Condition
                 </span>
                 <span className="text-xs text-[var(--ink)]">
-                  {conditions.dims.map((d) => `${d}=${sel[d]}`).join(" · ")}
+                  {keysPending
+                    ? "…"
+                    : (cellCondition ??
+                      conditions.dims.map((d) => `${d}=${sel[d]}`).join(" · "))}
                 </span>
               </div>
             ) : null}
