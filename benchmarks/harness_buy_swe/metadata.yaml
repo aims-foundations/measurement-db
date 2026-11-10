@@ -1,0 +1,102 @@
+benchmark:
+  name: Harness Buy SWE-bench Verified
+  description: 'Harness Buy SWE-bench Verified: the harness-swap study of "What Does a Harness Buy? Tokens,
+    Mostly", which holds the model fixed and swaps the production harness around it. Each task is a SWE-bench
+    Verified issue (492 instances; the 8 psf/requests instances are excluded upstream); the agent edits the
+    repository inside a Harbor task container and is graded by Harbor''s SWE-bench verifier after it exits. This
+    build ingests the authors'' released per-trial table for the no-web arms: Claude Code, mini-SWE-agent,
+    OpenCode and DeepSeek''s own harness across seven models, plus the Claude Code tool-removal,
+    harness-version, thinking-off, ripgrep and auto-continue arms, emitting a binary resolved=1/0 response per
+    (subject, task, seed).'
+  testing_condition: 'Agent configurations are model x harness x harness version x arm. Harnesses: Claude Code
+    2.1.259-2.1.273 and 1.0.100, mini-SWE-agent 2.4.6, OpenCode 1.18.26-1.18.31 and DeepSeek''s harness
+    0.1.2-rc.1, all run by Harbor 0.22.0. Local Qwen models are served by vLLM 0.27.1 in bfloat16; the others use
+    vendor APIs. Every included arm blocks web access in the agent phase (task.toml agent network allowlist or
+    the Opus no-web proxy); setup and verifier phases stay public. The model is the subject label; harness,
+    harness version, the released arm (tool_mode) and, where every job of an arm states it, reasoning effort
+    land in subject features, so all of them make up subject identity. The Claude Code tool-removal arms use
+    --disallowedTools (schema-level removal); the Claude Code 1.0.100 arm is tool_mode control-nw with its own
+    harness version. Thinking-off is enforced at the vLLM server (chat template and a <think> token ban) for
+    Qwen and through the API for HY4-Preview, not in the harness. response is 1 if Harbor''s verifier wrote
+    reward 1 (all FAIL_TO_PASS and PASS_TO_PASS tests pass under swebench 4.0.3), 0 if it wrote 0, and null for
+    the 63 slots in which every attempt was lost to one of the authors'' 14 infrastructure exception types.
+    Step, time, context and output-cap exhaustion count as 0, as in the paper. Seeds are trials; retries of
+    infrastructure failures are merged into their seed by the authors'' canonical rule. No test_condition.'
+  paper_url: https://arxiv.org/abs/2610.04433
+  data_source_url: https://github.com/YangzeLiu/what-does-a-harness-buy
+  subject_type: agent
+  item_type: task
+  license: CC-BY-4.0 for the trial table and job configurations (code is MIT); the pinned SWE-bench Verified
+    dataset card declares no license.
+  citation: "@misc{liu2026harness,\n  title={What Does a Harness Buy? {T}okens, Mostly.},\n  author={Liu, Yangze\
+    \ and Han, Zhongyi},\n  year={2026},\n  eprint={2610.04433},\n  archivePrefix={arXiv},\n  primaryClass={cs.AI},\n\
+    }"
+  tags:
+  - software_engineering
+  - agent
+  - swe
+  - tool_use
+  - harness_comparison
+  - ablation
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: '2026-10-03'
+  release: withheld
+  release_reason: The builder, tables and curation record await maintainer review.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+sources:
+  upstream:
+  - url: https://github.com/YangzeLiu/what-does-a-harness-buy
+    revision: 3f0c13208c8b71eefcf7b764e2372ac7200c3117
+    name: trials
+    files:
+    - match: data/trials\.csv
+      path: trials.csv
+    - match: benchmarks/(?:pool492|hard45|pool447_rest)\.txt
+      path: pools/{path}
+  - url: https://github.com/YangzeLiu/what-does-a-harness-buy
+    revision: 3f0c13208c8b71eefcf7b764e2372ac7200c3117
+    name: configs
+    files:
+    - match: jobs/[^/]+\.json
+      path: configs/{path}
+    - match: scripts/patch_testsh_[^/]+\.py
+      path: configs/{path}
+    - match: analysis/main_table\.py
+      path: configs/{path}
+  - url: https://github.com/YangzeLiu/what-does-a-harness-buy
+    revision: 3f0c13208c8b71eefcf7b764e2372ac7200c3117
+    name: reported
+    files:
+    - match: reference_outputs/tables/(?:table1_hard45|table2_pool447|tableA6_opus|tableA7_thinking)\.tex
+      path: reported/{path}
+  - url: https://github.com/harbor-framework/harbor
+    revision: 4407eb5227a2ff4f0d3f16b2eb48849382fdf276
+    name: grader
+    files:
+    - match: adapters/swebench/src/swebench_adapter/(?:adapter|utils)\.py
+      path: grader/{path}
+    - match: adapters/swebench/src/swebench_adapter/task-template/(?:tests/test\.sh|instruction\.md|task\.toml)
+      path: grader/{path}
+  - url: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified
+    revision: c104f840cc67f8b6eec6f759ebc8b2693d585d4a
+    name: swebench_verified
+    files:
+    - match: data/test-00000-of-00001\.parquet
+      path: swebench_verified.parquet
