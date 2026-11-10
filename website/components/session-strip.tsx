@@ -233,7 +233,10 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
                     trial: "1",
                     passed,
                     level: row.values
-                      ? { label: String(row.values[i]), color: row.colors![i] }
+                      ? {
+                          label: String(Number(row.values[i].toFixed(3))),
+                          color: row.colors![i],
+                        }
                       : null,
                   });
                 }}
@@ -252,8 +255,14 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
 
       {tip ? (
         <div
-          className="pointer-events-none fixed z-50 max-w-xs rounded bg-[var(--fg)] px-2 py-1 text-[11px] leading-snug text-[var(--bg)] shadow"
-          style={{ left: tip.x + 14, top: tip.y - 10 }}
+          className="pointer-events-none fixed z-50 max-w-xs rounded bg-[var(--ink)] px-2 py-1 text-[11px] leading-snug text-white shadow-sm"
+          // Near the right edge the tooltip flips to the cursor's left, so it is
+          // never cut off by the viewport.
+          style={
+            tip.x > window.innerWidth - 340
+              ? { right: window.innerWidth - tip.x + 14, top: tip.y - 10 }
+              : { left: tip.x + 14, top: tip.y - 10 }
+          }
         >
           {tip.text}
         </div>
@@ -486,7 +495,7 @@ function StripRow({
               y: ev.clientY,
               passed,
               text: observationRows
-                ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.values ? row.values[c.i] : passed ? oneLabel : zeroLabel}`
+                ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.values ? Number(row.values[c.i].toFixed(3)) : passed ? oneLabel : zeroLabel}`
                 : `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${passed ? oneLabel : zeroLabel}`,
             });
           }}

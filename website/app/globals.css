@@ -468,9 +468,12 @@ html {
     transform var(--duration-slow) var(--ease-out);
 }
 
+/* `none`, not translateY(0): any transform, even an identity one, makes the
+   section the containing block for `position: fixed` descendants, which puts
+   the matrix hover tooltips hundreds of pixels away from the cursor. */
 .reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 
 /* Stagger children */
