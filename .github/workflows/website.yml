@@ -64,6 +64,7 @@ jobs:
           python tests/test_gallery_hybrid_data.py --export-packed "$RUNNER_TEMP/gallery-packed-fixture"
           node website/scripts/test-gallery-source.mjs "$RUNNER_TEMP/gallery-packed-fixture"
           node website/scripts/test-gallery-lookup.mjs
+          node website/scripts/test-trace-display.mjs
           node website/scripts/test-gallery-source-route.mjs
           node website/scripts/test-vercel-fetch.mjs
       - run: pnpm --dir website lint

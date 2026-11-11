@@ -150,6 +150,11 @@ arena_140k) are not on Hugging Face at all.
 - **Lossless.** Every source field is either mapped or kept in the `native` field of the step (or
   the trace) it came from. Content the converter does not recognize becomes an `event` step named
   `unrecognized`, with its source JSON in `native` (section 5.4).
+- **`native` holds no copies.** A source field whose value is an exact copy of something already
+  mapped is dropped, not kept in `native` (mini-swe-agent's `extra.actions`, which repeats the
+  tool calls, and Anthropic `tool_result` blocks' `text`, which repeats `content`). The converter
+  checks that the values are equal before dropping one, and keeps the field when they differ. In
+  the programbench sample, `native` was 3.36 of 7.82 GB uncompressed, mostly such copies.
 - **Omit what the source does not provide.** Optional fields are left out, not written as `null`,
   and never invented.
 - **Plain strings.** Content, reasoning, arguments and outputs are stored in full as plain
@@ -290,9 +295,10 @@ to about 56 KB.
 
 - The paging change is independent of the format work, and is its precondition: without it, no
   trace display is usable on programbench. It applies to `traces.parquet` only.
-- The structured size above excludes `native`. Since `native` holds only fields the mapping did
-  not use, it should be much smaller than the raw record, but this has to be measured in stage 4
-  (section 13, risk 2).
+- The structured size above excludes `native`. Measured on the full programbench sample, with
+  `native`: raw 9.04 GB → `trace/1` 7.82 GB uncompressed (0.86×), of which `native` is 3.36 GB;
+  2.43 GB compressed against 2.88 GB raw. Most of `native` was copies of mapped values, which
+  section 5.1 now excludes.
 
 ## 7. Builders
 
@@ -384,6 +390,9 @@ call, and no message was unrecognized.
   - `role === "exit"` → `run`: `extra.exit_status`, `extra.submission`, `extra.exception_str`,
     `extra.traceback`.
 - **Cost** per LLM step is `extra.cost` of that message (absent on format-error replies).
+  A cost of exactly 0 on a step or run that used tokens means the harness did not price the
+  model (about 20% of programbench runs, e.g. every Claude Opus run), not that it was free:
+  omit `cost` and keep the raw 0 in `native`.
 - **Tool output** is wrapped as `<returncode>N</returncode>\n<output>\n…</output>\n`. Strip the
   wrapper only when the whole string matches
   `^<returncode>(-?\d+)</returncode>\n<output>\n?([\s\S]*)</output>\n?$`; otherwise keep it raw.
@@ -431,7 +440,7 @@ every dependent benchmark without CI noticing. Plan:
 `gallery-source.worker.ts` reads the trace row as today. Then:
 
 - **`trace/1` files** (marker from `gallery-sources.json`): parse the JSON, apply display caps
-  (section 8.2), return `{ trace: Trace }`. If parsing fails, return the raw string as today and
+  (section 8.2), return `{ trace: null, structured: Trace }`. If parsing fails, return the raw string as today and
   log a console warning with the slug and response key. A broken value must never hide a trace.
 - **Legacy files**: unchanged: the 50,000-character cut and `{ trace: string }`, so
   `tests/test_gallery_output_parity.py` and `website/scripts/test-gallery-source*.mjs` stay
@@ -454,22 +463,27 @@ the `MathText` answer pane when the worker returns a structured trace. Use the s
 setup and CSS variables (`--ink`, `--muted`, `--palo-alto`, …) and match the surrounding pane
 styling. Behavior proven in the prototype:
 
-1. **Header:** run status badge, tests passed `x / y` with a bar, an **"evaluation:
+1. **Header:** the matrix row's subject name, with the provider's model ID beside it in small
+   type; run status badge (neutral: its vocabulary is the harness's own, so only a recorded
+   exception turns it red), tests passed `x / y` with a bar, an **"evaluation:
    compile_failed"**-style badge when `evaluation.errorCode` is set, **"no tests ran"** when
    `notRun === total`, and chips for cost, model turns, API calls (only if different from turns),
-   tool calls, prompt/output tokens and duration. The matrix score from `responses.parquet` stays
+   tool calls, prompt/output tokens and duration. A missing cost reads "not recorded". The matrix score from `responses.parquet` stays
    as today; the trace complements it and is never used to recompute it.
-2. **Step strip:** one thin colored tick per step (model turn / tool ok / tool non-zero exit /
-   tool error / harness message / system-task), click to jump, search hits marked on top. Long
-   runs have 1,000+ steps, so this is the main navigation.
+2. **Step strip:** one thin tick per step, click to jump, search hits marked on top, the current
+   step marked below. Only the steps a reader hunts for are colored (tool non-zero exit, tool
+   error, harness message); the rest are one neutral color, because model turns and tool calls
+   alternate on agent runs and coloring both reads as a single band. Long runs have 1,000+
+   steps, so this is the main navigation.
 3. **Timeline:**
    - system prompt and task: collapsed to ~8 lines with "Show all N lines";
    - model turn: text, reasoning in a collapsed `<details>`, one card per tool call. A tool call
      whose arguments are exactly `{"command": "…"}` shows the command as a code block; otherwise
      pretty-printed JSON. Corner metadata: tokens in/out (+reasoning, cached), cost, latency;
    - tool result, indented under its call: tool name, exit-code badge (green 0, amber non-zero,
-     red error), first line of the command, duration, output clamped to ~16 lines with
-     "Show all N lines";
+     red error), duration, output clamped to ~16 lines with "Show all N lines". The command is
+     already on the model turn above, so the result repeats its first line only when that turn
+     made several calls or the result matches none of them;
    - harness message (e.g. "No tool calls found…" format errors) in a distinct accent color,
      labeled "sent by the agent harness, not a person"; other participants labeled by
      `participant`;
@@ -478,13 +492,21 @@ styling. Behavior proven in the prototype:
    - A trace with a single model step and nothing else renders as a plain answer, like today.
 4. **Search within the trace:** highlights matches (built from text nodes; never inject trace
    content as HTML), counts matching steps, Enter / Shift+Enter to move, auto-expands clamped
-   blocks that contain a match. Keyboard: `/` focus search, `j`/`k` next/previous turn.
+   blocks that contain a match. No other keyboard shortcuts: the site has none, so they would be
+   undiscoverable; Escape closes full screen.
 5. **Result section:** run status, exception and traceback, submission; evaluation error code and
    details; judge output; filterable list of non-passed tests (status containing "fail"/"error"
    in red, others such as `not_run` in amber). Label totals as "tests in this run's evaluation".
-6. **Space:** the trace pane gets its own scroll area with a sticky search bar and step strip,
-   plus an "Open full screen" control. A dedicated route (`/[slug]/trace/[responseKey]`) with step
-   deep links (`…#s42`) is a later stage.
+6. **Space:** inline, the trace is part of the page, with no scroll area of its own (nested
+   scrolling trapped the mouse wheel). The search bar and step strip stick to the top of the page,
+   just below the site header, which publishes its visible height as `--rd-header-offset`; the
+   toolbar has a "Back to matrix" control. "Open full screen" shows the same viewer as an overlay
+   with its own scroll area. A dedicated route (`/[slug]/trace/[responseKey]`) with step deep
+   links (`…#s42`) is a later stage.
+   - **Item prompt:** when the trace contains a `task` message, the cell's item prompt is folded
+     into a "Item prompt" disclosure, since the run starts with the task as the agent received
+     it. The item header and correct answer stay visible. The pane heading is "Run" instead of
+     "Model answer".
 7. **Pairwise cells:** two stacked trace viewers rather than side by side.
 8. **Performance:** do not use `content-visibility: auto` for step cards; it made jump-to-step land
    in the wrong place in the prototype. Plain rendering of 375 steps took about 25 ms. Consider
@@ -515,8 +537,9 @@ before readers see it. The website layer stays thin, so its tests stay small.
 ## 10. Size and performance
 
 - One row per page (section 6) bounds a click to roughly one row's compressed size.
-- Structured content without `native` was 0.38× the raw size for programbench. With `native` it
-  will be larger; measure in stage 4 and record per-benchmark sizes in each conversion PR.
+- Structured content without `native` was 0.38× the raw size for programbench; with `native`
+  (before the no-copies rule) it was 0.86× (section 6). Record per-benchmark sizes in each
+  conversion PR.
 - The website does not send `native` to the main thread, but the worker still downloads it as part
   of the value. If `native` makes clicks slow for some benchmark, options are to trim what that
   converter keeps or to revisit storing `native` separately (needs a new decision).
@@ -550,7 +573,7 @@ usual PR flow; the website build steps are in `scripts/render_website/README.md`
   for a value that cannot be parsed.
 - The gemini-3-1-pro × `sheepla__pingu.926d475` cell shows "evaluation: compile_failed" and "no
   tests ran", with the build log in the result section.
-- Search, step strip, collapsible outputs and keyboard navigation work on the longest run in the
+- Search, step strip, collapsible outputs and the sticky toolbar work on the longest run in the
   prototype set (muse-spark-1.2-xhigh × `sheepla__pingu.926d475`, 375 steps).
 - All existing gallery tests pass; benchmarks not yet converted look exactly as before.
 
@@ -558,7 +581,9 @@ usual PR flow; the website build steps are in `scripts/render_website/README.md`
 
 1. **Transfer time through the proxy.** Bytes per click are measured (section 6); end-to-end time
    through the Vercel proxy is not. Measure in stage 2.
-2. **`native` size.** Unmeasured (section 10). Measured first in stage 4.
+2. **`native` size.** Measured on the programbench sample (section 6): 43% of the `trace/1`
+   bytes, mostly copies of mapped values. Re-measure after the no-copies rule (section 5.1) in
+   stage 4; it bounds how much smaller than the raw file a converted file can get.
 3. **Re-upload volume.** Converting everything rewrites 104.6 GB of traces and rebuilds 267
    benchmarks. Shared-code changes that select many dependents make CI runs long; batch them.
 4. **Format evolution.** Once published, `trace/1` is a contract for dataset users. Additive

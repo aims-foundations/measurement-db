@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/aims-foundations/measurement-db/trace_schema.json",
+  "title": "trace/1",
+  "description": "One recorded attempt: what the model and its harness did, and what the grader observed. Optional fields are omitted when the source does not provide them. The trace never carries a score; responses.response is the grade.",
+  "type": "object",
+  "required": ["schema", "converter", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "trace/1" },
+    "converter": { "type": "string", "pattern": "^[a-z0-9_]+@[0-9]+$" },
+    "timing": { "enum": ["recorded", "partial", "synthetic"] },
+    "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string" },
+        "submission": { "type": "string" },
+        "exception": { "type": "string" },
+        "traceback": { "type": "string" },
+        "cost": { "type": "number" },
+        "apiCalls": { "type": "integer" },
+        "promptTokens": { "type": "integer" },
+        "completionTokens": { "type": "integer" },
+        "durationS": { "type": "number" }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "errorCode": { "type": "string" },
+        "errorDetails": { "type": "string" },
+        "passed": { "type": "integer" },
+        "total": { "type": "integer" },
+        "notRun": { "type": "integer" },
+        "tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status"],
+            "additionalProperties": false,
+            "properties": { "name": { "type": "string" }, "status": { "type": "string" } }
+          }
+        },
+        "judge": {
+          "type": "object",
+          "required": ["content"],
+          "additionalProperties": false,
+          "properties": {
+            "content": { "type": "string" },
+            "reasoning": { "type": "string" },
+            "participant": { "type": "string" }
+          }
+        }
+      }
+    },
+    "native": { "$ref": "#/$defs/native" }
+  },
+  "$defs": {
+    "native": {
+      "description": "Source fields the mapping did not use, kept so the conversion is lossless.",
+      "type": "object"
+    },
+    "time": { "type": "number", "description": "Unix seconds." },
+    "step": {
+      "type": "object",
+      "required": ["type"],
+      "properties": { "type": { "enum": ["message", "llm", "tool", "event"] } },
+      "oneOf": [
+        { "$ref": "#/$defs/message" },
+        { "$ref": "#/$defs/llm" },
+        { "$ref": "#/$defs/tool" },
+        { "$ref": "#/$defs/event" }
+      ]
+    },
+    "message": {
+      "type": "object",
+      "required": ["type", "label", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "message" },
+        "label": { "enum": ["system", "task", "harness", "user"] },
+        "participant": { "type": "string" },
+        "content": { "type": "string" },
+        "agent": { "type": "string" },
+        "native": { "$ref": "#/$defs/native" }
+      }
+    },
+    "llm": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "llm" },
+        "model": { "type": "string" },
+        "content": { "type": "string" },
+        "reasoning": { "type": "string" },
+        "toolCalls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["arguments"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "arguments": { "type": "string" }
+            }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "prompt": { "type": "integer" },
+            "completion": { "type": "integer" },
+            "reasoning": { "type": "integer" },
+            "cacheRead": { "type": "integer" },
+            "cacheWrite": { "type": "integer" }
+          }
+        },
+        "cost": { "type": "number" },
+        "start": { "$ref": "#/$defs/time" },
+        "end": { "$ref": "#/$defs/time" },
+        "agent": { "type": "string" },
+        "native": { "$ref": "#/$defs/native" }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "required": ["type", "output"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "tool" },
+        "callId": { "type": "string" },
+        "name": { "type": "string" },
+        "arguments": { "type": "string" },
+        "output": { "type": "string" },
+        "exitCode": { "type": "integer" },
+        "error": { "type": "string" },
+        "start": { "$ref": "#/$defs/time" },
+        "end": { "$ref": "#/$defs/time" },
+        "agent": { "type": "string" },
+        "native": { "$ref": "#/$defs/native" }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "event" },
+        "name": { "type": "string" },
+        "content": { "type": "string" },
+        "start": { "$ref": "#/$defs/time" },
+        "end": { "$ref": "#/$defs/time" },
+        "agent": { "type": "string" },
+        "native": { "$ref": "#/$defs/native" }
+      }
+    }
+  }
+}

@@ -14,6 +14,8 @@ __pycache__/
 **/_contrib/
 **/_oceanbench_src/
 **/traces/
+# ...but not the website's trace/1 reader, which is source code.
+!website/lib/traces/
 **/model_fits/
 **/.venv*/
 *.log
