@@ -142,6 +142,17 @@ jobs:
           echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
       - name: Install the build dependencies and matching Parquet writer
         run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
+      - name: Use configured scratch storage for upstream builds
+        env:
+          SCRATCH_BASE: ${{ vars.GALLERY_SCRATCH_DIR }}
+          MATRIX_INDEX: ${{ strategy.job-index }}
+        run: |
+          if [ -n "$SCRATCH_BASE" ]; then
+            scratch="$SCRATCH_BASE/reproduction-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$MATRIX_INDEX"
+            mkdir -p "$scratch"
+            echo "TMPDIR=$scratch" >> "$GITHUB_ENV"
+            echo "REPRODUCTION_SCRATCH=$scratch" >> "$GITHUB_ENV"
+          fi
       - name: Rebuild from declared upstream sources and compare every table byte for byte
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -160,6 +171,12 @@ jobs:
           name: benchmark-results-${{ github.run_attempt }}-${{ strategy.job-index }}
           path: ${{ runner.temp }}/benchmark-report/results.json
           if-no-files-found: warn
+      - name: Remove this job's build scratch
+        if: always()
+        run: |
+          if [ -n "${REPRODUCTION_SCRATCH:-}" ]; then
+            rm -rf -- "$REPRODUCTION_SCRATCH"
+          fi
 
   report:
     name: Benchmark report
