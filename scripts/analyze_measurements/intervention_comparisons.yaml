@@ -1,0 +1,243 @@
+# Intervention comparisons over the production builders.
+#
+# Each block expands into one comparison per entry of `models` (and of `harnesses`, when given; the
+# harness is then added to both sides). `reference` and `target` select subjects by feature, never by
+# subject ID: model (display_name), harness, harness_version, reasoning_effort and any key of
+# subject_features_extra (here only tool_mode). Versions matched by a side are pooled.
+# `item_scope` filters items by item_features. `changes` uses the pilot's {target, operation, value} form.
+# `origin`: paper = the authors report this contrast; analyst = chosen here.
+#
+# Deliberately left out (harness_buy_swe): control-nw-midsys (no released configuration says what it
+# changes) and B-stock / B-ac (unreported in the paper; their released job configurations look identical).
+
+expected_comparisons: 58
+bootstrap_draws: 5000
+outcome_policies: [observed, null_as_fail]
+
+benchmarks:
+  onlycodes_swe:
+    - name: baseline->bash_only
+      family: tool_surface
+      models: [claude-sonnet-4-6, gpt-5.5]
+      reference: {tool_mode: baseline}
+      target: {tool_mode: bash_only}
+      changes:
+        - {target: tool_surface, operation: restrict, value: "shell plus read-only browsing; edit primitives disabled (Codex: config flags plus a prompt directive)"}
+      origin: paper
+    - name: baseline->code_only
+      family: tool_surface
+      models: [claude-sonnet-4-6, gpt-5.5]
+      reference: {tool_mode: baseline}
+      target: {tool_mode: code_only}
+      changes:
+        - {target: tool_surface, operation: replace, value: "a single execute_code MCP tool (Codex: config flags plus a prompt directive)"}
+      origin: paper
+    - name: bash_only->code_only
+      family: tool_surface
+      models: [claude-sonnet-4-6, gpt-5.5]
+      reference: {tool_mode: bash_only}
+      target: {tool_mode: code_only}
+      changes:
+        - {target: tool_surface, operation: replace, value: "shell plus read-only browsing -> a single execute_code MCP tool"}
+      origin: paper
+
+  onlycodes_artifact:
+    - name: baseline->bash_only
+      family: tool_surface
+      models: [claude-sonnet-4-6, gpt-5.5]
+      reference: {tool_mode: baseline}
+      target: {tool_mode: bash_only}
+      changes:
+        - {target: tool_surface, operation: restrict, value: "shell plus read-only browsing; edit primitives disabled (Codex: config flags plus a prompt directive)"}
+      origin: paper
+    - name: baseline->code_only
+      family: tool_surface
+      models: [claude-sonnet-4-6, gpt-5.5]
+      reference: {tool_mode: baseline}
+      target: {tool_mode: code_only}
+      changes:
+        - {target: tool_surface, operation: replace, value: "a single execute_code MCP tool (Codex: config flags plus a prompt directive)"}
+      origin: paper
+    - name: bash_only->code_only
+      family: tool_surface
+      models: [claude-sonnet-4-6, gpt-5.5]
+      reference: {tool_mode: bash_only}
+      target: {tool_mode: code_only}
+      changes:
+        - {target: tool_surface, operation: replace, value: "shell plus read-only browsing -> a single execute_code MCP tool"}
+      origin: paper
+
+  tool_architecture_live:
+    - name: bashonly->atomic
+      family: tool_surface
+      models: &toolarch_models [Qwen3-Coder-30B-A3B-Instruct, kimi-k2.5, claude-sonnet-4-5]
+      reference: {tool_mode: bashonly}
+      target: {tool_mode: atomic}
+      changes:
+        - {target: tool_surface, operation: add, value: "atomic search, view, replace, insert and create tools"}
+      origin: paper
+    - name: bashonly->nlsearch
+      family: tool_surface
+      models: *toolarch_models
+      reference: {tool_mode: bashonly}
+      target: {tool_mode: nlsearch}
+      changes:
+        - {target: tool_surface, operation: add, value: "natural-language context query"}
+        - {target: agent_topology, operation: add, value: "search subagent behind the query (model defaults to Qwen3Coder-30B; per-run value unrecorded)"}
+      origin: paper
+    - name: bashonly->hypotrack
+      family: memory
+      models: *toolarch_models
+      reference: {tool_mode: bashonly}
+      target: {tool_mode: hypotrack}
+      changes:
+        - {target: memory_and_tool_surface, operation: add, value: "within-task structured hypothesis records and prompt instructions"}
+      origin: paper
+    - name: bashonly->scratchpad
+      family: memory
+      models: *toolarch_models
+      reference: {tool_mode: bashonly}
+      target: {tool_mode: scratchpad}
+      changes:
+        - {target: memory_and_tool_surface, operation: add, value: "within-task notes tool and prompt instructions"}
+      origin: paper
+    - name: bashonly->python
+      family: tool_surface
+      models: *toolarch_models
+      reference: {tool_mode: bashonly}
+      target: {tool_mode: python}
+      changes:
+        - {target: action_interface, operation: replace, value: "executable Python blocks"}
+        - {target: controller, operation: replace, value: "Trae Agent fork -> adapted simple-agent loop (max_tokens 4096 -> 8192)"}
+      origin: paper
+
+  harness_buy_swe:
+    # Opus 5 in Claude Code on hard45 (paper Table A5). Control is pinned to 2.1.263 so the 1.0.100 run,
+    # which shares control's tool_mode, is not pooled into it.
+    - name: control->bash_only
+      family: tool_surface
+      models: [claude-opus-5]
+      harnesses: [claude_code]
+      item_scope: {pool: hard45}
+      reference: {tool_mode: control-nw, harness_version: "2.1.263"}
+      target: {tool_mode: c2-bashonly-nw}
+      changes:
+        - {target: tool_surface, operation: restrict, value: "Bash only (--disallowedTools)"}
+      origin: paper
+      source: paper Table A5
+    - name: control->no_shell
+      family: tool_surface
+      models: [claude-opus-5]
+      harnesses: [claude_code]
+      item_scope: {pool: hard45}
+      reference: {tool_mode: control-nw, harness_version: "2.1.263"}
+      target: {tool_mode: c2-noshell-nw}
+      changes:
+        - {target: tool_surface, operation: restrict, value: "no shell tool (--disallowedTools)"}
+      origin: paper
+      source: paper Table A5
+    - name: v2.1.263->v1.0.100
+      family: harness_version
+      models: [claude-opus-5]
+      harnesses: [claude_code]
+      item_scope: {pool: hard45}
+      reference: {tool_mode: control-nw, harness_version: "2.1.263"}
+      target: {tool_mode: control-nw, harness_version: "1.0.100"}
+      changes:
+        - {target: harness_version, operation: replace, value: "Claude Code 2.1.263 -> 1.0.100"}
+      origin: paper
+      source: paper Table A5
+
+    # Thinking off, enforced at the vLLM server (Qwen) or through the API (HY4-Preview); paper Table A6.
+    - name: thinking_on->off
+      family: reasoning
+      models: [Qwen3.6-35B-A3B]
+      harnesses: [claude_code, mini_swe_agent, opencode]
+      item_scope: {pool: hard45}
+      reference: {tool_mode: control-nw}
+      target: {tool_mode: control-nw-nothink}
+      changes:
+        - {target: reasoning, operation: disable, value: "thinking off at the vLLM server (chat template plus a <think> token ban)"}
+      origin: paper
+      source: paper Table A6
+    - name: thinking_on->off
+      family: reasoning
+      models: [HY4-Preview]
+      harnesses: [claude_code]
+      item_scope: {pool: hard45}
+      reference: {tool_mode: control-nw}
+      target: {tool_mode: control-nw-nothink}
+      changes:
+        - {target: reasoning, operation: disable, value: "thinking off through the API"}
+      origin: analyst
+
+    # OpenCode with ripgrep pre-placed in the container (the authors' canonical OpenCode arm).
+    - name: no_ripgrep->ripgrep
+      family: tool_surface
+      models: [Qwen3.6-35B-A3B, Qwen3.8-27B, deepseek-v4-flash]
+      harnesses: [opencode]
+      item_scope: {pool: hard45}
+      reference: {tool_mode: control-nw}
+      target: {tool_mode: control-nw-rg}
+      changes:
+        - {target: tool_surface, operation: add, value: "ripgrep binary pre-placed in the task container"}
+      origin: paper
+
+    # Harness swaps (paper Tables 1 and 2): the paper's pairs; OpenCode is its ripgrep arm.
+    - name: claude_code->mini_swe_agent@hard45
+      family: harness
+      models: &hard45_models [GLM-5.3-Flash, HY4-Preview, Qwen3.6-35B-A3B, Qwen3.8-27B, deepseek-v4-flash]
+      item_scope: {pool: hard45}
+      reference: {harness: claude_code, tool_mode: control-nw}
+      target: {harness: mini_swe_agent, tool_mode: control-nw}
+      changes: &cc_to_mini
+        - {target: harness, operation: replace, value: "Claude Code -> mini-SWE-agent"}
+      origin: paper
+      source: paper Table 2 (table1_hard45.tex)
+    - name: claude_code->opencode@hard45
+      family: harness
+      models: *hard45_models
+      item_scope: {pool: hard45}
+      reference: {harness: claude_code, tool_mode: control-nw}
+      target: {harness: opencode, tool_mode: control-nw-rg}
+      changes: &cc_to_oc
+        - {target: harness, operation: replace, value: "Claude Code -> OpenCode (ripgrep pre-placed)"}
+      origin: paper
+      source: paper Table 2 (table1_hard45.tex)
+    - name: mini_swe_agent->opencode@hard45
+      family: harness
+      models: *hard45_models
+      item_scope: {pool: hard45}
+      reference: {harness: mini_swe_agent, tool_mode: control-nw}
+      target: {harness: opencode, tool_mode: control-nw-rg}
+      changes: &mini_to_oc
+        - {target: harness, operation: replace, value: "mini-SWE-agent -> OpenCode (ripgrep pre-placed)"}
+      origin: paper
+      source: paper Table 2 (table1_hard45.tex)
+    - name: claude_code->mini_swe_agent@pool447
+      family: harness
+      models: &pool447_models [Qwen3.6-35B-A3B, Qwen3.8-27B]
+      item_scope: {pool: pool447}
+      reference: {harness: claude_code, tool_mode: control-nw}
+      target: {harness: mini_swe_agent, tool_mode: control-nw}
+      changes: *cc_to_mini
+      origin: paper
+      source: paper Table 1 (table2_pool447.tex)
+    - name: claude_code->opencode@pool447
+      family: harness
+      models: *pool447_models
+      item_scope: {pool: pool447}
+      reference: {harness: claude_code, tool_mode: control-nw}
+      target: {harness: opencode, tool_mode: control-nw-rg}
+      changes: *cc_to_oc
+      origin: paper
+      source: paper Table 1 (table2_pool447.tex)
+    - name: mini_swe_agent->opencode@pool447
+      family: harness
+      models: *pool447_models
+      item_scope: {pool: pool447}
+      reference: {harness: mini_swe_agent, tool_mode: control-nw}
+      target: {harness: opencode, tool_mode: control-nw-rg}
+      changes: *mini_to_oc
+      origin: paper
+      source: paper Table 1 (table2_pool447.tex)
