@@ -1,0 +1,64 @@
+format_version: 1
+tables:
+  assets:
+    rows: 159
+    logical_sha256: 5fd015c47fe2381ddef7f6ac1a074ac9a8b8fe2d1e953f7e3aa504bfacd1a755
+  benchmarks:
+    rows: 1
+    logical_sha256: 5a7fb41c5d3791eba4b544f59197de877efb60697aee7e287080b3c1efad52c3
+  items:
+    rows: 93
+    logical_sha256: 60c8f5fbededafb1e474616df88426a81ebca643a4d68b39bf04509c84e5d42d
+  responses:
+    rows: 1674
+    logical_sha256: 2a2162d035200256c69ea093d3e73cb62d454638c093658e73066d4ca8d16f96
+  subjects:
+    rows: 9
+    logical_sha256: 607963dfae9835ecf05258dd91e94b58a50d108d1ea9e1c4a70ac7a4aa5a634b
+source_claims:
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/raw/all_results.csv
+    locator: 'raw/all_results.csv: rows with benchmark == artifact'
+    scope: Released artifact-suite attempts; each (agent, arm, task, seed) row counts once.
+    expected: 1674
+  released_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/raw/all_results.csv
+    locator: 'raw/all_results.csv: verdict column, rows with benchmark == artifact'
+    scope: Released artifact-suite attempts with verdict PASS.
+    expected: 1638
+  reported_pass_rates:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/paired_marginals.csv
+    locator: 'paper/data/paired_marginals.csv: rows with benchmark == artifact and metric == pass, mean column'
+    scope: Pass fraction per (agent, released arm label), averaging the three seeds within each task and then
+      the 93 tasks with equal weight (paper section 4.3).
+    expected:
+      artifact:claude:bash_only: 0.9749103942652331
+      artifact:claude:code_only: 0.9749103942652331
+      artifact:claude:tool_rich: 0.9856630824372761
+      artifact:codex:bash_only: 0.9605734767025089
+      artifact:codex:code_only: 0.9856630824372761
+      artifact:codex:tool_rich: 0.989247311827957
+    absolute_tolerance: 1.0e-12
+  reported_category_counts:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/artifact_categories.csv
+    locator: 'paper/data/artifact_categories.csv: n per category, excluding the total row'
+    scope: Artifact tasks per category in the pinned task tree.
+    expected:
+      algorithmic: 8
+      data_engineering: 15
+      data_processing: 8
+      data_science: 15
+      enumeration: 8
+      iterative_numerical: 8
+      ml_engineering: 15
+      stateful_reasoning: 8
+      verification_heavy: 8
+    absolute_tolerance: 0

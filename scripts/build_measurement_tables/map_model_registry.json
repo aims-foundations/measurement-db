@@ -27332,5 +27332,17 @@
   "company": "Alibaba",
   "release_date": "2025-04-29",
   "release_date_url": "https://qwenlm.github.io/blog/qwen3/"
+ },
+ "Qwen3.8-27B": {
+  "model": "Alibaba Qwen3.8 27B",
+  "company": "Alibaba"
+ },
+ "GLM-5.3-Flash": {
+  "model": "Zhipu GLM-5.3 Flash",
+  "company": "Zhipu"
+ },
+ "HY4-Preview": {
+  "model": "Tencent Hunyuan 4",
+  "company": "Tencent"
  }
 }

@@ -1,0 +1,74 @@
+benchmark:
+  name: Onlycodes Artifact
+  description: 'Onlycodes Artifact: the computation-regime suite of the Onlycodes three-arm tool-surface
+    ablation of coding agents. Each of 93 synthetic tasks in nine categories (algorithmic, data_engineering,
+    data_processing, data_science, enumeration, iterative_numerical, ml_engineering, stateful_reasoning,
+    verification_heavy) asks the agent to produce an output artifact from a supplied workspace; a per-task
+    hidden grader checks the artifact. This build ingests the authors'' released per-attempt results for
+    Claude Code (claude-sonnet-4-6) and Codex CLI (gpt-5.5) under the baseline, bash_only and code_only tool
+    surfaces, emitting a binary PASS=1/FAIL=0 response per (agent, arm, task, seed).'
+  testing_condition: 'Agent configurations: Claude Code (claude-sonnet-4-6; Claude Code 2.1.132 or 2.1.139,
+    recorded per attempt) and Codex CLI (gpt-5.5; codex-cli 0.130.0), each under three tool surfaces: baseline
+    (native tools; released as tool_rich), bash_only (shell plus read-only browsing; edit primitives disabled)
+    and code_only (a single execute_code MCP tool). The model is the subject label; the harness, its version
+    and the tool surface land in subject features, so all of them make up subject identity. Claude Code
+    restrictions use --tools and --disallowedTools; Codex restrictions use config.toml feature flags plus a
+    prompt directive, because its apply_patch tool has no feature flag. response is 1 for a released PASS
+    verdict and 0 for FAIL. The three seeds per (agent, arm, task) are separate trials. No test_condition.'
+  paper_url: https://arxiv.org/abs/2607.10569
+  data_source_url: https://github.com/hyang0129/onlycodes
+  subject_type: agent
+  item_type: task
+  license: unknown; no license file in the pinned Onlycodes repository.
+  citation: "@misc{yang2026onlycodes,\n  title={When Does Restricting a Coding Agent to execute\\_code Help?\
+    \ A Regime $\\times$ Agent-Design Ablation},\n  author={Yang, Hong and Yu, Qi and Desell, Travis},\n\
+    \  year={2026},\n  eprint={2607.10569},\n  archivePrefix={arXiv},\n  primaryClass={cs.SE},\n}"
+  tags:
+  - agent
+  - tool_use
+  - code_execution
+  - data_processing
+  - ablation
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  - software_engineering
+  - ml_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: '2026-07-12'
+  release: withheld
+  release_reason: The builder, tables and curation record await maintainer review.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+sources:
+  upstream:
+  - url: https://github.com/hyang0129/onlycodes
+    revision: 93740e588a7a7b5d36c66931768532fa724db903
+    name: results
+    files:
+    - match: paper/data/raw/all_results\.csv
+      path: all_results.csv
+  - url: https://github.com/hyang0129/onlycodes
+    revision: 93740e588a7a7b5d36c66931768532fa724db903
+    name: tasks
+    files:
+    - match: problems/artifact/.+
+      path: tasks/{path}
+  - url: https://github.com/hyang0129/onlycodes
+    revision: 93740e588a7a7b5d36c66931768532fa724db903
+    name: harness
+    files:
+    - match: swebench/[^/]+\.py
+      path: harness/{path}

@@ -1,0 +1,63 @@
+format_version: 1
+tables:
+  assets:
+    rows: 2
+    logical_sha256: cf7738d3c701a992247f4e590e3404f0946e3973bb271f18d1811ee3fa078567
+  benchmarks:
+    rows: 1
+    logical_sha256: 0ffccf39e5291b190127b7fba2776174ecfeec5d543866bad8306f7d73cb04ce
+  items:
+    rows: 100
+    logical_sha256: fec5499cf05b9b2819a20414d7883b1a5adaa593f3ca4110697c0560ae08c9c6
+  responses:
+    rows: 1800
+    logical_sha256: fc6d886bdeb6d9f167bae0711175f01aaa4585076d1a88d580b0109f1649c73a
+  subjects:
+    rows: 6
+    logical_sha256: 8757d347b3abe2113736a6a90fe5f3d0d0b14e3b157f1d780e8253245a7ee976
+source_claims:
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/raw/all_results.csv
+    locator: 'raw/all_results.csv: rows with benchmark == swebench'
+    scope: Released SWE-bench Mini attempts; each (agent, arm, task, seed) row counts once.
+    expected: 1800
+  released_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/raw/all_results.csv
+    locator: 'raw/all_results.csv: verdict column, rows with benchmark == swebench'
+    scope: Released SWE-bench Mini attempts with verdict PASS.
+    expected: 873
+  reported_pass_rates:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/paired_marginals.csv
+    locator: 'paper/data/paired_marginals.csv: rows with benchmark == swebench and metric == pass, mean column'
+    scope: Pass fraction per (agent, released arm label), averaging the three seeds within each task and then
+      the 100 tasks with equal weight (paper section 4.3).
+    expected:
+      swebench:claude:baseline: 0.5166666666666666
+      swebench:claude:bash_only: 0.51
+      swebench:claude:onlycode: 0.5
+      swebench:codex:baseline: 0.4633333333333334
+      swebench:codex:bash_only: 0.45333333333333337
+      swebench:codex:onlycode: 0.4666666666666666
+    absolute_tolerance: 1.0e-12
+  reported_repository_counts:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/hyang0129/onlycodes/blob/93740e588a7a7b5d36c66931768532fa724db903/paper/data/swebench_repos.csv
+    locator: 'paper/data/swebench_repos.csv: n per (corpus, repo), excluding total rows'
+    scope: Distinct SWE-bench Mini tasks per sub-corpus and repository.
+    expected:
+      datasci-mini:astropy: 3
+      datasci-mini:matplotlib: 12
+      datasci-mini:scikit-learn: 15
+      datasci-mini:seaborn: 5
+      datasci-mini:sympy: 7
+      datasci-mini:xarray: 8
+      verified-mini:django: 25
+      verified-mini:sphinx: 25
+    absolute_tolerance: 0

@@ -1,0 +1,80 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: d1616fc688a4006da9a365ab1b67bb8c00ba5b5221180f55375381d386d4fdf2
+  items:
+    rows: 65
+    logical_sha256: 5f2c456cbaea6e016282ae033b08d1667b41814540d2874192c27c2558dc8fd7
+  responses:
+    rows: 11700
+    logical_sha256: efe11f6c471d9bc29e8366d14d56a4d27bcf23b44c41666d82f86723dbed4cff
+  subjects:
+    rows: 18
+    logical_sha256: 13b9c796afaf7f41f48c834d2ec57520761f67fd1ad18c202db55f14c6a17a83
+  traces:
+    rows: 11700
+    logical_sha256: 0d2ac742b267be44f6e9818fc10c3ec5585c44d6ee8ee746701261b0a7649083
+source_claims:
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.usercontent.google.com/download?id=19CFyQoD_gv_VQbn5zjj9y1hi1_I7dxQb&export=download&confirm=t
+    locator: 'raw/tool-arch-study-data.zip: data/processed/figure4/inputs.json, trajectories'
+    scope: Main SWE-bench Live study attempts; each (actor, setup, task, repeat) counts once.
+    expected: 11700
+  released_resolved:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.usercontent.google.com/download?id=19CFyQoD_gv_VQbn5zjj9y1hi1_I7dxQb&export=download&confirm=t
+    locator: 'raw/tool-arch-study-data.zip: data/processed/figure4/inputs.json, resolved == true'
+    scope: Main-study attempts whose recorded status is resolved.
+    expected: 3647
+  unfinished_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.usercontent.google.com/download?id=19CFyQoD_gv_VQbn5zjj9y1hi1_I7dxQb&export=download&confirm=t
+    locator: 'raw/tool-arch-study-data.zip: data/processed/figure4/inputs.json, resolved == null'
+    scope: Main-study attempts with no recorded verdict, retained as ungraded responses.
+    expected: 548
+  reported_trajectories:
+    kind: count
+    origin: reported
+    source: https://arxiv.org/abs/2608.11386v1
+    locator: Abstract, "a total of 11,700 trajectories"
+    scope: Main study trajectories across three actors and six tool architectures.
+    expected: 11700
+  reported_tasks:
+    kind: count
+    origin: reported
+    source: https://arxiv.org/abs/2608.11386v1
+    locator: Section 2, "yielding 65 problem instances in total"
+    scope: Distinct SWE-bench Live tasks in the main study.
+    expected: 65
+  reported_all_attempt_resolve_rates:
+    kind: aggregate
+    origin: reported
+    source: https://drive.usercontent.google.com/download?id=19CFyQoD_gv_VQbn5zjj9y1hi1_I7dxQb&export=download&confirm=t
+    locator: 'raw/tool-arch-study-data.zip: data/processed/table2/inputs.json, sum of n_pass per (actor, setup)'
+    scope: Resolved fraction of all 650 attempts per (actor, setup) under the Table 2 policy, in which
+      unfinished attempts count as failures.
+    expected:
+      kimi-k2.5:atomic-common: 0.3892307692307692
+      kimi-k2.5:bash-hypo: 0.3861538461538462
+      kimi-k2.5:bash-scratchpad: 0.37384615384615383
+      kimi-k2.5:bash-search: 0.36153846153846153
+      kimi-k2.5:bashonly: 0.38
+      kimi-k2.5:py-interface: 0.36
+      qwen3-coder-30b:atomic-common: 0.19538461538461538
+      qwen3-coder-30b:bash-hypo: 0.15076923076923077
+      qwen3-coder-30b:bash-scratchpad: 0.14307692307692307
+      qwen3-coder-30b:bash-search: 0.15384615384615385
+      qwen3-coder-30b:bashonly: 0.14615384615384616
+      qwen3-coder-30b:py-interface: 0.12615384615384614
+      sonnet4.5:atomic-common: 0.40923076923076923
+      sonnet4.5:bash-hypo: 0.42
+      sonnet4.5:bash-scratchpad: 0.4107692307692308
+      sonnet4.5:bash-search: 0.41846153846153844
+      sonnet4.5:bashonly: 0.4169230769230769
+      sonnet4.5:py-interface: 0.36923076923076925
+    absolute_tolerance: 1.0e-12

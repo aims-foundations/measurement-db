@@ -1,0 +1,151 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: e247617b2976408fc1a09815817e76dc39e0066f7d7b15a6875aa33d7dc89d6d
+  items:
+    rows: 492
+    logical_sha256: 026df44dcf9c9f1e22a07101a636559b714e8508746dac0a79a5d96ef2327131
+  responses:
+    rows: 6431
+    logical_sha256: a51161a11e16c998d8f928ed24a65c38db51b6713afd35babb62bb89e3f3037d
+  subjects:
+    rows: 48
+    logical_sha256: d544e1e1b4ef3d3d4d2f47cf44a6d89c3048f4b6c5a92a33539616d966f1647d
+source_claims:
+  released_no_web_trials:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/data/trials.csv
+    locator: 'raw/trials.csv: rows with exclude == 0, task in pool492.txt and a no-web arm'
+    scope: Released SWE-bench Verified trials of the no-web arms, retries included.
+    expected: 6879
+  canonical_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/analysis/main_table.py
+    locator: 'analysis/main_table.py: canonical(), applied to every no-web arm and seed'
+    scope: One picked trial per (harness, model, arm, task, seed); the other 448 retry rows are superseded.
+    expected: 6431
+  unplaced_ungraded_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/data/trials.csv
+    locator: 'raw/trials.csv: picked ungraded trials with no agent_version whose job recorded several versions'
+    scope: Slots left out because no harness version can be assigned.
+    expected: 0
+  released_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/data/trials.csv
+    locator: 'raw/trials.csv: picked usable trials with reward 1.0'
+    scope: Responses equal to 1.
+    expected: 3827
+  ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/data/trials.csv
+    locator: 'raw/trials.csv: picked trials that are unscored or carry one of the 14 infrastructure exception types'
+    scope: Null responses; every attempt in the slot was lost to infrastructure.
+    expected: 63
+  reported_hard45_table1:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/reference_outputs/tables/table1_hard45.tex
+    locator: 'Table 2 of the paper (table1_hard45.tex): solved / usable tasks, seed 1, per model and harness'
+    scope: hard45 pass counts; OpenCode is the ripgrep pre-placement arm.
+    expected:
+      qwen3.6-35b-a3b:claude-code:solved: 11
+      qwen3.6-35b-a3b:claude-code:usable: 45
+      qwen3.6-35b-a3b:mini-swe-agent:solved: 15
+      qwen3.6-35b-a3b:mini-swe-agent:usable: 45
+      qwen3.6-35b-a3b:opencode:solved: 11
+      qwen3.6-35b-a3b:opencode:usable: 45
+      qwen3.8-27b:claude-code:solved: 19
+      qwen3.8-27b:claude-code:usable: 43
+      qwen3.8-27b:mini-swe-agent:solved: 17
+      qwen3.8-27b:mini-swe-agent:usable: 45
+      qwen3.8-27b:opencode:solved: 17
+      qwen3.8-27b:opencode:usable: 45
+      ds-v4-flash:claude-code:solved: 21
+      ds-v4-flash:claude-code:usable: 45
+      ds-v4-flash:mini-swe-agent:solved: 22
+      ds-v4-flash:mini-swe-agent:usable: 45
+      ds-v4-flash:opencode:solved: 19
+      ds-v4-flash:opencode:usable: 45
+      glm-5.3-flash:claude-code:solved: 22
+      glm-5.3-flash:claude-code:usable: 45
+      glm-5.3-flash:mini-swe-agent:solved: 20
+      glm-5.3-flash:mini-swe-agent:usable: 45
+      glm-5.3-flash:opencode:solved: 18
+      glm-5.3-flash:opencode:usable: 45
+      hy4-preview:claude-code:solved: 23
+      hy4-preview:claude-code:usable: 45
+      hy4-preview:mini-swe-agent:solved: 26
+      hy4-preview:mini-swe-agent:usable: 45
+      hy4-preview:opencode:solved: 21
+      hy4-preview:opencode:usable: 45
+      opus5:claude-code:solved: 36
+      opus5:claude-code:usable: 45
+    absolute_tolerance: 0
+  reported_pool447_table2:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/reference_outputs/tables/table2_pool447.tex
+    locator: 'Table 1 of the paper (table2_pool447.tex): n, A and B per model and harness pair'
+    scope: pool447 paired pass counts, seed 1, over tasks usable under both harnesses; OC is the ripgrep arm.
+    expected:
+      qwen3.6-35b-a3b:CC-mini:n: 445
+      qwen3.6-35b-a3b:CC-mini:A: 310
+      qwen3.6-35b-a3b:CC-mini:B: 318
+      qwen3.6-35b-a3b:CC-OC:n: 445
+      qwen3.6-35b-a3b:CC-OC:A: 310
+      qwen3.6-35b-a3b:CC-OC:B: 297
+      qwen3.6-35b-a3b:mini-OC:n: 445
+      qwen3.6-35b-a3b:mini-OC:A: 318
+      qwen3.6-35b-a3b:mini-OC:B: 297
+      qwen3.8-27b:CC-mini:n: 444
+      qwen3.8-27b:CC-mini:A: 347
+      qwen3.8-27b:CC-mini:B: 353
+      qwen3.8-27b:CC-OC:n: 444
+      qwen3.8-27b:CC-OC:A: 347
+      qwen3.8-27b:CC-OC:B: 312
+      qwen3.8-27b:mini-OC:n: 445
+      qwen3.8-27b:mini-OC:A: 353
+      qwen3.8-27b:mini-OC:B: 312
+    absolute_tolerance: 0
+  reported_opus_settings:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/reference_outputs/tables/tableA6_opus.tex
+    locator: 'Table A5 of the paper (tableA6_opus.tex): Solved / 45, k column'
+    scope: Claude Opus 5 in Claude Code on hard45; each setting run separately, all 45 tasks usable.
+    expected:
+      control-1: 36
+      control-2: 35
+      control-3: 35
+      bash-only-1: 36
+      bash-only-2: 37
+      no-shell: 34
+      claude-code-1.0.100: 34
+    absolute_tolerance: 0
+  reported_thinking_off:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/YangzeLiu/what-does-a-harness-buy/blob/3f0c13208c8b71eefcf7b764e2372ac7200c3117/reference_outputs/tables/tableA7_thinking.tex
+    locator: 'Table A6 of the paper (tableA7_thinking.tex): solved / attempts, thinking on and off'
+    scope: Qwen3.6-35B-A3B on hard45, two runs per side; OpenCode without ripgrep pre-placement.
+    expected:
+      claude-code:on:solved: 21
+      claude-code:on:usable: 90
+      claude-code:off:solved: 22
+      claude-code:off:usable: 87
+      mini-swe-agent:on:solved: 28
+      mini-swe-agent:on:usable: 90
+      mini-swe-agent:off:solved: 18
+      mini-swe-agent:off:usable: 90
+      opencode:on:solved: 15
+      opencode:on:usable: 88
+      opencode:off:solved: 16
+      opencode:off:usable: 86
+    absolute_tolerance: 0

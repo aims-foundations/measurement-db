@@ -1,0 +1,90 @@
+benchmark:
+  name: Tool Architecture SWE-bench Live
+  description: 'Tool Architecture SWE-bench Live: the main study of "The Devil Is in the Interface", which varies
+    how a coding agent''s tools are organized and exposed while holding the underlying information and actions
+    similar. Each task is one of 65 SWE-bench Live issues (25 sampled repositories, at most five issues each);
+    the agent edits the repository and the SWE-bench Live harness grades its patch with the task''s held-out
+    tests. This build ingests the authors'' released per-attempt outcomes and trajectories for three actor
+    models (Qwen3Coder-30B, Kimi K2.5, Claude Sonnet 4.5) under six tool architectures (BashOnly, Atomic,
+    NLSearch, HypoTrack, ScratchPad, Python), ten repeats each, emitting a binary resolved=1/0 response per
+    (actor, architecture, task, repeat); unfinished attempts without a recorded verdict remain null.'
+  testing_condition: 'Eighteen agent configurations: each actor model under six tool architectures. BashOnly,
+    Atomic, NLSearch, HypoTrack and ScratchPad run in the authors'' Trae Agent fork (max_tokens 4096); Python runs
+    in an adapted simple-agent loop that executes Python blocks (max_tokens 8192), so it changes the interface and
+    the controller together. NLSearch adds a natural-language search tool backed by a search subagent whose model
+    defaults to Qwen3Coder-30B; the per-run value is not recorded. All configurations use temperature 0.7 and at
+    most 200 steps. The model is the subject label; the harness and tool architecture land in subject features,
+    so both make up subject identity. Historical agent code versions are unknown. Every attempt was graded by the
+    SWE-bench Live python-only harness against the verified split; its grading package and that split are
+    byte-identical across all revisions the runs could have used. response is 1 if the attempt
+    resolved the task, 0 if it did not, and null for the 548 unfinished attempts. Repeats are separate trials.
+    No test_condition (temperature is fixed).'
+  paper_url: https://arxiv.org/abs/2608.11386
+  data_source_url: https://github.com/XZ-X/tool-arch-study
+  subject_type: agent
+  item_type: task
+  license: unknown for the released trajectories and outcomes (no license in the study repository or data
+    archive); the bundled agent code is MIT (ByteDance Trae Agent).
+  citation: "@misc{xu2026devil,\n  title={The Devil Is in the Interface: Evaluating How Tool Architecture Shapes\
+    \ Coding Agent Behavior},\n  author={Xu, Xiangzhe and Saghir, Hamidreza and Wu, Qianhui and C{\\^o}t{\\'e},\
+    \ Marc-Alexandre and Wang, Tong and Lakkaraju, Kiran and Pei, Kexin and Zhang, Xiangyu},\n  year={2026},\n\
+    \  eprint={2608.11386},\n  archivePrefix={arXiv},\n  primaryClass={cs.SE},\n}"
+  tags:
+  - software_engineering
+  - agent
+  - swe
+  - tool_use
+  - tool_architecture
+  - ablation
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: '2026-08-11'
+  release: withheld
+  release_reason: The builder, tables and curation record await maintainer review.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+sources:
+  upstream:
+  - url: https://drive.usercontent.google.com/download?id=19CFyQoD_gv_VQbn5zjj9y1hi1_I7dxQb&export=download&confirm=t
+    revision: null
+    name: archive
+    file: tool-arch-study-data.zip
+    size: 748538616
+    sha256: 59b0e867bf36c41f330d5eba23d3b91ac5a4fe867aef695ce2502136add5d4b4
+  - url: https://github.com/XZ-X/tool-arch-study
+    revision: fd3fbbe111f19afe156942338db2f79dfec4185d
+    name: tasks
+    files:
+    - match: agent_src/trae-agent/evaluation/swebench_live_verified_mini\.json
+      path: swebench_live_verified_mini.json
+  - url: https://github.com/XZ-X/tool-arch-study
+    revision: fd3fbbe111f19afe156942338db2f79dfec4185d
+    name: harness
+    files:
+    - match: agent_src/.+
+      path: harness/{path}
+    - match: (?:README|reproduce-paper-results|tool-interfaces)\.md
+      path: harness/{path}
+  - url: https://huggingface.co/datasets/SWE-bench-Live/SWE-bench-Live
+    revision: b51a86422e10cfd403beb4773e5a2947953e36ec
+    name: swebench_live_verified
+    files:
+    - match: data/verified-00000-of-00001\.parquet
+      path: swebench_live_verified.parquet
+  - url: https://github.com/microsoft/SWE-bench-Live
+    revision: ad79b850f15e33992e96f03f6e97f05ddf9aa0be
