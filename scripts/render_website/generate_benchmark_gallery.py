@@ -1720,7 +1720,12 @@ def write_source_pages(path: Path, columns: list[str], output: Path, name: str) 
                 yield str(number), {"footer": base64.b64encode(footer).decode(), "pages": pages}
 
         write_lookup(output / f"{name}-pages", groups())
-    return {"size": path.stat().st_size, "columns": columns}
+    descriptor = {"size": path.stat().st_size, "columns": columns}
+    # Files written in the trace/1 format say so; the browser picks its renderer from this.
+    trace_format = (pq.read_schema(path).metadata or {}).get(b"measurement_db.trace_format")
+    if trace_format:
+        descriptor["format"] = trace_format.decode()
+    return descriptor
 
 
 def static_item(slug: str, row: dict) -> dict:
