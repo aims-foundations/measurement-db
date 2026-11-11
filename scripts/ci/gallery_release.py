@@ -254,12 +254,12 @@ def download(candidate: Path, run_id: str | None = None) -> dict:
     return manifest
 
 
-def download_published(candidate: Path, tree: str) -> dict | None:
+def download_published(candidate: Path, tree: str, *, revision: str | None = None) -> dict | None:
     """Durable redeploy path, pinned to one HF commit and this exact Git tree."""
     from huggingface_hub import HfApi, hf_hub_download
     from huggingface_hub.errors import RemoteEntryNotFoundError
 
-    revision = HfApi().dataset_info(artifacts.GALLERY_REPO).sha
+    revision = revision or HfApi().dataset_info(artifacts.GALLERY_REPO).sha
     try:
         path = hf_hub_download(artifacts.GALLERY_REPO, "v2/latest.json", revision=revision,
                                repo_type="dataset")
@@ -289,6 +289,30 @@ def download_published(candidate: Path, tree: str) -> dict | None:
     for entry in [manifest["catalog"], *manifest["benchmarks"].values()]:
         cache.store(candidate / entry["path"], entry)
     print(f"Downloaded accepted static gallery from {artifacts.GALLERY_REPO}@{revision}")
+    return manifest
+
+
+def preview_published(candidate: Path, web_dir: Path) -> dict:
+    """Preview current website code against an immutable, accepted data release."""
+    if os.environ.get("DEPLOY_ENV") != "preview" or os.environ.get("GITHUB_REF") == "refs/heads/main":
+        raise ValueError("Published-gallery reuse is only available for non-main previews")
+    from huggingface_hub import HfApi, hf_hub_download
+
+    revision = HfApi().dataset_info(artifacts.GALLERY_REPO).sha
+    path = hf_hub_download(artifacts.GALLERY_REPO, "v2/latest.json", revision=revision, repo_type="dataset")
+    accepted = json.loads(Path(path).read_text())
+    artifacts.validate_manifest(accepted)
+    manifest = download_published(candidate, accepted["git_tree"], revision=revision)
+    if manifest is None:
+        raise ValueError("Pinned accepted gallery is unavailable")
+    artifacts.restore(candidate, web_dir, manifest, tree=accepted["git_tree"])
+    message = (f"Preview code: {git('rev-parse', 'HEAD')}; accepted gallery: "
+               f"{artifacts.GALLERY_REPO}@{revision}; data source: {manifest['source_revision']}; "
+               f"gallery generated from: {manifest['git_sha']}. No rendering or model fitting.")
+    print(message, flush=True)
+    if summary := os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(summary, "a") as output:
+            output.write(f"\n### Preview using published data\n\n{message}\n")
     return manifest
 
 
@@ -350,16 +374,19 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     fetch = commands.add_parser("download")
     fetch.add_argument("--run-id", default=None)
-    for name in ("publish", "restore"):
+    for name in ("publish", "restore", "preview"):
         commands.add_parser(name)
     for command in commands.choices.values():
         command.add_argument("--candidate", type=Path, required=True)
     commands.choices["restore"].add_argument("--web-dir", type=Path, default=ROOT / "website")
+    commands.choices["preview"].add_argument("--web-dir", type=Path, default=ROOT / "website")
     args = parser.parse_args()
     if args.command == "download":
         download(args.candidate, args.run_id or None)
     elif args.command == "publish":
         publish(args.candidate)
+    elif args.command == "preview":
+        preview_published(args.candidate, args.web_dir)
     else:
         tree = git("rev-parse", "HEAD^{tree}")
         manifest = verify_candidate(args.candidate, tree=tree)

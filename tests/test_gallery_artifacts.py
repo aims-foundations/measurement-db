@@ -65,6 +65,47 @@ class GalleryArtifactTests(unittest.TestCase):
         self.addCleanup(environment.stop)
         self.candidate, self.manifest = candidate_fixture(self.root)
 
+    def test_published_preview_rejects_production_and_main_before_downloading(self):
+        for mode, ref in (("production", "refs/heads/feature"), ("preview", "refs/heads/main")):
+            with self.subTest(mode=mode, ref=ref), patch.dict(os.environ, DEPLOY_ENV=mode, GITHUB_REF=ref):
+                with self.assertRaisesRegex(ValueError, "non-main previews"):
+                    release.preview_published(self.root / "preview", self.root / "website")
+
+    def test_published_preview_preserves_accepted_provenance_and_checksums(self):
+        calls = []
+        def fetch(repo, path, *, revision, repo_type):
+            calls.append((repo, revision))
+            self.assertEqual(revision, REVISION)
+            if path == "v2/latest.json":
+                return str(self.candidate / "manifest.json")
+            if path.startswith("v2/receipts/"):
+                return str(self.candidate / "validation.json")
+            return str(self.candidate / path.removeprefix("v2/"))
+        for corrupt in (False, True):
+            with self.subTest(corrupt=corrupt):
+                if corrupt:
+                    archive = self.candidate / self.manifest["benchmarks"]["alpha"]["path"]
+                    archive.write_bytes(archive.read_bytes() + b"tampered")
+                target = self.root / ("corrupt-preview" if corrupt else "preview")
+                web = self.root / ("corrupt-website" if corrupt else "website")
+                sentinel = web / "public/benchmark-data/previous.json"
+                artifacts.write_json(sentinel, {"previous": True})
+                with patch.dict(os.environ, DEPLOY_ENV="preview", GITHUB_REF="refs/heads/feature", GITHUB_STEP_SUMMARY=""), \
+                     patch("huggingface_hub.HfApi", return_value=SimpleNamespace(dataset_info=lambda repo: SimpleNamespace(sha=REVISION))), \
+                     patch("huggingface_hub.hf_hub_download", side_effect=fetch), \
+                     patch.object(release, "git", return_value="f" * 40):
+                    if corrupt:
+                        with self.assertRaisesRegex(ValueError, "checksum"):
+                            release.preview_published(target, web)
+                        self.assertTrue(sentinel.exists())
+                    else:
+                        result = release.preview_published(target, web)
+                        self.assertEqual(result["git_tree"], TREE)
+                        self.assertTrue((web / "public/benchmark-data/alpha/view.json.gz").exists())
+                        with self.assertRaisesRegex(ValueError, "Git tree"):
+                            release.verify_candidate(target, tree="f" * 40)
+        self.assertTrue(calls)
+
     def test_verified_release_restores_static_files_and_removes_obsolete_benchmarks(self):
         web = self.root / "website"
         artifacts.write_json(web / "public/benchmark-data/obsolete/view.json", {})

@@ -14,6 +14,14 @@ on:
         description: 'Successful preparation run ID (empty: find the candidate matching this Git tree)'
         type: string
         required: false
+      reuse_published_gallery:
+        description: 'Fast preview using the accepted published gallery (non-main branches only)'
+        type: boolean
+        default: false
+      preview_pr:
+        description: 'PR number for the review alias (optional)'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -52,6 +60,9 @@ jobs:
           echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"
 
   deploy:
+    defaults:
+      run:
+        working-directory: ${{ env.DEPLOY_CODE_DIR }}
     needs: changes
     if: >-
       needs.changes.outputs.deploy == 'true' &&
@@ -68,6 +79,8 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}/measurement-db
     env:
       GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
+      DEPLOY_CODE_DIR: ${{ vars.GALLERY_SCRATCH_DIR != '' && format('{0}/website-{1}-{2}/repo', vars.GALLERY_SCRATCH_DIR, github.run_id, github.run_attempt) || github.workspace }}
+      REUSE_PUBLISHED_GALLERY: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_published_gallery || false }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       PYTHONUNBUFFERED: '1'
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -84,6 +97,20 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Configure deployment scratch storage
+        working-directory: ${{ github.workspace }}
+        run: |
+          if [ "$REUSE_PUBLISHED_GALLERY" = true ]; then
+            test "$DEPLOY_ENV" = preview
+          fi
+          if [ "$DEPLOY_CODE_DIR" != "$GITHUB_WORKSPACE" ]; then
+            mkdir -p "$DEPLOY_CODE_DIR"
+            cp -a "$GITHUB_WORKSPACE/." "$DEPLOY_CODE_DIR/"
+          fi
+          directory="${DEPLOY_CODE_DIR}/.deployment"
+          mkdir -p "$directory/tmp"
+          echo "DEPLOY_JOB_DIR=$directory" >> "$GITHUB_ENV"
+          echo "TMPDIR=$directory/tmp" >> "$GITHUB_ENV"
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
@@ -142,18 +169,25 @@ jobs:
           python-version: '3.11'
       - name: Install the artifact download client
         run: |
-          python -m venv --clear "$RUNNER_TEMP/website-venv"
-          echo "$RUNNER_TEMP/website-venv/bin" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/website-venv/bin/pip" install 'huggingface_hub>=1,<2'
+          python -m venv --clear "$DEPLOY_JOB_DIR/venv"
+          echo "$DEPLOY_JOB_DIR/venv/bin" >> "$GITHUB_PATH"
+          "$DEPLOY_JOB_DIR/venv/bin/pip" install 'huggingface_hub>=1,<2'
       - name: Download the validated candidate matching this Git tree
+        if: env.REUSE_PUBLISHED_GALLERY != 'true'
         run: >-
           python -m scripts.ci.gallery_release download
           --run-id "$CANDIDATE_RUN_ID"
-          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          --candidate "$DEPLOY_JOB_DIR/candidate"
       - name: Restore verified static files and generated catalogs
+        if: env.REUSE_PUBLISHED_GALLERY != 'true'
         run: >-
           python -m scripts.ci.gallery_release restore
-          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          --candidate "$DEPLOY_JOB_DIR/candidate"
+      - name: Restore accepted published data for a fast website preview
+        if: env.REUSE_PUBLISHED_GALLERY == 'true'
+        run: >-
+          python -m scripts.ci.gallery_release preview
+          --candidate "$DEPLOY_JOB_DIR/candidate"
       - run: pnpm --dir website install --frozen-lockfile
       - run: pnpm --dir website lint
       - run: pnpm --dir website typecheck
@@ -177,7 +211,7 @@ jobs:
         id: gallery
         run: >-
           python -m scripts.ci.gallery_release publish
-          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          --candidate "$DEPLOY_JOB_DIR/candidate"
       - name: Deploy
         id: deploy
         env:
@@ -190,10 +224,10 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
       - name: Create or reuse the PR review link
-        if: env.DEPLOY_ENV == 'preview' && github.event_name == 'pull_request'
+        if: env.DEPLOY_ENV == 'preview' && (github.event_name == 'pull_request' || inputs.preview_pr != '')
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ github.event.number || inputs.preview_pr }}
         run: python scripts/ci/vercel_preview_link.py --url "$DEPLOYMENT_URL" --pr "$PR_NUMBER"
       - name: Check deployed pages
         env:
