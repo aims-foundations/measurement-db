@@ -216,6 +216,7 @@ jobs:
     timeout-minutes: 720
     env:
       GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
+      GALLERY_SCRATCH_DIR: ${{ vars.GALLERY_SCRATCH_DIR }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
       PYTHONUNBUFFERED: '1'
@@ -229,6 +230,24 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Configure gallery scratch storage
+        id: storage
+        run: |
+          root="${GALLERY_SCRATCH_DIR:-$RUNNER_TEMP}"
+          directory="$root/gallery-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$directory/tmp"
+          echo "directory=$directory" >> "$GITHUB_OUTPUT"
+          echo "GALLERY_JOB_DIR=$directory" >> "$GITHUB_ENV"
+          echo "TMPDIR=$directory/tmp" >> "$GITHUB_ENV"
+          if [ -n "$GALLERY_SCRATCH_DIR" ]; then
+            # Share immutable Hub downloads across this host's runner pool and
+            # keep large downloads off the runner checkout filesystem.
+            mkdir -p "$root/huggingface/hub" "$root/huggingface/xet" "$root/pip"
+            echo "HF_HUB_CACHE=$root/huggingface/hub" >> "$GITHUB_ENV"
+            echo "HF_XET_CACHE=$root/huggingface/xet" >> "$GITHUB_ENV"
+            echo "PIP_CACHE_DIR=$root/pip" >> "$GITHUB_ENV"
+          fi
+          df -h "$directory"
       - uses: actions/setup-python@v5
         with:
           # Keep the preparation cache identity identical across runner caches.
@@ -237,28 +256,28 @@ jobs:
           cache-dependency-path: scripts/ci/gallery-requirements.txt
       - name: Install isolated preparation dependencies
         run: |
-          python -m venv --clear "$RUNNER_TEMP/gallery-venv"
-          echo "$RUNNER_TEMP/gallery-venv/bin" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/gallery-venv/bin/pip" install -r scripts/ci/gallery-requirements.txt 'pytest>=8,<10'
-          "$RUNNER_TEMP/gallery-venv/bin/pip" install 'torch==2.10.0' --index-url https://download.pytorch.org/whl/cpu
+          python -m venv --clear "$GALLERY_JOB_DIR/venv"
+          echo "$GALLERY_JOB_DIR/venv/bin" >> "$GITHUB_PATH"
+          "$GALLERY_JOB_DIR/venv/bin/pip" install -r scripts/ci/gallery-requirements.txt 'pytest>=8,<10'
+          "$GALLERY_JOB_DIR/venv/bin/pip" install 'torch==2.10.0' --index-url https://download.pytorch.org/whl/cpu
       - name: Test gallery parity, cache reuse, and artifact integrity
         run: python -m pytest -q tests/test_gallery_*.py
       - name: Download this run's validation receipts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: benchmark-run-report-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/gallery-validation
+          path: ${{ steps.storage.outputs.directory }}/validation
       - name: Prepare benchmark bundles with four workers and stage timings
         run: >-
           python -m scripts.ci.gallery_prepare
-          --report "$RUNNER_TEMP/gallery-validation/results.json"
-          --out "$RUNNER_TEMP/gallery-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          --report "$GALLERY_JOB_DIR/validation/results.json"
+          --out "$GALLERY_JOB_DIR/candidate"
           --workers 4
       - name: Upload prepared benchmark archives and validation receipts
         uses: actions/upload-artifact@v4
         with:
           name: gallery-candidate-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/handoff/
+          path: ${{ steps.storage.outputs.directory }}/candidate/handoff/
           compression-level: 0
           retention-days: 30
           if-no-files-found: error
@@ -267,8 +286,8 @@ jobs:
         with:
           name: gallery-manifest-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/manifest.json
-            ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/validation.json
+            ${{ steps.storage.outputs.directory }}/candidate/manifest.json
+            ${{ steps.storage.outputs.directory }}/candidate/validation.json
           retention-days: 30
           if-no-files-found: error
 

@@ -4505,7 +4505,11 @@ class OSWorldAuditTests(unittest.TestCase):
                 if change == "grade":
                     tables["responses"].loc[[fractional, historical], "response"] = responses.loc[[historical, fractional], "response"].to_numpy()
                 elif change == "rounding":
-                    tables["responses"].loc[fractional, "response"] = pd.to_numeric(pd.Series(["0.028626288575876013"]))[0]
+                    # Newer pandas preserves this decimal exactly; create an
+                    # actual precision loss independently of its parser.
+                    rounded = round(float(responses.loc[fractional, "response"]), 15)
+                    self.assertNotEqual(rounded, responses.loc[fractional, "response"])
+                    tables["responses"].loc[fractional, "response"] = rounded
                 elif change == "null_to_zero":
                     tables["responses"].loc[missing, "response"] = 0.
                 elif change == "clip":
