@@ -9,6 +9,7 @@ import {
   readGalleryLookup as lookup,
   type GallerySource as Source,
 } from "./gallery-lookup.ts";
+import { displayTrace } from "./traces/display.ts";
 
 type RowPosition = [number, number];
 type PageIndex = {
@@ -168,7 +169,20 @@ self.onmessage = async ({
         ? await readRow(base, source, "traces", position)
         : null;
       let trace = row?.trace == null ? null : String(row.trace);
-      if (trace != null && Array.from(trace).length > TRACE_MAX_CHARS) {
+      let structured: ReturnType<typeof displayTrace> | undefined;
+      if (trace != null && source.tables.traces?.format === "trace/1") {
+        try {
+          structured = displayTrace(JSON.parse(trace));
+        } catch (error) {
+          // A broken value must never hide a trace: fall back to the raw text.
+          console.warn("Could not read trace/1 value", base, key, error);
+        }
+      }
+      if (
+        trace != null &&
+        !structured &&
+        Array.from(trace).length > TRACE_MAX_CHARS
+      ) {
         const chars = Array.from(trace).slice(0, TRACE_MAX_CHARS);
         const space = chars.lastIndexOf(" ");
         trace =
@@ -177,7 +191,7 @@ self.onmessage = async ({
             .join("")
             .trimEnd() + " …";
       }
-      value = { trace };
+      value = structured ? { trace: null, structured } : { trace };
     }
     self.postMessage({ value });
   } catch (error) {

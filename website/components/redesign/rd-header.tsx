@@ -6,7 +6,7 @@
    which are NOT routes of this sub-site. next/link would wrongly prefix them
    with /measurement-db. */
 
-import { type MouseEvent, useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { SiteSearchDialog } from "@/components/site-search-dialog";
 import type { NavItem } from "@/content/site";
@@ -56,6 +56,26 @@ export function RdHeader({ navItems }: { navItems: readonly NavItem[] }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Publishes how much of the viewport top the header covers, so page-level
+  // sticky elements (the trace viewer's toolbar) can sit just below it and
+  // move up when it slides away.
+  const headerRef = useRef<HTMLElement>(null);
+  const shown = !hidden || mobileOpen || searchOpen;
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const root = document.documentElement;
+    const publish = () =>
+      root.style.setProperty(
+        "--rd-header-offset",
+        shown ? `${header.offsetHeight}px` : "0px",
+      );
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, [shown]);
+
   const openSearch = (event: MouseEvent<HTMLAnchorElement>) => {
     if (
       event.button !== 0 ||
@@ -75,9 +95,10 @@ export function RdHeader({ navItems }: { navItems: readonly NavItem[] }) {
   return (
     <>
       <header
+        ref={headerRef}
         className={`rd-header rd-header--solid ${
           scrolled || mobileOpen || searchOpen ? "rd-header--scrolled" : ""
-        } ${hidden && !mobileOpen && !searchOpen ? "rd-header--hidden" : ""}`}
+        } ${shown ? "" : "rd-header--hidden"}`}
       >
         <div className="rd-container flex items-center justify-between py-4">
           {/* Plain anchor (not next/link) so basePath is NOT prepended — the
