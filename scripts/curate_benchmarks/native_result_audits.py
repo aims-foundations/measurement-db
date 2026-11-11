@@ -24687,6 +24687,7 @@ def _programbench_sources(directory, metadata):
     """Verify registry/fork correspondence without using the builder's joins."""
     import copy
     import tarfile
+    import zlib
 
     parameters = metadata['build']['parameters']
     with tarfile.open(directory / 'raw' / parameters['layout']['registry']) as archive:
@@ -24762,12 +24763,108 @@ def _programbench_sources(directory, metadata):
                 features=dict(task_id=task, grader_version=version, test_set_sha256=scope),
                 verifier=dict(**metadata['grading']['verifiers']['published'], grader_version=version, active_test_names=names))
             trace = dict(source_run=run, task_id=task, trajectory=trajectory, evaluation=evaluation, published_tests=tests)
+            serialized = json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)
             native[run, task] = dict(subject=model, item=identity, grade=score,
-                trace_sha256=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), grader_version=version)
+                trace_sha256=_digest(serialized), trace_record=zlib.compress(serialized.encode(), 1), grader_version=version)
     return dict(native=native, subjects=subjects, items=items, counts=dict(counts), runs=len(registered))
 
 
+def _programbench_trace1(trace, original):
+    """Check source evidence independently of the builder and its converter.
+
+    Check identities/configuration and every native test record, recorded step
+    counts, tool links, and source scalar/text coverage. Structural role/type
+    tags are represented by trace/1's step types. Flattened content blocks may
+    retain source text as a substring; terminal wrappers are decoded explicitly.
+    """
+    import re
+    from measurement_db.scripts.build_measurement_tables.trace_format import validate
+
+    try:
+        validate(trace)
+    except Exception as exc:
+        raise ValueError('ProgramBench invalid trace/1 document') from exc
+    native = trace.get('native', {})
+    for name in ['source_run', 'task_id', 'published_tests']:
+        _check(native.get(name), original[name], 'ProgramBench trace/1 original '+name)
+    trajectory, evaluation = original['trajectory'], original['evaluation']
+    info = {key:value for key,value in trajectory.get('info', {}).items() if key not in {'model_stats','exit_status'}}
+    _check(_digest(json.dumps(native.get('info') or {}, sort_keys=True)), _digest(json.dumps(info, sort_keys=True)),
+           'ProgramBench trace/1 complete original configuration and run metadata')
+    remainder = {key:value for key,value in trajectory.items() if key not in {'messages','info'}}
+    _check(_digest(json.dumps(native.get('trajectory') or {}, sort_keys=True)), _digest(json.dumps(remainder, sort_keys=True)),
+           'ProgramBench trace/1 unmapped trajectory fields')
+    tests = (evaluation or {}).get('test_results') or []
+    if evaluation is None:
+        _check('evaluation' not in trace, True, 'ProgramBench missing evaluation stays absent')
+    else:
+        expected = [dict(name=row['branch']+'/'+row['name'], status=row['status']) for row in tests]
+        _check(trace['evaluation'].get('tests', []), expected, 'ProgramBench all native tests including repeated identifiers')
+        fields = {str(index):{key:value for key,value in row.items() if key not in {'name','status'}}
+                  for index,row in enumerate(tests)}
+        _check(native.get('test_result_fields', {}), fields, 'ProgramBench full native test-result fields')
+        for name, key in [('errorCode','error_code'),('errorDetails','error_details')]:
+            _check(trace['evaluation'].get(name), evaluation.get(key) or None, 'ProgramBench evaluation '+key)
+        _check((trace['evaluation']['passed'],trace['evaluation']['total'],trace['evaluation']['notRun']),
+               (sum(t['status']=='passed' for t in tests),len(tests),sum(t['status']=='not_run' for t in tests)),
+               'ProgramBench native evaluation counts')
+    messages = trajectory.get('messages') or []
+    expected_llm = sum(m.get('role')=='assistant' or m.get('object')=='response' or
+        (m.get('role') in {'system','user'} and isinstance((m.get('extra') or {}).get('response'),dict)) for m in messages)
+    expected_tools = sum(1 if m.get('role')=='tool' or m.get('type')=='function_call_output' else
+        sum(isinstance(b,dict) and b.get('type')=='tool_result' for b in m.get('content', []))
+        if m.get('role')=='user' and isinstance(m.get('content'),list) else 0 for m in messages)
+    steps = trace['steps']
+    _check((sum(s['type']=='llm' for s in steps),sum(s['type']=='tool' for s in steps)),
+           (expected_llm,expected_tools), 'ProgramBench every recorded model turn and tool result')
+    calls = {}
+    for step in steps:
+        if step['type']=='llm':
+            calls.update({call['id']:call for call in step.get('toolCalls', []) if 'id' in call})
+        elif step['type']=='tool':
+            call = calls.get(step.get('callId'))
+            _check(call is not None, True, 'ProgramBench matching recorded tool call')
+            _check((step.get('name'),step.get('arguments')), (call.get('name'),call.get('arguments')),
+                   'ProgramBench exact tool-call association')
+        elif step['type']=='event':
+            _check(step['name']!='unrecognized', True, 'ProgramBench no unrecognized source events')
+
+    def leaves(value, path=()):
+        if isinstance(value,dict):
+            for key,child in value.items():
+                yield from leaves(child, (*path,str(key)))
+        elif isinstance(value,list):
+            for index,child in enumerate(value):
+                yield from leaves(child, (*path,str(index)))
+        else:
+            yield path,value
+    strings, numbers = set(), set()
+    for _,value in leaves(trace):
+        if isinstance(value,str):
+            strings.add(value)
+            if value.startswith(('{','[')):
+                try:
+                    for _,child in leaves(json.loads(value)):
+                        if isinstance(child,str):strings.add(child)
+                        elif isinstance(child,(int,float,bool)):numbers.add(child)
+                except (ValueError,TypeError):
+                    pass
+        elif isinstance(value,(int,float,bool)):
+            numbers.add(value)
+    wrapper = re.compile(r'\A<returncode>-?\d+</returncode>\n<output>\n?(.*)</output>\n?\Z', re.S)
+    for path,value in leaves(original):
+        if path[-1] in {'role','type','object'} or value is None or value=='':continue
+        if isinstance(value,str):
+            match=wrapper.fullmatch(value)
+            value=match.group(1) if match else value
+            found=value in strings or any(value in actual for actual in strings if len(actual)>=len(value))
+        else:
+            found=value in numbers
+        _check(found, True, 'ProgramBench trace/1 preserves source value at '+'.'.join(path))
+
+
 def _programbench(directory, tables, metadata, source=None):
+    import zlib
     source = _programbench_sources(directory, metadata) if source is None else source
     subjects, seen_subjects = {}, Counter()
     for row in tables['subjects'].itertuples():
@@ -24806,10 +24903,14 @@ def _programbench(directory, tables, metadata, source=None):
     seen = Counter()
     for row in tables['responses'].itertuples():
         trace = json.loads(traces[row.response_id])
-        key = trace['source_run'], trace['task_id']
+        locator = trace['native'] if trace.get('schema')=='trace/1' else trace
+        key = locator['source_run'], locator['task_id']
         original = source['native'][key]
-        _check(_digest(json.dumps(trace,sort_keys=True,ensure_ascii=False,allow_nan=False)), original['trace_sha256'],
-            'ProgramBench full native trajectory, evaluation and test verdicts')
+        if trace.get('schema')=='trace/1':
+            _programbench_trace1(trace,json.loads(zlib.decompress(original['trace_record'])))
+        else:
+            _check(_digest(json.dumps(trace,sort_keys=True,ensure_ascii=False,allow_nan=False)), original['trace_sha256'],
+                'ProgramBench full native trajectory, evaluation and test verdicts')
         _check((subjects[row.subject_id],items[row.item_id]), (original['subject'],original['item']),
             'ProgramBench original subject-task association')
         _check(None if pd.isna(row.response) else row.response, original['grade'], 'ProgramBench exact fractional score or unavailable evaluation')

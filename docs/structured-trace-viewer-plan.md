@@ -636,7 +636,40 @@ usual PR flow; the website build steps are in `scripts/render_website/README.md`
 8. **Task-omission edge cases.** Whitespace or templating differences between the item content and
    the task message keep the task in the trace. That is acceptable (duplication, not loss).
 
-## 14. Reference material
+## 14. ProgramBench builder migration
+
+ProgramBench opts into `StructuredTraceBuild`; its `convert_trace` hook is in
+`benchmarks/programbench/build.py`. The hook adapts the three mini-swe-agent
+dialects, retains full branch/test names and repeated test results, and keeps
+provider timestamps, content-block signatures and tool-call metadata in
+`native`. An empty published verdict map stays distinct from an absent grade.
+Measurement construction and the pinned upstream inputs are unchanged.
+
+The native audit accepts both legacy envelopes and `trace/1`. It independently
+checks source identities, configuration, test records, recorded turn counts,
+tool associations and source scalar/text coverage. Coverage permits text
+substrings when content blocks are flattened; this is not an exact JSON-tree
+round trip. The source snapshots remain the reconstruction reference.
+
+Review this stack in order: trace viewer (#15), abstract builder contract (#16),
+then ProgramBench. Compare the migration with its parent builder using the same
+inputs and pinned writer environment. Non-trace files must remain byte identical;
+only trace payloads, the format marker and trace page layout should change.
+Publishing the converted tables to the canonical dataset is a later release
+step, coordinated with the merged trace reader. The normal reproduction check
+against canonical HF tables will report a difference until that release.
+
+For isolated review, `deploy-website.yml` accepts `preview_gallery_revision`, an
+immutable commit in the gallery repository containing `preview/manifest.json`.
+The manifest must explicitly identify itself as preview-only and match the
+checked-out code commit and tree. Every archive/member checksum is verified.
+This path rejects production and main before downloading data; it does not
+promote a gallery or substitute for the ordinary reproduction receipt.
+Rebuild only the migrated benchmark bundle and shared catalog, retaining the
+accepted bundles for other benchmarks. Pin the converted source tables on a
+separate HF branch so browser range requests exercise the new traces.
+
+## 15. Reference material
 
 The research artifacts are kept outside this repo, because they contain benchmark data and the
 prototype is not production code. Ask the plan's author for them.
