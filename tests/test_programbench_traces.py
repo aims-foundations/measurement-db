@@ -18,7 +18,8 @@ def source(dialect):
             {"role": "assistant", "content": "Checking", "created_at": 100, "completed_at": 102,
              "tool_calls": [{"id": "c1", "type": "function", "extra_content": {"google": {"thought_signature": "opaque signature"}},
                              "function": {"name": "bash", "arguments": '{"command":"ls"}'}}],
-             "extra": {"response": {"created": 101, "model": "fixture", "choices": [{"message": {"role": "assistant"}}]}}},
+             "extra": {"response": {"created": 101, "created_at": 100.5, "completed_at": 101.5,
+                                     "model": "fixture", "choices": [{"message": {"role": "assistant"}}]}}},
             {"role": "tool", "tool_call_id": "c1", "content": "full tool output\n"}]
     elif dialect == "anthropic":
         messages += [
@@ -53,6 +54,7 @@ def test_dialects_retries_tool_links_and_metadata(dialect):
     if dialect == "chat":
         client = result.value["native"]["client_metadata"]["2"]
         assert client["created_at"] == 100 and client["response_created"] == 101
+        assert client["response_created_at"] == 100.5 and client["response_completed_at"] == 101.5
         assert client["tool_calls"]["0"]["extra_content"]["google"]["thought_signature"] == "opaque signature"
     if dialect == "anthropic":
         assert result.value["native"]["client_metadata"]["2"]["content_blocks"]["0"]["signature"] == "opaque signature"
@@ -67,3 +69,18 @@ def test_empty_published_verdicts_and_missing_grade_remain_distinct(graded):
     _programbench_trace1(result.value, native)
     assert ("evaluation" in result.value) == graded
     assert ("published_tests" in result.value["native"]) == graded
+
+
+def test_format_error_retains_response_timestamps_when_step_timing_is_clamped():
+    native = source("responses")
+    native["trajectory"]["messages"][2]["created_at"] = 9000.111
+    native["trajectory"]["messages"].append({
+        "role": "user", "content": "A tool call is required.",
+        "extra": {"response": {"object": "response", "created_at": 1234.567, "completed_at": 1234.678,
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "Original rejected reply"}]}]}},
+    })
+    result = ProgramBench.__new__(ProgramBench).convert_trace(native, context=None)
+    _programbench_trace1(result.value, native)
+    client = result.value["native"]["client_metadata"]["4"]
+    assert client["response_created_at"] == 1234.567
+    assert client["response_completed_at"] == 1234.678

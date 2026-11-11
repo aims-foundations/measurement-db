@@ -64,8 +64,9 @@ class ProgramBench(StructuredTraceBuild):
         for index, message in enumerate(messages):
             fields = {key: message[key] for key in ('created_at', 'completed_at') if key in message}
             response = (message.get('extra') or {}).get('response') or {}
-            if 'created' in response:
-                fields['response_created'] = response['created']
+            for key in ('created', 'created_at', 'completed_at'):
+                if key in response:
+                    fields['response_' + key] = response[key]
             content_fields = blocks(message.get('content'))
             response_fields = blocks(response.get('content'), message.get('content'))
             if content_fields:

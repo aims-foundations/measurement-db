@@ -106,7 +106,29 @@ def _validator():
 
     schema = json.loads(SCHEMA_PATH.read_text())
     jsonschema.Draft202012Validator.check_schema(schema)
-    return jsonschema.Draft202012Validator(schema)
+    # The step alternatives have distinct constant type tags. Select the one
+    # possible branch before validating it, rather than constructing errors for
+    # every other branch on each of millions of steps. All other schema rules
+    # still run normally, including the step's required type and allowed tags.
+    step = schema["$defs"]["step"]
+    branches = {}
+    for choice in step["oneOf"]:
+        definition = schema["$defs"][choice["$ref"].removeprefix("#/$defs/")]
+        tag = definition["properties"]["type"]["const"]
+        if tag in branches:
+            return jsonschema.Draft202012Validator(schema)
+        branches[tag] = choice
+    ordinary = jsonschema.Draft202012Validator.VALIDATORS["oneOf"]
+
+    def tagged_step(validator, choices, value, subschema):
+        tag = value.get("type") if isinstance(value, dict) else None
+        if subschema is step and isinstance(tag, str) and tag in branches:
+            yield from validator.descend(value, branches[tag])
+        else:
+            yield from ordinary(validator, choices, value, subschema)
+
+    validator = jsonschema.validators.extend(jsonschema.Draft202012Validator, {"oneOf": tagged_step})
+    return validator(schema)
 
 
 def validate(value: dict) -> None:
