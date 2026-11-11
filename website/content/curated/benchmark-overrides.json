@@ -1455,7 +1455,7 @@
     },
     "image": "/benchmarks/programbench.png",
     "fit": "contain",
-    "note": "Per-(model, task) outcomes for 12 models across 15 agent runs, on upstream's own Resolved / Almost-Resolved thresholds."
+    "note": "Recorded attempts across model and harness configurations, scored by the fraction of active behavioral tests passed."
   },
   "prompt_to_leaderboard": {
     "image": "/benchmarks/prompt_to_leaderboard.png",
