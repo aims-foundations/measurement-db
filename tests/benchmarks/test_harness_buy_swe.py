@@ -162,6 +162,16 @@ class ReleaseTests(shared.DatasetTests):
         return {"reported_hard45_table1": table1, "reported_pool447_table2": table2,
                 "reported_opus_settings": opus, "reported_thinking_off": thinking}
 
+    def test_unstated_reasoning_effort_is_null(self):
+        subjects = self.tables["subjects"]
+        stated = subjects.reasoning_effort.dropna()
+        self.assertTrue(stated.isin({"high", "xhigh"}).all(), sorted(set(stated)))
+        self.assertGreater(subjects.reasoning_effort.isna().sum(), 0)
+        for name, table in self.tables.items():
+            for column in table.select_dtypes(exclude="number"):
+                text = table[column].dropna().astype(str).str.lower()
+                self.assertFalse(text.eq("nan").any() | text.str.contains("=nan").any(), f"{name}.{column}")
+
     def test_items_match_swebench_verified(self):
         verified = pd.read_parquet(DIRECTORY / "raw/swebench_verified.parquet").set_index("instance_id")
         pool = set((DIRECTORY / "raw/pools/benchmarks/pool492.txt").read_text().split())

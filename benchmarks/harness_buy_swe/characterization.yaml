@@ -8,10 +8,10 @@ tables:
     logical_sha256: 026df44dcf9c9f1e22a07101a636559b714e8508746dac0a79a5d96ef2327131
   responses:
     rows: 6431
-    logical_sha256: f15fb4bfdeeb99d1a68e4370d4324c73384991dd07cce762368afb520fafeede
+    logical_sha256: a51161a11e16c998d8f928ed24a65c38db51b6713afd35babb62bb89e3f3037d
   subjects:
     rows: 48
-    logical_sha256: f9c48b8a9a3a004f99f61fd88af3e2a88d7298f91024dc3fa10e7e0e404fbf2d
+    logical_sha256: d544e1e1b4ef3d3d4d2f47cf44a6d89c3048f4b6c5a92a33539616d966f1647d
 source_claims:
   released_no_web_trials:
     kind: count

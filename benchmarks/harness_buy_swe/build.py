@@ -147,7 +147,7 @@ class HarnessBuySWE(BenchmarkBuild):
         subjects["raw_label"] = subjects.model.map(MODELS)
         subjects["features"] = [
             {"harness": HARNESSES[row.harness], "harness_version": row.harness_version, "tool_mode": row.tool_mode,
-             **({"reasoning_effort": row.reasoning_effort} if row.reasoning_effort else {})}
+             **({"reasoning_effort": row.reasoning_effort} if pd.notna(row.reasoning_effort) else {})}
             for row in subjects.itertuples()
         ]
 
