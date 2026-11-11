@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -9,6 +10,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from .register_measurements import _locked_registration_rows
+from . import trace_format as _trace_format
 from .validate_measurement_tables import (
     PARQUET_SCHEMAS,
     _validated_registration_tables,
@@ -52,7 +54,7 @@ def validate_parquet_schema(table_name: str, schema: pa.Schema) -> None:
 def write_parquet(
     table: pd.DataFrame, path: Path | str, *, item_id_version: str = "4",
     table_name: str | None = None, response_scale: dict | str | None = None,
-    items: pd.DataFrame | None = None, **kwargs,
+    items: pd.DataFrame | None = None, trace_format: str | None = None, **kwargs,
 ) -> None:
     """Validate and write canonical fields with fixed Arrow types.
 
@@ -72,6 +74,22 @@ def write_parquet(
     validate_table(
         name, table, include_derived=True, context=str(path),
     )
+    if trace_format is not None:
+        if name != "traces" or trace_format != _trace_format.SCHEMA:
+            raise ValueError("trace_format must be trace/1 and applies only to traces.parquet")
+        for row in table.itertuples(index=False):
+            try:
+                value = json.loads(row.trace)
+                _trace_format.validate(value)
+                # JSON permits non-finite numbers in Python by default. Dataset
+                # JSON must also be readable by the browser's strict parser.
+                _trace_format.dumps(value)
+            except Exception as exc:
+                raise ValueError(f"response {row.response_id}: invalid trace/1 document") from exc
+        # A large trace must not force the browser to read neighboring values.
+        # Keep other columns dictionary encoded and retain bounded row groups.
+        kwargs.update(data_page_size=1, write_batch_size=1,
+                      use_dictionary=[column for column in table.columns if column != "trace"])
     if name == "responses":
         if response_scale is None:
             raise ValueError("writing responses requires an explicit response_scale")
@@ -92,6 +110,8 @@ def write_parquet(
     metadata[b"measurement_db.schema_version"] = PARQUET_SCHEMA_VERSION.encode()
     metadata[b"measurement_db.response_id_version"] = b"1"
     metadata[b"measurement_db.item_id_version"] = item_id_version.encode()
+    if trace_format is not None:
+        metadata[_trace_format.FORMAT_KEY] = trace_format.encode()
     kwargs.setdefault("row_group_size", _ARROW_BATCH_ROWS)
     pq.write_table(arrow.replace_schema_metadata(metadata), path, **kwargs)
 

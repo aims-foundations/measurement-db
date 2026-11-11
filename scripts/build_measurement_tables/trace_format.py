@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -16,6 +18,33 @@ SCHEMA = "trace/1"
 # Parquet metadata key that marks a traces.parquet file written in this format.
 FORMAT_KEY = b"measurement_db.trace_format"
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "trace_schema.json"
+
+
+@dataclass(frozen=True)
+class TraceContext:
+    """Final observation identity and item text, supplied by the shared builder."""
+
+    benchmark_id: str
+    response_id: str
+    subject_id: str
+    item_id: str
+    trial: int
+    test_condition: str | None
+    interactors: str | None
+    item_content: str | None
+
+
+@dataclass(frozen=True)
+class ConvertedTrace:
+    """One trace/1 document and the converter's nonnegative accounting counters.
+
+    ``unrecognized`` and ``unmatched_tool_results`` default to zero tolerance in
+    StructuredTraceBuild. A reported ``parse_failures`` count always fails a
+    build. Missing source traces never reach the converter.
+    """
+
+    value: dict
+    counts: Mapping[str, int] = field(default_factory=dict)
 
 
 def compact(value: dict) -> dict:
