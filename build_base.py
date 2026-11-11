@@ -17,7 +17,9 @@ final subjects, items, and responses through
 writes the Parquet output. No second provenance manifest is generated.
 """
 
-from abc import ABC
+from abc import ABC, abstractmethod
+from collections import Counter
+from collections.abc import Mapping
 import copy
 import argparse
 import hashlib
@@ -50,7 +52,9 @@ from scripts.build_measurement_tables import (  # noqa: E402
     normalize_evaluation_settings as _evaluation_settings,
     validate_benchmark_metadata as _benchmark_metadata,
     source_snapshots as _source_snapshots,
+    trace_format as _trace_format,
 )
+from scripts.build_measurement_tables.trace_format import ConvertedTrace, TraceContext
 
 # Intentional author-facing verifier specifications. Everything else imported
 # from the measurement-table package remains an implementation dependency.
@@ -608,7 +612,7 @@ class BenchmarkBuild(ABC):
         item_id: str,
         response: float | None,
         reference_answer: str | None = _REFERENCE_FROM_ITEM,
-        trace: str | None,
+        trace: object | None,
         trial: int = 1,
         test_condition: str | None = None,
         interactors: str | None = None,
@@ -699,10 +703,7 @@ class BenchmarkBuild(ABC):
                 f"{self.slug}: add_response() reference_answer must be a "
                 "string or None"
             )
-        if trace is not None and not isinstance(trace, str):
-            raise BuildContractError(
-                f"{self.slug}: add_response() trace must be a string or None"
-            )
+        self._validate_trace_source(trace)
 
         try:
             _tables.get_subject_registration(subject_id)
@@ -1034,6 +1035,18 @@ class BenchmarkBuild(ABC):
         for row in responses.to_dict("records"):
             self.add_response(**row)
 
+    def _validate_trace_source(self, source: object | None) -> None:
+        """Legacy builders submit text; structured builders own their raw shape."""
+        if source is not None and not isinstance(source, str):
+            raise BuildContractError(f"{self.slug}: add_response() trace must be a string or None")
+
+    def _prepare_traces(self, traces: pd.DataFrame) -> pd.DataFrame:
+        """Normalize trace values after final identities have been assigned."""
+        return traces
+
+    def _write_trace_table(self, traces: pd.DataFrame, path: Path) -> None:
+        _tables.write_parquet(traces, path)
+
     def _validate_and_write_tables(self) -> pd.DataFrame:
         """Validate the completed build and write its output tables."""
         df = pd.DataFrame(self._response_rows)
@@ -1107,12 +1120,14 @@ class BenchmarkBuild(ABC):
                     f"{' or '.join(missing_registrations)}; register the real "
                     "item bank and at least one provider-reported AI subject."
                 )
-            traces = pd.DataFrame()
+            traces = self._prepare_traces(pd.DataFrame())
             resp = None
         else:
             traces = df.loc[
                 df["trace"].notna(), _tables.parquet_columns("traces")
             ].copy()
+            traces = self._prepare_traces(traces)
+            df.loc[traces.index, "trace"] = traces["trace"]
             resp = df.drop(columns="trace")
             # Revalidate the assembled serialization boundary before anything
             # is written. DataFrame construction determines final column order
@@ -1192,7 +1207,7 @@ class BenchmarkBuild(ABC):
                     response_scale=self.INFO["response_scale"], items=registered_items,
                 )
             if not traces.empty:
-                _tables.write_parquet(traces, staging_dir / "traces.parquet")
+                self._write_trace_table(traces, staging_dir / "traces.parquet")
             if not assets.empty:
                 # One file payload per row group permits readers to retrieve a
                 # selected asset without decoding unrelated byte blobs.
@@ -1425,3 +1440,88 @@ class BenchmarkBuild(ABC):
                     )
         except (OSError, TypeError, ValueError, _source_files.SourceDataError) as exc:
             raise BuildContractError(f"{self.slug}: source manifest validation failed: {exc}") from exc
+
+
+class StructuredTraceBuild(BenchmarkBuild):
+    """Opt into trace/1 by implementing one source-specific conversion hook.
+
+    Both table builders and row builders pass native records through their
+    existing ``trace`` input. The shared pipeline calls ``convert_trace`` once
+    per available trace, after measurement identities are fixed. Missing traces
+    remain absent. Conversion must preserve its input and return only trace
+    content and accounting; it cannot replace response rows or their grades.
+
+    Explicit, reviewed allowances may be declared in the builder for known
+    source anomalies. Parse failures are always fatal.
+    """
+
+    TRACE_ALLOWANCES: Mapping[str, int] = {}
+    _TRACE_DIAGNOSTICS = {"unrecognized", "unmatched_tool_results"}
+
+    @abstractmethod
+    def convert_trace(self, source: object, *, context: TraceContext) -> ConvertedTrace:
+        """Map one native record to trace/1; raise on an unparsable record."""
+        raise NotImplementedError
+
+    def _validate_trace_source(self, source: object | None) -> None:
+        # The source may be text, a message list, or a benchmark-native object.
+        # The concrete converter owns that input contract.
+        pass
+
+    def _prepare_traces(self, traces: pd.DataFrame) -> pd.DataFrame:
+        allowances = self.TRACE_ALLOWANCES
+        if (not isinstance(allowances, Mapping) or set(allowances) - self._TRACE_DIAGNOSTICS
+                or any(isinstance(n, bool) or not isinstance(n, Integral) or n < 0
+                       for n in allowances.values())):
+            raise BuildContractError(f"{self.slug}: invalid TRACE_ALLOWANCES")
+        converted = traces.copy()
+        counters, steps = Counter(), Counter()
+        for row in traces.itertuples():
+            context = TraceContext(
+                benchmark_id=row.benchmark_id, response_id=row.response_id,
+                subject_id=row.subject_id, item_id=row.item_id, trial=int(row.trial),
+                test_condition=row.test_condition, interactors=row.interactors,
+                item_content=_tables.get_item_registration(row.item_id)["content"],
+            )
+            try:
+                result = self.convert_trace(row.trace, context=context)
+                if not isinstance(result, ConvertedTrace):
+                    raise TypeError("convert_trace() must return ConvertedTrace")
+                _trace_format.validate(result.value)
+                if (not isinstance(result.counts, Mapping)
+                        or any(not isinstance(key, str) or isinstance(n, bool)
+                               or not isinstance(n, Integral) or n < 0
+                               for key, n in result.counts.items())):
+                    raise ValueError("converter counters must be nonnegative integers with string keys")
+                counts = Counter({key: int(n) for key, n in result.counts.items()})
+                unrecognized = sum(step["type"] == "event" and step["name"] == "unrecognized"
+                                   for step in result.value["steps"])
+                if "unrecognized" in counts and counts["unrecognized"] != unrecognized:
+                    raise ValueError("unrecognized counter disagrees with the emitted events")
+                counts["unrecognized"] = unrecognized
+                counts.setdefault("unmatched_tool_results", 0)
+                counts.setdefault("parse_failures", 0)
+                if counts["parse_failures"]:
+                    raise ValueError("parse failures cannot be allowed")
+                converted.at[row.Index, "trace"] = _trace_format.dumps(result.value)
+                counters.update(counts)
+                steps.update(step["type"] for step in result.value["steps"])
+            except Exception as exc:
+                # Schema errors may include the entire native record; keep logs
+                # bounded while identifying the exact observation that failed.
+                message = getattr(exc, "message", None) or str(exc) or type(exc).__name__
+                detail = message.splitlines()[0][:240]
+                raise BuildContractError(
+                    f"{self.slug}: response {row.response_id}: trace conversion failed: {detail}"
+                ) from None
+        self.trace_accounting = {"rows": len(traces), "steps": dict(steps), "counters": dict(counters)}
+        for name in sorted(self._TRACE_DIAGNOSTICS):
+            if counters[name] > allowances.get(name, 0):
+                raise BuildContractError(
+                    f"{self.slug}: trace {name}={counters[name]} exceeds allowance {allowances.get(name, 0)}"
+                )
+        print(f"[{self.slug}] trace/1: {json.dumps(self.trace_accounting, sort_keys=True)}")
+        return converted
+
+    def _write_trace_table(self, traces: pd.DataFrame, path: Path) -> None:
+        _tables.write_parquet(traces, path, trace_format=_trace_format.SCHEMA)

@@ -47,3 +47,19 @@ def test_invalid_later_batch_does_not_overwrite_existing_file(tmp_path, monkeypa
     with pytest.raises(UnicodeEncodeError):
         writer.write_parquet(data, output)
     assert output.read_bytes() == b"previous release"
+
+
+@pytest.mark.parametrize("value,format_name", [
+    ("legacy text", "trace/1"),
+    ('{"schema":"trace/1","converter":"fixture@1","steps":[],"native":{"bad":NaN}}', "trace/1"),
+    ('{"schema":"trace/1","converter":"fixture@1","steps":[]}', "trace/2"),
+])
+def test_format_marker_requires_valid_strict_json_before_opening_output(tmp_path, value, format_name):
+    data = pd.DataFrame({"response_id": ["r"], "subject_id": ["s"], "item_id": ["i"],
+        "benchmark_id": ["b"], "trial": [1], "test_condition": [None], "interactors": [None],
+        "trace": [value]})
+    output = tmp_path / "traces.parquet"
+    output.write_bytes(b"previous release")
+    with pytest.raises(ValueError, match="trace"):
+        writer.write_parquet(data, output, trace_format=format_name)
+    assert output.read_bytes() == b"previous release"

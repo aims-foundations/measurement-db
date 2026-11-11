@@ -1,8 +1,17 @@
 # Plan: a standard trace format and a structured trace viewer
 
-Status: proposal, ready for implementation. Written 2026-11-09 from a research spike, a working
-prototype and a paging experiment (paths in section 14). Nothing in this document has been
-implemented in this repo yet.
+Status: staged implementation. PR #15 provides the schema, converter helpers, mini-swe-agent
+converter and structured website viewer. PR #16 introduces `StructuredTraceBuild`,
+write-time validation and format-aware paging. Existing benchmark builders still write their
+legacy traces until they explicitly migrate. The survey and measurements below describe the
+original 2026-11-09 research spike; refresh them against pinned inputs for each migration.
+
+The viewer and schema landed in [#15](https://github.com/aims-foundations/measurement-db/pull/15).
+The builder contract follows in [#16](https://github.com/aims-foundations/measurement-db/pull/16)
+(`feat/structured-trace-build` → `main`). The ProgramBench pilot is
+[#17](https://github.com/aims-foundations/measurement-db/pull/17)
+(`feat/programbench-structured-traces` → `feat/structured-trace-build`). Land parents first and
+retarget each dependent PR as its parent lands.
 
 ## 1. Goal
 
@@ -304,6 +313,14 @@ to about 56 KB.
 
 ### 7.1 Shared code
 
+- `build_base.py::StructuredTraceBuild` is the opt-in abstract builder contract. Each migrated
+  builder implements `convert_trace(source, *, context) -> ConvertedTrace`. `TraceContext` is
+  immutable and contains the final observation identity and item text; `ConvertedTrace` holds
+  the `trace/1` document and accounting counters. Benchmark-specific parsing stays in `build.py`.
+  Shared format converters are optional helpers called from this method.
+- The shared pipeline invokes conversion once for each available trace after response assembly.
+  Both `build_tables()` and `build_subject_item_response_rows()` use this path. Missing traces
+  remain absent; conversion does not create or modify response rows, grades or identities.
 - `scripts/build_measurement_tables/trace_format.py`: step constructors, `native` collection
   (a helper that returns the source fields not consumed by the mapping), the task-omission rule,
   JSON Schema validation against `trace_schema.json` (`jsonschema` is already a dependency), and
@@ -316,30 +333,49 @@ to about 56 KB.
 
 ### 7.2 In a builder
 
-A builder builds each `trace` with the helpers instead of `json.dumps` of its own envelope. For
-programbench, step 5 of `benchmarks/programbench/build.py` becomes roughly:
+A migrated builder inherits `StructuredTraceBuild`. Its existing `trace` input can contain
+native dictionaries, message lists or text; the shared pipeline handles serialization. The
+ProgramBench pilot can adapt its current envelope with a hook like this (not yet enabled in
+the production ProgramBench builder):
 
 ```python
-traces['trace'] = [mini_swe_agent.convert(row.trajectory, evaluation=row.evaluation,
-    native=dict(source_run=row.source_run, task_id=row.task_id, published_tests=row.published_tests))
-    for row in calls.itertuples()]
+from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild
+from measurement_db.scripts.build_measurement_tables.trace_converters import mini_swe_agent
+
+class ProgramBench(StructuredTraceBuild):
+    def convert_trace(self, source, *, context):
+        record = json.loads(source) if isinstance(source, str) else source
+        value, counts = mini_swe_agent.convert(
+            record["trajectory"], evaluation=record.get("evaluation"),
+            native={k: v for k, v in record.items() if k not in {"trajectory", "evaluation"}},
+        )
+        return ConvertedTrace(value, counts)
 ```
 
-`add_response(trace=…)` keeps accepting a string; it also accepts a `trace/1` dict, which the base
-class serializes.
+Legacy `BenchmarkBuild` subclasses keep accepting only trace strings and retain their existing
+output. Inheriting `StructuredTraceBuild` is the migration opt-in; no per-benchmark metadata flag
+or external postprocessing command is needed. This stacked foundation changes no real builder
+outputs. The next PR migrates and audits ProgramBench before additional converter families.
 
 ### 7.3 Write-time validation
 
 In `BenchmarkBuild._validate_and_write_tables`, before `traces.parquet` is written:
 
 1. Every value is validated against `trace_schema.json`.
-2. Accounting: unrecognized steps, unmatched tool results and parse failures are counted. The
-   build fails if a count exceeds the allowance in the benchmark's `metadata.yaml`
-   (`build.parameters.trace.allow`, default zero). A row that cannot be parsed at all fails the
-   build; it is never silently replaced.
+2. Accounting: emitted unrecognized events are counted independently and checked against the
+   converter's counters. Unrecognized events and reported unmatched tool results default to
+   zero tolerance. A builder may declare reviewed finite totals with
+   `TRACE_ALLOWANCES = {"unrecognized": n, "unmatched_tool_results": m}`. Invalid counters and
+   parse failures always fail the build. A present trace cannot be converted to `None`.
 3. Counts (rows, steps by type, unrecognized, unmatched) are printed in the build log.
 4. The file gets the `measurement_db.trace_format` marker (section 5.5) and the one-row-per-page
    layout (section 6).
+
+The writer validates structured JSON before opening its output and keeps the existing table
+columns and schema-version metadata. It disables dictionary encoding only for the trace column.
+Legacy writes retain their prior options and bytes. Tests cover row/table builder parity,
+unchanged non-trace files and identities, missing/ungraded traces, failure handling, accounting
+and the page index consumed by the website.
 
 ### 7.4 Converters
 
