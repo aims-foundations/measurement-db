@@ -6,11 +6,12 @@ write-time validation and format-aware paging. Existing benchmark builders still
 legacy traces until they explicitly migrate. The survey and measurements below describe the
 original 2026-11-09 research spike; refresh them against pinned inputs for each migration.
 
-Current stack: [#15](https://github.com/aims-foundations/measurement-db/pull/15)
-(`feat/trace-viewer` → `main`), then [#16](https://github.com/aims-foundations/measurement-db/pull/16)
-(`feat/structured-trace-build` → `feat/trace-viewer`). Branch the ProgramBench pilot from
-`feat/structured-trace-build` and target that branch. Land parents first and retarget each
-dependent PR as its parent lands.
+The viewer and schema landed in [#15](https://github.com/aims-foundations/measurement-db/pull/15).
+The builder contract follows in [#16](https://github.com/aims-foundations/measurement-db/pull/16)
+(`feat/structured-trace-build` → `main`). The ProgramBench pilot is
+[#17](https://github.com/aims-foundations/measurement-db/pull/17)
+(`feat/programbench-structured-traces` → `feat/structured-trace-build`). Land parents first and
+retarget each dependent PR as its parent lands.
 
 ## 1. Goal
 
