@@ -1,10 +1,16 @@
 # Plan: a standard trace format and a structured trace viewer
 
 Status: staged implementation. PR #15 provides the schema, converter helpers, mini-swe-agent
-converter and structured website viewer. The next stacked change introduces `StructuredTraceBuild`,
+converter and structured website viewer. PR #16 introduces `StructuredTraceBuild`,
 write-time validation and format-aware paging. Existing benchmark builders still write their
 legacy traces until they explicitly migrate. The survey and measurements below describe the
 original 2026-11-09 research spike; refresh them against pinned inputs for each migration.
+
+Current stack: [#15](https://github.com/aims-foundations/measurement-db/pull/15)
+(`feat/trace-viewer` → `main`), then [#16](https://github.com/aims-foundations/measurement-db/pull/16)
+(`feat/structured-trace-build` → `feat/trace-viewer`). Branch the ProgramBench pilot from
+`feat/structured-trace-build` and target that branch. Land parents first and retarget each
+dependent PR as its parent lands.
 
 ## 1. Goal
 
