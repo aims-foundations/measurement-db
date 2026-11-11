@@ -79,6 +79,8 @@ export type Trace = {
     tests?: { name: string; status: string }[];
     /** Set by the worker when it kept only part of the test list. */
     testsTotal?: number;
+    /** Set by the worker: tests per status, counted before any were dropped. */
+    testCounts?: Record<string, number>;
     judge?: { content: string; reasoning?: string; participant?: string };
   };
 };
@@ -121,6 +123,11 @@ export function displayTrace(value: unknown, limit = FIELD_MAX_CHARS): Trace {
     }
   }
   const tests = trace.evaluation?.tests;
+  if (tests?.length) {
+    const counts: Record<string, number> = {};
+    for (const t of tests) counts[t.status] = (counts[t.status] ?? 0) + 1;
+    trace.evaluation!.testCounts = counts;
+  }
   if (tests && tests.length > TESTS_MAX) {
     // Keep what a reader looks for first: the tests that did not pass.
     const ordered = [

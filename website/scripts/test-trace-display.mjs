@@ -42,6 +42,11 @@ assert.deepEqual(
   shown.evaluation.tests.slice(0, 3).map((t) => t.status),
   ["failure", "failure", "failure"],
 );
+// Counts per status cover every test, including the ones dropped from the list.
+assert.deepEqual(shown.evaluation.testCounts, {
+  failure: 3,
+  passed: TESTS_MAX - 1,
+});
 
 // Anything that is not a trace/1 value is rejected, so the worker falls back to raw text.
 for (const value of [

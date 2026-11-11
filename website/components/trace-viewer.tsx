@@ -446,19 +446,58 @@ function StatusBadge({ run }: { run: NonNullable<Trace["run"]> }) {
 }
 
 /* ---------- result ---------- */
+/** The test list opens on the tests that did not pass; a status pill narrows it to that status. */
+const NOT_PASSED = "not passed";
+
 function Result({ trace }: { trace: Trace }) {
   const [filter, setFilter] = useState("");
+  const [status, setStatus] = useState(NOT_PASSED);
   const run = trace.run ?? {};
   const ev = trace.evaluation;
   const tests = ev?.tests ?? [];
-  const counts = new Map<string, number>();
-  for (const t of tests) counts.set(t.status, (counts.get(t.status) ?? 0) + 1);
-  const notPassed = tests.filter((t) => t.status !== "passed");
-  const matching = notPassed.filter(
+  // Counted over the whole list; the page may have received only part of it.
+  const counts = useMemo(() => {
+    if (ev?.testCounts) return ev.testCounts;
+    const c: Record<string, number> = {};
+    for (const t of ev?.tests ?? []) c[t.status] = (c[t.status] ?? 0) + 1;
+    return c;
+  }, [ev]);
+  const statuses = Object.entries(counts).sort(
+    ([a, x], [b, y]) =>
+      Number(a === "passed") - Number(b === "passed") || y - x,
+  );
+  const total = ev?.testsTotal ?? tests.length;
+  const notPassedCount = total - (counts.passed ?? 0);
+  const expected =
+    status === NOT_PASSED ? notPassedCount : (counts[status] ?? 0);
+  const inStatus = tests.filter((t) =>
+    status === NOT_PASSED ? t.status !== "passed" : t.status === status,
+  );
+  const matching = inStatus.filter(
     (t) => !filter || t.name.toLowerCase().includes(filter),
   );
   const shown = matching.slice(0, TESTS_SHOWN);
   const h3 = "mb-1.5 mt-4 text-[0.75rem] font-semibold text-[var(--ink)]";
+  const pill = (key: string, label: string, n: number) => (
+    <button
+      key={key}
+      type="button"
+      aria-pressed={status === key}
+      onClick={() => setStatus(status === key ? NOT_PASSED : key)}
+      className={`rounded-full px-2.5 py-0.5 text-[0.6875rem] transition-colors ${
+        status === key
+          ? "bg-[var(--ink)] text-white"
+          : "bg-[var(--fog-light)] text-[var(--muted)] hover:bg-[var(--line)]"
+      }`}
+    >
+      {label}{" "}
+      <b
+        className={`font-semibold ${status === key ? "" : "text-[var(--ink)]"}`}
+      >
+        {n.toLocaleString()}
+      </b>
+    </button>
+  );
   return (
     <section className="mt-4 rounded border border-[var(--line)] bg-white p-4">
       <h2 className="mb-2 text-[0.8125rem] font-semibold text-[var(--ink)]">
@@ -466,9 +505,6 @@ function Result({ trace }: { trace: Trace }) {
       </h2>
       <div className="flex flex-wrap items-center gap-1.5 text-[0.75rem] text-[var(--muted)]">
         Run status: <StatusBadge run={run} />
-        {[...counts].map(([status, n]) => (
-          <Chip key={status} label={status} value={n.toLocaleString()} />
-        ))}
       </div>
       {!ev ? (
         <p className="mt-2 text-[0.75rem] text-[var(--muted)]">
@@ -519,11 +555,17 @@ function Result({ trace }: { trace: Trace }) {
       {tests.length ? (
         <>
           <h3 className={h3}>
-            Tests not passed ({notPassed.length.toLocaleString()} of{" "}
-            {(ev?.testsTotal ?? tests.length).toLocaleString()} tests in this
-            run&apos;s evaluation)
+            Tests ({total.toLocaleString()} in this run&apos;s evaluation)
           </h3>
-          {notPassed.length ? (
+          <div
+            role="group"
+            aria-label="Show tests by status"
+            className="mb-1.5 flex flex-wrap gap-1.5"
+          >
+            {pill(NOT_PASSED, NOT_PASSED, notPassedCount)}
+            {statuses.map(([s, n]) => pill(s, s, n))}
+          </div>
+          {expected ? (
             <input
               type="search"
               placeholder="Filter tests…"
@@ -539,7 +581,15 @@ function Result({ trace }: { trace: Trace }) {
                   key={i}
                   className="flex gap-2 border-b border-[var(--line)] px-2 py-0.5 font-mono text-[0.6875rem] leading-5 last:border-b-0"
                 >
-                  <Badge tone={/fail|error/i.test(t.status) ? "err" : "warn"}>
+                  <Badge
+                    tone={
+                      t.status === "passed"
+                        ? "ok"
+                        : /fail|error/i.test(t.status)
+                          ? "err"
+                          : "warn"
+                    }
+                  >
                     {t.status}
                   </Badge>
                   <span className="break-all">{t.name}</span>
@@ -547,7 +597,13 @@ function Result({ trace }: { trace: Trace }) {
               ))
             ) : (
               <p className="px-2 py-1 text-[0.75rem] italic text-[var(--muted)]">
-                {notPassed.length ? "No match." : "Every test passed."}
+                {filter && inStatus.length
+                  ? "No match."
+                  : status === NOT_PASSED && !expected
+                    ? "Every test passed."
+                    : inStatus.length < expected
+                      ? "These tests are not loaded (see below)."
+                      : "No tests."}
               </p>
             )}
           </div>
@@ -555,6 +611,14 @@ function Result({ trace }: { trace: Trace }) {
             <p className="mt-1 text-[0.6875rem] text-[var(--muted)]">
               Showing the first {shown.length.toLocaleString()} of{" "}
               {matching.length.toLocaleString()}; filter to narrow the list.
+            </p>
+          ) : null}
+          {inStatus.length < expected ? (
+            <p className="mt-1 text-[0.6875rem] text-[var(--muted)]">
+              {inStatus.length.toLocaleString()} of {expected.toLocaleString()}{" "}
+              loaded: the page receives at most {tests.length.toLocaleString()}{" "}
+              of this run&apos;s {total.toLocaleString()} tests, those that did
+              not pass first.
             </p>
           ) : null}
         </>
