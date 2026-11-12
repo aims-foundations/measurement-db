@@ -20,7 +20,29 @@
       "final_native_audits": 229,
       "final_native_audit_subtests": 1756
     },
-    "author_caches": "Captured author inputs were verified against declared immutable source identities. CI may reuse the ordinary Hub cache for those author downloads; builders still verify all selected inputs, and expected Measurement DB tables remain separate."
+    "author_caches": "Captured author inputs were verified against declared immutable source identities. CI may reuse the ordinary Hub cache for those author downloads; builders still verify all selected inputs, and expected Measurement DB tables remain separate.",
+    "source_download_transport": {
+      "scope": "Large pinned Zenodo archives use four bounded concurrent HTTP ranges; author URLs, declared sizes, complete-file SHA-256 validation, retry policy, and reference comparisons are unchanged. Existing raw inputs are not injected into reproduction jobs.",
+      "regression_tests": 183,
+      "subtests": 132,
+      "cases": [
+        "Concurrent completion with ordered assembly",
+        "Interrupted range resumes exactly",
+        "Invalid range and extra bytes rejected",
+        "Complete-file hash corruption rejected",
+        "Access denial not retried",
+        "Empty-response retry budget enforced",
+        "Unsupported ranges fall back to verified complete transfer",
+        "Failed transfers preserve existing file and remove temporary files"
+      ],
+      "live_author_download": {
+        "url": "https://zenodo.org/api/records/8021960/files/code_data_images.zip/content",
+        "size": 3929928,
+        "sha256": "febb8908d6e4f936f2d6744ca450339fdc309ecdcdce5b9d052637e49c01e557",
+        "seconds": 3.691,
+        "result": "Fresh author download passed exact pinned size and SHA-256"
+      }
+    }
   },
   "deferred": {
     "frontieror": {

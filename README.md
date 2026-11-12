@@ -409,8 +409,10 @@ no table bytes are normalized or rewritten.
 Success requires the exact same set of tables and byte-identical files, including
 optional traces and assets, row order, and Parquet metadata. Missing references,
 missing builders, build errors, extra tables, and any byte difference fail.
-SHA-256 values for both files appear in the job log. Jobs continue independently
-after another benchmark fails. The workflow uses up to 16 concurrent reproduction jobs;
+SHA-256 values for both files appear in the job log. Large pinned Zenodo archives
+use at most four concurrent HTTP ranges, retaining interrupted-transfer retries
+and complete-file size and SHA-256 validation. Jobs continue independently
+after another benchmark fails. Reproduction concurrency is configurable;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
 Jobs use Python 3.11 unless `build.parameters.runtime.python_version` declares

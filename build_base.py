@@ -31,6 +31,7 @@ import re
 import shutil
 import sys
 import tempfile
+import urllib.parse
 import urllib.request
 from pathlib import Path, PurePosixPath
 
@@ -320,7 +321,18 @@ class BenchmarkBuild(ABC):
                     if length is not None and temporary.tell() < length:
                         raise IncompleteRead(b'', length - temporary.tell())
 
-                if body is not None or expected_size is None or expected_size <= chunk_size:
+                # Zenodo's large archives can be slow on one connection. Keep
+                # the declared source and complete-file integrity checks, with
+                # at most four independently retried ranges in flight.
+                copied = (body is None and expected_sha256 is not None and
+                          expected_size is not None and expected_size >= 4 * chunk_size and
+                          urllib.parse.urlparse(url).hostname == 'zenodo.org' and
+                          _source_files.copy_http_ranges(url, temporary,
+                              size=expected_size, headers=headers, chunk_size=chunk_size,
+                              workers=4, **transfer_options))
+                if copied:
+                    pass
+                elif body is not None or expected_size is None or expected_size <= chunk_size:
                     request = urllib.request.Request(url, headers=headers, data=body)
                     _source_files.read_http_source(request, consume=copy_complete, **transfer_options)
                 else:
