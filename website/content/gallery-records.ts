@@ -1,7 +1,10 @@
 import catalog from "./generated/gallery-records.json";
 import previewJson from "./generated/record-previews.json";
 import type { GalleryEntry } from "@/lib/benchmark-records/types";
-import type { RecordPreview } from "@/lib/benchmark-records/record-preview";
+import {
+  matchingPreviews,
+  type RecordPreview,
+} from "@/lib/benchmark-records/record-preview";
 
 /** Only lightweight manifests are bundled with the page; table rows stay lazy. */
 const previews = previewJson as unknown as Record<
@@ -17,15 +20,7 @@ export const galleryRecords: Record<string, GalleryEntry> = Object.fromEntries(
         manifest: {
           ...entry.manifest,
           // A cache for another source revision must never supply this record.
-          previews: Object.fromEntries(
-            Object.entries(previews[slug] ?? {}).filter(([table, preview]) =>
-              Object.entries(entry.manifest.tables).some(
-                ([name, descriptor]) =>
-                  name === table &&
-                  descriptor.parquet?.download === preview.source,
-              ),
-            ),
-          ),
+          previews: matchingPreviews(entry.manifest.tables, previews[slug]),
         },
       },
     ],

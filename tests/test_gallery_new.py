@@ -286,6 +286,19 @@ if __name__ == "__main__":
         fixture(root, kind=kind)[0]
         for kind in ["binary", "pairwise", "mixed", "item_bank"]
     ]
+    # Exercise the actual browser worker with both legacy answers and trace/1.
+    trace_path = sources[0] / "formatted_tables/traces.parquet"
+    traces = pq.read_table(trace_path).to_pylist()
+    traces[0]["trace"] = json.dumps({
+        "schema": "trace/1", "converter": "fixture@1", "native": {"keep": "original"},
+        "steps": [
+            {"type": "message", "label": "task", "content": "Run the tests."},
+            {"type": "tool", "name": "pytest", "output": "x" * 25000,
+             "native": {"keep": "original step"}},
+        ],
+        "evaluation": {"tests": [{"name": "test_example", "status": "passed"}]},
+    })
+    pq.write_table(pa.Table.from_pylist(traces), trace_path)
     gallery.build(sources, root / "site", page_size=5)
     gallery.build(sources, root / "lazy", page_size=5, parquet_base="http://fixture.invalid")
     gallery.write_json(root / "expected-traces.json", {

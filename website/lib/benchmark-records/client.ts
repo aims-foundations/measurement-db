@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { readParquetRecord } from "./parquet";
 import { readJson } from "./json";
+import { prepareTraceRecord, type TraceDisplay } from "./trace";
 
 type Fetch = typeof fetch;
 type PageIndex = Record<string, number>;
@@ -167,6 +168,27 @@ export class RecordSource {
     if (!Object.hasOwn(page, id))
       throw new Error(`Missing ${table} record ${id}.`);
     return page[id];
+  }
+
+  /** Parse and cap trace/1 in the source worker; get("traces") still returns the exact row. */
+  async trace(id: string, signal: AbortSignal): Promise<TraceDisplay | null> {
+    const descriptor = this.manifest.tables.traces;
+    if (descriptor?.parquet)
+      return readParquetRecord<TraceDisplay>(
+        this.base,
+        descriptor.parquet,
+        id,
+        signal,
+        {
+          ...this.manifest,
+          table: "traces",
+          key: descriptor.key,
+          preview: this.manifest.previews?.traces,
+          slug: this.manifest.benchmark.benchmark_id,
+          traceDisplay: true,
+        },
+      );
+    return prepareTraceRecord(await this.get("traces", id, signal));
   }
 
   async asset(

@@ -16,6 +16,7 @@ export function readParquetRecord<T>(
     key: string;
     slug?: string;
     preview?: RecordPreview;
+    traceDisplay?: boolean;
   },
 ): Promise<T | null> {
   signal.throwIfAborted();

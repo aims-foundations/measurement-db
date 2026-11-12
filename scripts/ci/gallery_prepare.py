@@ -31,7 +31,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def legacy_identity(root: Path = ROOT) -> str:
     paths = [p for folder in ("scripts/render_website", "scripts/analyze_measurements")
              for p in (root / folder).rglob("*.py")
-             if not p.name.startswith("record_") and p.name != "generate_benchmark_gallery_new.py"]
+             if not p.name.startswith("record_") and p.name not in
+             {"generate_benchmark_gallery_new.py", "prepare_record_previews.py"}]
     paths += [root / "scripts/ci" / name for name in
               ("legacy_gallery.py", "gallery_artifacts.py", "gallery_packs.py")]
     return artifacts.digest({str(p.relative_to(root)): artifacts.file_digest(p) for p in sorted(paths)})

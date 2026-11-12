@@ -6,6 +6,8 @@ import {
 import { compressors } from "hyparquet-compressors";
 import { readJson, type JsonTransport } from "./json";
 import { budgetSource } from "./source-budget";
+import { prepareTraceRecord } from "./trace";
+import type { Trace } from "./types";
 import {
   readPreviewRecord,
   PagedRecordError,
@@ -23,7 +25,7 @@ async function json<T>(url: string): Promise<T> {
   return response.json();
 }
 
-/** Return the exact source row. Never extract, truncate, or re-label its answer. */
+/** Exact rows by default; structured display values are prepared only when requested. */
 self.onmessage = async ({
   data,
 }: MessageEvent<
@@ -35,6 +37,7 @@ self.onmessage = async ({
     key?: string;
     preview?: RecordPreview;
     previewBase?: string;
+    traceDisplay?: boolean;
   } & JsonTransport
 >) => {
   try {
@@ -47,7 +50,9 @@ self.onmessage = async ({
         key,
       );
       if (value) {
-        self.postMessage({ value });
+        self.postMessage({
+          value: data.traceDisplay ? prepareTraceRecord(value as Trace) : value,
+        });
         return;
       }
     }
@@ -112,7 +117,9 @@ self.onmessage = async ({
         return [key, number];
       }),
     );
-    self.postMessage({ value });
+    self.postMessage({
+      value: data.traceDisplay ? prepareTraceRecord(value as Trace) : value,
+    });
   } catch (error) {
     self.postMessage({
       ...(error instanceof PagedRecordError ? { paged: error.record } : {}),

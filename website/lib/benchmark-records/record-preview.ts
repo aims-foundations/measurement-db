@@ -8,6 +8,18 @@ export type RecordPreview = {
   packs: number[];
   indexes: PreviewRange[];
 };
+
+/** Optional archives can outlive their source revision; only exact pins are usable. */
+export function matchingPreviews(
+  tables: Record<string, { parquet?: { download?: string } }>,
+  previews: Record<string, RecordPreview> = {},
+): Record<string, RecordPreview> {
+  return Object.fromEntries(
+    Object.entries(previews).filter(
+      ([table, preview]) => tables[table]?.parquet?.download === preview.source,
+    ),
+  );
+}
 export type PagedRecord = {
   record: Record<string, unknown>;
   fields: Record<string, PreviewRange[]>;

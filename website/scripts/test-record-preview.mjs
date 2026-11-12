@@ -7,6 +7,7 @@ import {
   readPreviewRecord,
   readPreviewPart,
   PagedRecordError,
+  matchingPreviews,
 } from "../lib/benchmark-records/record-preview.ts";
 import {
   textPart,
@@ -151,7 +152,28 @@ test("DOM text pagination preserves surrogate pairs at both boundaries", () => {
   for (const part of parts) assert.equal(part.isWellFormed(), true);
 });
 
-test("published preview manifests match canonical sources and bound every index range", async () => {
+test("optional previews are used only for the exact published source", () => {
+  const current = { source: "https://fixture.invalid/current/traces.parquet" };
+  const stale = { source: "https://fixture.invalid/old/items.parquet" };
+  const tables = {
+    traces: { parquet: { download: current.source } },
+    items: {
+      parquet: { download: "https://fixture.invalid/current/items.parquet" },
+    },
+  };
+  assert.deepEqual(
+    matchingPreviews(tables, {
+      traces: current,
+      items: stale,
+      assets: current,
+    }),
+    { traces: current },
+  );
+  assert.deepEqual(matchingPreviews({}, { traces: current }), {});
+  assert.deepEqual(matchingPreviews(tables), {});
+});
+
+test("published preview manifests pin immutable sources and bound every index range", async () => {
   const { readFile } = await import("node:fs/promises");
   const previews = JSON.parse(
     await readFile(
@@ -159,18 +181,14 @@ test("published preview manifests match canonical sources and bound every index 
       "utf8",
     ),
   );
-  const catalog = JSON.parse(
-    await readFile(
-      new URL("../content/generated/gallery-records.json", import.meta.url),
-      "utf8",
-    ),
-  );
   for (const [slug, tables] of Object.entries(previews))
     for (const [table, preview] of Object.entries(tables)) {
       assert.match(preview.revision, /^[a-f0-9]{40}$/);
-      assert.equal(
+      assert.match(
         preview.source,
-        catalog[slug].manifest.tables[table].parquet.download,
+        new RegExp(
+          `^https://huggingface.co/datasets/aims-foundations/measurement-db/resolve/[a-f0-9]{40}/${slug}/(formatted_tables/)?${table}\\.parquet$`,
+        ),
       );
       assert.equal(
         preview.directory,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { RecordSource } from "@/lib/benchmark-records/client";
 import {
   prepareItem,
@@ -21,6 +21,26 @@ import { ItemContent } from "../item-content";
 import { StructuredContent } from "../structured-content";
 import { metadataFields } from "@/lib/structured-content";
 import { SourceError } from "./source-error";
+import { useTrace } from "./use-trace";
+
+function ItemPrompt({
+  collapsed,
+  children,
+}: {
+  collapsed: boolean;
+  children: ReactNode;
+}) {
+  return collapsed ? (
+    <details className="min-w-0">
+      <summary className="mb-3 cursor-pointer text-sm text-[var(--muted)]">
+        Item prompt (the run below starts with the task)
+      </summary>
+      {children}
+    </details>
+  ) : (
+    children
+  );
+}
 
 function Metadata({
   title,
@@ -58,6 +78,7 @@ export function CellDetails({
   model,
   pairs,
   onClose,
+  onBack,
 }: {
   source: RecordSource;
   selection: CellSelection;
@@ -67,6 +88,7 @@ export function CellDetails({
   model: MatrixModel;
   pairs: Map<string, Observation>;
   onClose: () => void;
+  onBack: () => void;
 }) {
   const item = useRecord(source, "items", selection.itemId);
   const [attempt, setAttempt] = useState(0);
@@ -74,6 +96,14 @@ export function CellDetails({
   const prepared = value ? prepareItem(value, scale) : undefined;
   const observation = observations[attempt];
   const opponent = observation && pairs.get(observation.response_id);
+  const answer = useTrace(source, observation?.response_id ?? null);
+  const opponentAnswer = useTrace(source, opponent?.response_id ?? null);
+  const traceHasTask =
+    answer.status === "ready" &&
+    answer.value?.kind === "structured" &&
+    answer.value.value.steps.some(
+      (step) => step.type === "message" && step.label === "task",
+    );
   const opponentName = model.subjects.find(
     (s) => s.subject_id === opponent?.subject_id,
   )?.display_name;
@@ -98,55 +128,57 @@ export function CellDetails({
         </button>
       </div>
       <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <section className="min-w-0 rounded-md border border-[var(--line)] bg-white p-4 sm:p-5">
-          <h4 className="mb-4 border-b border-[var(--line)] pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-            Item
-          </h4>
-          <div aria-label="Item content">
-            {item.status === "loading" ? (
-              <p role="status">Loading item…</p>
-            ) : item.status === "error" ? (
-              <SourceError
-                source={source}
-                table="items"
-                message={item.message}
-                paged={item.paged}
-                onRetry={item.retry}
-              />
-            ) : value && prepared ? (
-              <ItemContent
-                key={selection.itemId}
-                benchmark={source.manifest.benchmark.benchmark_id}
-                text={value.content}
-                assets={prepared.attachments}
-                renderAsset={(link) => (
-                  <Attachment source={source} link={link} />
-                )}
-              />
-            ) : (
-              <p>The selected item is unavailable.</p>
-            )}
-          </div>
-          {prepared?.criterion.reference_answer != null && (
-            <div className="mt-4">
-              <h4 className="mb-2 text-xs font-medium text-[var(--muted)]">
-                Reference answer
-              </h4>
-              <div
-                aria-label="Reference answer"
-                className="max-h-[32rem] overflow-auto break-words"
-              >
-                <StructuredContent
-                  value={prepared.criterion.reference_answer}
+        <ItemPrompt collapsed={Boolean(traceHasTask)}>
+          <section className="min-w-0 rounded-md border border-[var(--line)] bg-white p-4 sm:p-5">
+            <h4 className="mb-4 border-b border-[var(--line)] pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+              Item
+            </h4>
+            <div aria-label="Item content">
+              {item.status === "loading" ? (
+                <p role="status">Loading item…</p>
+              ) : item.status === "error" ? (
+                <SourceError
+                  source={source}
+                  table="items"
+                  message={item.message}
+                  paged={item.paged}
+                  onRetry={item.retry}
+                />
+              ) : value && prepared ? (
+                <ItemContent
+                  key={selection.itemId}
+                  benchmark={source.manifest.benchmark.benchmark_id}
+                  text={value.content}
+                  assets={prepared.attachments}
+                  renderAsset={(link) => (
+                    <Attachment source={source} link={link} />
+                  )}
+                />
+              ) : (
+                <p>The selected item is unavailable.</p>
+              )}
+            </div>
+            {prepared?.criterion.reference_answer != null && (
+              <div className="mt-4">
+                <h4 className="mb-2 text-xs font-medium text-[var(--muted)]">
+                  Reference answer
+                </h4>
+                <div
+                  aria-label="Reference answer"
+                  className="max-h-[32rem] overflow-auto break-words"
+                >
+                  <StructuredContent
+                    value={prepared.criterion.reference_answer}
+                  />
+                </div>
+                <SourceText
+                  text={prepared.criterion.reference_answer}
+                  label="Reference answer"
                 />
               </div>
-              <SourceText
-                text={prepared.criterion.reference_answer}
-                label="Reference answer"
-              />
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        </ItemPrompt>
         <section className="min-w-0">
           <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
             Recorded result
@@ -229,6 +261,8 @@ export function CellDetails({
             name={selection.subject?.display_name ?? "Selected model"}
             showName={Boolean(opponent)}
             presentation={presentation}
+            answer={answer}
+            onBack={onBack}
           />
           {opponent && (
             <AnswerPanel
@@ -238,6 +272,8 @@ export function CellDetails({
               name={opponentName ?? opponent.subject_id}
               showName
               presentation={presentation}
+              answer={opponentAnswer}
+              onBack={onBack}
             />
           )}
         </div>

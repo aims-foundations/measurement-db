@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
 import type { RecordSource } from "@/lib/benchmark-records/client";
 import {
@@ -42,6 +42,7 @@ export function RecordGallery({
   irt?: Omit<BenchmarkIrt, "zByItem">;
   paged?: boolean;
 }) {
+  const matrixRef = useRef<HTMLDivElement>(null);
   const scale = useMemo(
     () => JSON.parse(metadata.response_scale) as ResponseScale,
     [metadata],
@@ -96,7 +97,7 @@ export function RecordGallery({
       ? irt
       : undefined;
   return (
-    <div>
+    <div ref={matrixRef}>
       <p id="heatmap-help" className="mb-3 text-xs text-[var(--muted)]">
         Hover for model and item; click a cell for details. Arrow keys move
         between cells; Enter opens the selected cell.
@@ -183,6 +184,7 @@ export function RecordGallery({
           model={model}
           pairs={pairs}
           onClose={() => setSelection(null)}
+          onBack={() => matrixRef.current?.scrollIntoView({ block: "start" })}
         />
       )}
       {publishedFit && (

@@ -371,6 +371,63 @@ function transport() {
   };
 }
 
+test("structured trace display keeps exact original rows and legacy answers available", async () => {
+  const fixture = transport();
+  const structured = {
+    schema: "trace/1",
+    converter: "fixture@1",
+    native: { original: true },
+    steps: [
+      { type: "tool", output: "x".repeat(25000), native: { original: true } },
+    ],
+    evaluation: {
+      tests: Array.from({ length: 5002 }, (_, i) => ({
+        name: `t${i}`,
+        status: i === 5001 ? "failed" : "passed",
+      })),
+    },
+  };
+  const original = { response_id: "a-1", trace: JSON.stringify(structured) };
+  fixture.files["traces/1.json"]["a-1"] = original;
+  const shown = await fixture.source.trace("a-1", signal());
+  assert.equal(shown.kind, "structured");
+  assert.equal(shown.value.native, undefined);
+  assert.equal(shown.value.steps[0].native, undefined);
+  assert.equal(shown.value.steps[0].output.length, 20000);
+  assert.equal(shown.value.steps[0].truncated.output, 25000);
+  assert.equal(shown.value.evaluation.tests.length, 5000);
+  assert.deepEqual(shown.value.evaluation.testCounts, {
+    passed: 5001,
+    failed: 1,
+  });
+  assert.equal(shown.value.evaluation.tests[0].status, "failed");
+  assert.deepEqual(
+    await fixture.source.get("traces", "a-1", signal()),
+    original,
+  );
+  assert.deepEqual(await fixture.source.trace("b-1", signal()), {
+    kind: "legacy",
+    value: { response_id: "b-1", trace: "Answer B" },
+  });
+  assert.equal(await fixture.source.trace("absent", signal()), null);
+});
+
+test("malformed and unknown trace formats remain readable as exact legacy text", async () => {
+  const { prepareTraceRecord } =
+    await import("../lib/benchmark-records/trace.ts");
+  for (const trace of [
+    "plain answer",
+    "{broken",
+    "null",
+    '{"schema":"trace/1"}',
+    '{"schema":"trace/2","steps":[]}',
+  ]) {
+    const row = { response_id: "r", trace };
+    assert.deepEqual(prepareTraceRecord(row), { kind: "legacy", value: row });
+  }
+  assert.equal(prepareTraceRecord(null), null);
+});
+
 test("initial load fetches axes and observations; content and answers remain lazy", async () => {
   const fixture = transport();
   assert.deepEqual(await fixture.source.load(signal()), fixture.dataset);

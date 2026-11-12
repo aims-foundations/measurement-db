@@ -4,7 +4,9 @@ import {
   displayText,
   type Presentation,
 } from "@/lib/benchmark-records/presentation";
-import { useRecord } from "./use-records";
+import type { TraceLoad } from "./use-trace";
+import { TraceViewer } from "../trace-viewer";
+import { OriginalTrace } from "./original-trace";
 import { SourceText } from "./rich-text";
 import { StructuredContent } from "../structured-content";
 import { SourceError } from "./source-error";
@@ -15,17 +17,35 @@ export function AnswerPanel({
   name,
   showName = false,
   presentation,
+  answer,
+  onBack,
 }: {
   source: RecordSource;
   observation: Observation;
   name: string;
   showName?: boolean;
   presentation: Presentation;
+  answer: TraceLoad;
+  onBack: () => void;
 }) {
-  const answer = useRecord(source, "traces", observation.response_id);
+  const value =
+    answer.status === "ready" && answer.value?.kind === "legacy"
+      ? answer.value.value
+      : null;
+  if (answer.status === "ready" && answer.value?.kind === "structured")
+    return (
+      <section className="min-w-0" aria-label={`Run from ${name}`}>
+        <TraceViewer
+          trace={answer.value.value}
+          subject={name}
+          onBack={onBack}
+        />
+        <OriginalTrace source={source} id={observation.response_id} />
+      </section>
+    );
   const scores =
     answer.status === "ready"
-      ? presentation.answerScores?.(answer.value?.trace ?? "")
+      ? presentation.answerScores?.(value?.trace ?? "")
       : undefined;
   return (
     <section
@@ -65,7 +85,7 @@ export function AnswerPanel({
                   <summary className="cursor-pointer text-xs">
                     Released evaluation record
                   </summary>
-                  <StructuredContent value={answer.value?.trace} />
+                  <StructuredContent value={value?.trace} />
                 </details>
               </>
             ) : scores ? (
@@ -103,24 +123,22 @@ export function AnswerPanel({
                     Evaluation details
                   </summary>
                   <div className="mt-3">
-                    <StructuredContent value={answer.value?.trace} />
+                    <StructuredContent value={value?.trace} />
                   </div>
                 </details>
               </>
             ) : (
               <StructuredContent
                 value={
-                  displayText(
-                    answer.value?.trace ?? null,
-                    presentation.answerPath,
-                  ) ?? "No answer text released."
+                  displayText(value?.trace ?? null, presentation.answerPath) ??
+                  "No answer text released."
                 }
               />
             )}
           </div>
-          {answer.value?.trace && (
+          {value?.trace && (
             <SourceText
-              text={answer.value.trace}
+              text={value.trace}
               label={presentation.answerNotice ? "record" : "Answer"}
             />
           )}

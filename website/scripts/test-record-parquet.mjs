@@ -57,6 +57,24 @@ for (const [number, rows] of Object.entries(expected)) {
       row,
       "Every original trace field must survive a range read",
     );
+    await self.onmessage({
+      data: {
+        base: `http://fixture.invalid/lazy/${number}/traces`,
+        parquet,
+        id: row.response_id,
+        traceDisplay: true,
+      },
+    });
+    assert.ok(result && !result.error, result?.error);
+    if (row.trace.startsWith('{"schema": "trace/1"')) {
+      assert.equal(result.value.kind, "structured");
+      assert.equal(result.value.value.native, undefined);
+      assert.equal(result.value.value.steps[1].native, undefined);
+      assert.equal(result.value.value.steps[1].output.length, 20000);
+      assert.equal(result.value.value.steps[1].truncated.output, 25000);
+    } else {
+      assert.deepEqual(result.value, { kind: "legacy", value: row });
+    }
   }
   let missing;
   self.postMessage = (value) => {
