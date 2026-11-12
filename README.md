@@ -458,6 +458,14 @@ NumExpr, and Arrow CPU pools to use two threads, and Arrow I/O pools to use four
 These are library settings, not an operating-system CPU quota. Larger pools
 require more runner installations and a higher `max-parallel` setting.
 
+Set the repository Actions variable `REPRODUCTION_SCRATCH_DIR` to place native
+source downloads, generated tables, and comparison references on storage with
+enough capacity for concurrent jobs. Each job owns and removes its own subdirectory.
+This storage may be mounted `noexec`: Python environments and executable tools
+remain in the runner's normal directories. If unset, reproduction uses
+`GALLERY_SCRATCH_DIR`, then the runner's default temporary storage. Gallery and
+website builds continue to use `GALLERY_SCRATCH_DIR`, which must support execution.
+
 An existing run keeps the workflow configuration from its original commit.
 GitHub's **Re-run jobs** also uses that commit. To apply a new parallelism limit,
 start a fresh **Run workflow** dispatch on the updated branch. A new manual run

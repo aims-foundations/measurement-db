@@ -149,7 +149,7 @@ jobs:
         run: python -m pip install --no-deps --force-reinstall 'rouge==1.0.1'
       - name: Use configured scratch storage for upstream builds
         env:
-          SCRATCH_BASE: ${{ vars.GALLERY_SCRATCH_DIR }}
+          SCRATCH_BASE: ${{ vars.REPRODUCTION_SCRATCH_DIR || vars.GALLERY_SCRATCH_DIR }}
           MATRIX_INDEX: ${{ strategy.job-index }}
         run: |
           if [ -n "$SCRATCH_BASE" ]; then
