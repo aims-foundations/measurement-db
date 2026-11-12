@@ -1,0 +1,80 @@
+# Structure: ../../benchmark_metadata_schema.yaml
+# The benchmark slug is the containing folder name; do not repeat it here.
+benchmark:
+  name: Decider Filing Grading
+  version: "v4"
+  one_line_description: >-
+    Measures how independent grading configurations judge whether SEC filings
+    disclose material, non-routine events.
+  description: >-
+    Blind grading of 179 SEC filings under one written rubric, the Decider
+    SIGNAL standard. Each item is a filing identified by its EDGAR accession
+    number. Two independent grading passes (Pass C and Pass R) graded every
+    filing blind, a remediation pass re-graded 38 filings whose packets were
+    rebuilt at complete-submission scope, and a human lock fixed the final
+    reference verdict for every item. One response records one subject's
+    verdict on one filing on a three-value nominal scale (SIGNAL, NO SIGNAL,
+    ABSTAIN); each grade's recorded basis text is preserved as its trace.
+  paper_url: null
+  data_source_url: https://atlas7.app
+  license: CC BY-SA 4.0
+  modality:
+    - text
+  domain:
+    - finance
+  response_type: nominal
+  response_scale:
+    kind: discrete
+    values: [1, 2, 3]
+    meanings:
+      "1": "SIGNAL: the filing discloses a material, non-routine event or change"
+      "2": "NO SIGNAL: the filing is routine, a continuation, or mechanics without substance changing"
+      "3": "ABSTAIN: the evidence in the filing does not settle the verdict under the rubric's abstain band"
+    direction: unordered
+  categorical: true
+  release_date: "2026-10"
+  multi_single_turn: single_turn
+  testing_condition: >-
+    Each filing was graded blind under one written rubric (the Decider SIGNAL
+    standard, carried verbatim in every item's grading criterion) by two
+    independent Muse Spark 1.3 sessions (Pass C and Pass R, Standard tier,
+    run by separate operators on separate machines, October 2026); each pass
+    saw the filing packet alone, with no labels and no other grader's work.
+    Splits and abstentions went to a fresh session acting as adjudicator,
+    shown the two verdicts anonymized and shuffled. Thirty-eight items whose
+    packets an exhibit audit found incomplete were rebuilt at
+    complete-submission scope and re-graded blind in two remediation
+    tranches; the remaining 141 items rest on the earlier extraction scope
+    (primary document plus EX-99 exhibits, 140,000-character cap). Finals
+    were locked by the corpus owner (v1 locked 2026-10-16; v4 amendment lock
+    2026-10-24). Packet assembly used an October 14, 2026 extraction builder,
+    and batch sampling used that round's labels for strata only; graders
+    never saw them, and that round's quarantined labels were excluded from
+    grading.
+  subject_type: model
+  item_type: question
+  citation: |-
+    @misc{aitrailblazer_decider_corpus_2026,
+      title = {AITrailblazer Decider Corpus: Blind Grading of SEC Filings},
+      author = {AITrailblazer},
+      year = {2026},
+      howpublished = {https://atlas7.app}
+    }
+  tags:
+    - sec-filings
+    - llm-judge
+    - abstention
+    - grading
+  release: public
+
+build:
+  contract_version: 2
+
+sources:
+  upstream:
+    - name: release
+      url: https://atlas7.app/data/decider-filing-grading-release.json
+      revision: null
+      file: decider-filing-grading-release.json
+      size: 213947
+      sha256: 25535b0d6f0794e03826a9bf226f33c3a2dc722f2419373f9bc8c21e189e3b9e
