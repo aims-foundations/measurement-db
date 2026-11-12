@@ -31,7 +31,7 @@ ZERO_SHA = "0" * 40
 
 
 class MissingReferenceError(ValueError):
-    """The upstream build succeeded, but published comparison tables are absent."""
+    """The build succeeded, but published comparison tables are absent."""
 
 
 class WithheldBenchmark(ValueError):
@@ -221,8 +221,55 @@ def compare_tables(generated: Path, expected: dict[str, Path]) -> dict[str, dict
     return verified
 
 
-def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> dict[str, dict]:
-    """Build from upstream first, then fetch references and compare exact bytes."""
+def restore_local_archive(root: Path, workspace: Path, slug: str, env: dict) -> str | None:
+    """Restore an explicitly pinned, host-local archive that cannot be published."""
+    registry = root / "scripts/ci/local-source-archives.json"
+    archives = json.loads(registry.read_text()) if registry.exists() else {}
+    if slug not in archives:
+        return None
+    digest = archives[slug]["manifest_sha256"]
+    if not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ValueError(f"Invalid local archive pin for {slug}")
+    directory = os.environ.get("REPRODUCTION_LOCAL_ARCHIVE_DIR")
+    if not directory:
+        raise ValueError(f"{slug} requires its restricted local archive; configure REPRODUCTION_LOCAL_ARCHIVE_DIR")
+    snapshot = Path(directory) / digest
+    manifest = snapshot / "manifest.json"
+    if sha256(manifest) != digest:
+        raise ValueError(f"{slug}: local archive manifest differs from its pin")
+    document = json.loads(manifest.read_text())
+    artifacts = document.get("benchmarks", {}).get(slug)
+    if document.get("format_version") != 1 or not isinstance(artifacts, list) or not artifacts:
+        raise ValueError(f"{slug}: invalid local archive inventory")
+    source_root = (snapshot / slug / "raw").resolve()
+    seen = set()
+    for artifact in artifacts:
+        name = artifact["file"]
+        if (not isinstance(name, str) or not name or name in seen or "\\" in name
+                or PurePosixPath(name).is_absolute() or ".." in PurePosixPath(name).parts
+                or str(PurePosixPath(name)) != name or artifact["hash_kind"] != "sha256"):
+            raise ValueError(f"{slug}: invalid local archive input")
+        seen.add(name)
+        source = source_root / artifact["file"]
+        if not source.resolve().is_relative_to(source_root):
+            raise ValueError(f"{slug}: local archive input leaves its snapshot")
+        if source.stat().st_size != artifact["size"] or sha256(source) != artifact["digest"]:
+            raise ValueError(f"{slug}: local archive input differs from its pin: {name}")
+        target = workspace / "benchmarks" / slug / "raw" / artifact["file"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    # Pin the manifest inside the clean workspace as well as the copied inputs.
+    copied_manifest = workspace / "source-archive.json"
+    shutil.copyfile(manifest, copied_manifest)
+    if sha256(copied_manifest) != digest:
+        raise ValueError(f"{slug}: local archive manifest changed during restoration")
+    env["MEASUREMENT_DB_SOURCE_MANIFEST"] = str(copied_manifest)
+    return digest
+
+
+def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None,
+                     source_mode="upstream") -> dict[str, dict]:
+    """Rebuild selected inputs, then compare the complete published table bytes."""
     progress = progress or (lambda phase, revision=None: None)
     validate_slug(slug)
     if not (root / "benchmarks" / slug / "build.py").is_file():
@@ -230,25 +277,37 @@ def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> 
     release, reason = load_release(root / "benchmarks" / slug / "metadata.yaml")
     if release == "withheld":
         raise WithheldBenchmark(reason)
+    if source_mode not in ("archive", "upstream"):
+        raise ValueError(f"Unknown source mode: {source_mode}")
     progress("build")
+    if source_mode == "archive" and not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError("Archive builds require one pinned, immutable HF revision before execution")
     with tempfile.TemporaryDirectory(prefix=f"measurement-db-{slug}-") as temporary:
         scratch = Path(temporary)
         workspace = scratch / "measurement_db"  # Builders import this package name.
         copy_build_source(root, workspace)
         env = os.environ.copy()
-        # HF supplies expected tables only. Archive overrides would bypass the
-        # author's upstream sources declared in each benchmark's metadata.yaml.
+        # Source selection is explicit; inherited overrides must not select a
+        # different repository, moving revision, or development manifest.
         for key in ("MEASUREMENT_DB_SOURCE_REPO", "MEASUREMENT_DB_SOURCE_REVISION",
                     "MEASUREMENT_DB_SOURCE_MANIFEST"):
             env.pop(key, None)
         env.update(PYTHONPATH=str(scratch), PYTHONHASHSEED="0")
         command = [sys.executable, f"benchmarks/{slug}/build.py"]
-        print(f"Rebuilding {slug} from metadata.yaml upstream sources: {' '.join(command)}", flush=True)
+        if source_mode == "archive":
+            local_pin = restore_local_archive(root, workspace, slug, env)
+            if local_pin:
+                print(f"Restoring {slug} from verified local archive {local_pin}", flush=True)
+            else:
+                env.update(MEASUREMENT_DB_SOURCE_REPO=HF_REPOSITORY,
+                           MEASUREMENT_DB_SOURCE_REVISION=revision)
+            command.append("--archive")
+        print(f"Rebuilding {slug} from {source_mode} inputs: {' '.join(command)}", flush=True)
         subprocess.run(command, cwd=workspace, env=env, check=True)
         generated = workspace / "benchmarks" / slug / "formatted_tables"
         if not any(generated.rglob("*.parquet")):
             raise ValueError(f"Builder produced no Parquet tables for {slug}")
-        print(f"BUILD PASS {slug}: upstream build completed.", flush=True)
+        print(f"BUILD PASS {slug}: {source_mode} build completed.", flush=True)
         progress("reference")
         if not revision:
             raise ValueError("HF reference could not be pinned; see the workflow's reference resolution step.")
@@ -280,6 +339,8 @@ def main() -> int:
     verify = commands.add_parser("verify", help="Build and compare one or more benchmarks")
     verify.add_argument("benchmarks", nargs="*")
     verify.add_argument("--revision", default=HF_BRANCH)
+    verify.add_argument("--source-mode", choices=("archive", "upstream"), default="upstream",
+                        help="Use pinned captured inputs or freshly resolved author sources")
     verify.add_argument("--report", type=Path, help="Checkpoint individual benchmark outcomes as JSON")
     args = parser.parse_args()
     if args.command == "select":
@@ -303,7 +364,8 @@ def main() -> int:
     slugs = args.benchmarks or json.loads(os.environ.get("BENCHMARKS_JSON", "[]"))
     if not isinstance(slugs, list) or not slugs:
         parser.error("Specify at least one benchmark")
-    report = reports.new_batch(slugs, args.revision)
+    report = reports.new_batch(slugs, args.revision, source_mode=args.source_mode)
+    build_label = "Archive" if args.source_mode == "archive" else "Upstream"
     if args.report:
         reports.save(args.report, report)
     failures = []
@@ -319,9 +381,9 @@ def main() -> int:
             row.update(phase=phase, build_status="running" if phase == "build" else "passed",
                        comparison_status="not_run" if phase == "build" else "running")
             row["message"] = {
-                "build": "Building from declared upstream sources.",
-                "reference": "Upstream build passed; preparing comparison references.",
-                "comparison": "Upstream build passed; comparing every table byte for byte.",
+                "build": f"Building from {args.source_mode} inputs.",
+                "reference": f"{build_label} build passed; preparing comparison references.",
+                "comparison": f"{build_label} build passed; comparing every table byte for byte.",
             }[phase]
             if revision is not None:
                 report["hf_revision"] = revision
@@ -329,7 +391,8 @@ def main() -> int:
                 reports.save(args.report, report)
 
         try:
-            tables = verify_benchmark(ROOT, slug, report["hf_revision"], progress=progress)
+            tables = verify_benchmark(ROOT, slug, report["hf_revision"], progress=progress,
+                                      source_mode=args.source_mode)
         except WithheldBenchmark as exc:
             row.update(reports.withheld_result(slug, str(exc)))
             print(f"SKIPPED (WITHHELD) {slug}: {exc}", flush=True)
@@ -345,7 +408,7 @@ def main() -> int:
             else:
                 status = "comparison_failed"
                 row["comparison_status"] = status
-            prefix = "Upstream build passed. " if row["build_status"] == "passed" else ""
+            prefix = f"{build_label} build passed. " if row["build_status"] == "passed" else ""
             message = reports.safe_message(f"{prefix}{type(exc).__name__}: {exc}")
             print(f"{reports.STATUSES[status]} {slug}: {message}", file=sys.stderr, flush=True)
             row.update(status=status, message=message)
@@ -358,7 +421,7 @@ def main() -> int:
             raise
         else:
             row.update(status="passed", build_status="passed", comparison_status="passed",
-                       message="Upstream build passed; every published table matched byte for byte.")
+                       message=f"{build_label} build passed; every published table matched byte for byte.")
             row["tables"] = tables
         finally:
             row.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=reports.utc_now())

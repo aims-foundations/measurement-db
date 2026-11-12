@@ -373,9 +373,9 @@ the offline CI tests and change detection, without accessing HF or rebuilding.
 
 Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
 has access to `aims-foundations/measurement-db`. The dataset is gated; missing
-credentials or access prevent reference comparison but do not block upstream
-builds. Author-hosted gated sources still require their own access through this
-token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
+credentials or access prevent archive restoration and reference comparison. In the
+optional upstream mode, author-hosted gated sources require their own access through
+this token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
 Fork PRs are skipped; their reviewed commits
 need a branch in this repository to run this check with repository secrets.
 
@@ -387,21 +387,32 @@ An all-withheld selection runs no reproduction jobs and does not resolve HF.
 Missing, invalid, duplicate, or private release declarations fail selection.
 Direct `verify` commands apply the same release check before executing a builder.
 
-Each run with public benchmarks attempts to resolve the HF `main` branch
-to one immutable commit shared by all jobs. If that preparation fails, upstream
-builds still run and successful builds report **REFERENCE ERROR**. Jobs never
-fall back to independently resolving a moving HF branch.
-Each selected public benchmark first executes `benchmarks/<slug>/build.py`
-in a temporary source checkout, downloading the authors' inputs declared in
-`sources.upstream` in the benchmark's `metadata.yaml`. The HF commit supplies
-only the expected output tables; it does not select the build's raw inputs.
-Only after a successful upstream build does the job list and download those
-reference tables and compare them. Missing reference tables therefore cannot
-prevent an upstream build from being attempted.
-The check clears `MEASUREMENT_DB_SOURCE_REPO`, `MEASUREMENT_DB_SOURCE_REVISION`,
-and `MEASUREMENT_DB_SOURCE_MANIFEST` so inherited archive overrides cannot
-redirect those downloads. Existing local raw inputs and tables are never reused
-or modified. The comparison uses `<slug>/formatted_tables/*.parquet`
+Routine PR and push checks rebuild from captured raw inputs. Each run resolves the
+HF `main` branch once to one immutable commit shared by all jobs. That same commit
+supplies `<slug>/raw/` and the expected formatted tables. Every archived input is
+verified against the commit's file size and content hash, including cache hits.
+Missing or corrupt archives fail explicitly; CI does not silently fetch upstream
+inputs. The builder runs with `--archive` in a clean temporary checkout, with the
+archive repository and revision explicitly set. Inherited source overrides cannot
+redirect the build. Existing working-directory inputs and outputs are untouched.
+
+An existing restriction on the complete MedAgentBoard archive requires its inputs
+to remain local. `scripts/ci/local-source-archives.json` pins the inventory hash;
+`REPRODUCTION_LOCAL_ARCHIVE_DIR` locates the runner's private archive store. The
+layout is `<root>/<manifest-sha256>/manifest.json` plus `<slug>/raw/` beneath that
+snapshot directory. CI verifies the manifest and every input before copying them
+into an isolated build. Missing or changed inputs fail without network fallback.
+The original archive is never uploaded as a workflow artifact or to HF.
+
+Fresh author-source checks remain available as a separate manual workflow run:
+choose `source_mode: upstream` and the benchmark folders to check. This mode fetches
+`sources.upstream` from `metadata.yaml`, clears archive overrides, and attempts the
+build even if reference resolution failed. Direct `verify` commands retain their
+upstream default; pass `--source-mode archive --revision <40-character-HF-commit>`
+to reproduce captured inputs. Reports identify the selected input mode, and a
+receipt from another mode cannot satisfy the current run.
+
+After building, CI downloads reference tables from `<slug>/formatted_tables/*.parquet`
 on HF, or the older flat `<slug>/*.parquet` layout when the modern directory is
 absent. Only the legacy filename `response.parquet` maps to `responses.parquet`;
 no table bytes are normalized or rewritten.
@@ -422,14 +433,14 @@ scorer's floating-point summation must reproduce the published grades; use that
 version for local LawBench builds too.
 
 The final **Benchmark report** job publishes a table on the workflow run's
-**Summary** page, with one row per selected benchmark: overall result, upstream
+**Summary** page, with one row per selected benchmark: overall result, selected input mode,
 build status, comparison status, elapsed time,
 failure details, and a link to its job log. Each grouped job also publishes its
 own summary. The **benchmark-run-report-<attempt>** artifact contains
 `summary.md`, `results.csv`, and `results.json` with full failure messages.
 Results are checkpointed after each benchmark and uploaded even when a job
 fails. A passing benchmark remains visible if another benchmark in its group
-fails. **BUILD FAILED** identifies an upstream download/build failure.
+fails. **BUILD FAILED** identifies an input restoration/download or build failure.
 **COMPARISON FAILED** means the build passed but comparison failed, including
 byte differences and missing or extra generated tables. **REFERENCE MISSING**
 means the build passed but published comparison tables are absent;

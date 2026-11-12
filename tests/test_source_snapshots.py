@@ -887,12 +887,30 @@ class SnapshotTests(unittest.TestCase):
 
     def test_restoration_fetches_only_missing_files_at_pinned_revision(self):
         cached=Path(self.temp.name)/'downloaded';cached.write_bytes(PAYLOAD)
-        with patch('huggingface_hub.hf_hub_download',return_value=str(cached)) as download:
+        with patch('huggingface_hub.try_to_load_from_cache', return_value=None), \
+             patch('huggingface_hub.hf_hub_download',return_value=str(cached)) as download:
             restore_snapshot(self.archive,self.raw,[self.artifact])
             restore_snapshot(self.archive,self.raw,[self.artifact])
         self.assertEqual((self.raw/'source.json').read_bytes(),PAYLOAD)
         download.assert_called_once()
         self.assertEqual(download.call_args.kwargs['revision'],self.archive['revision'])
+
+    def test_immutable_hub_cache_is_verified_without_an_http_request(self):
+        cached = Path(self.temp.name) / 'cached'
+        for payload, valid in ((PAYLOAD, True), (b'x' * len(PAYLOAD), False)):
+            cached.write_bytes(payload)
+            with self.subTest(valid=valid), \
+                 patch('huggingface_hub.try_to_load_from_cache', return_value=str(cached)) as lookup, \
+                 patch('huggingface_hub.hf_hub_download', side_effect=AssertionError('network')):
+                if valid:
+                    restore_snapshot(self.archive, self.raw, [self.artifact])
+                    self.assertEqual((self.raw / 'source.json').read_bytes(), PAYLOAD)
+                    (self.raw / 'source.json').unlink()
+                else:
+                    with self.assertRaisesRegex(SourceDataError, 'pinned source'):
+                        restore_snapshot(self.archive, self.raw, [self.artifact])
+                    self.assertFalse((self.raw / 'source.json').exists())
+                self.assertEqual(lookup.call_args.kwargs['revision'], self.archive['revision'])
 
     def test_corrupt_cached_input_is_rejected_without_network_or_replacement(self):
         target=self.raw/'source.json';target.write_bytes(b'x'*len(PAYLOAD))

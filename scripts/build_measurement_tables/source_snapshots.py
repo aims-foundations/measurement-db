@@ -116,7 +116,7 @@ def verify_snapshot_file(path: Path, artifact: dict) -> None:
 
 
 def restore_snapshot(archive: dict, raw: Path, artifacts: list[dict]) -> None:
-    from huggingface_hub import hf_hub_download
+    from huggingface_hub import hf_hub_download, try_to_load_from_cache
 
     root = raw.resolve()
     for artifact in artifacts:
@@ -128,10 +128,13 @@ def restore_snapshot(archive: dict, raw: Path, artifacts: list[dict]) -> None:
             continue
         if "manifest" in archive:
             raise SourceDataError(f"frozen local input is absent: {target}")
-        cached = Path(hf_hub_download(
-            archive["repo_id"], f"{archive['path']}/{artifact['file']}",
-            repo_type="dataset", revision=archive["revision"],
-        ))
+        filename = f"{archive['path']}/{artifact['file']}"
+        cached = try_to_load_from_cache(archive["repo_id"], filename,
+                                       repo_type="dataset", revision=archive["revision"])
+        if not isinstance(cached, str):
+            cached = hf_hub_download(archive["repo_id"], filename,
+                                     repo_type="dataset", revision=archive["revision"])
+        cached = Path(cached)
         verify_snapshot_file(cached, artifact)
         target.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".download-", delete=False) as handle:

@@ -48,7 +48,7 @@ class ReportTests(unittest.TestCase):
         path = self.root / "batch.json"
         observed = []
 
-        def verify(root, slug, revision, *, progress):
+        def verify(root, slug, revision, *, progress, source_mode):
             observed.append([row["status"] for row in json.loads(path.read_text())["results"]])
             progress("reference", REVISION)
             progress("comparison")
@@ -87,7 +87,7 @@ class ReportTests(unittest.TestCase):
             "delta": ("comparison", ValueError("Byte mismatch: responses.parquet")),
         }
 
-        def verify(root, slug, revision, *, progress):
+        def verify(root, slug, revision, *, progress, source_mode):
             phase, error = outcomes[slug]
             progress(phase)
             raise error
@@ -287,6 +287,33 @@ class ReportTests(unittest.TestCase):
             jobs = reports.github_jobs()
         self.assertEqual(len(jobs), 101)
         self.assertIn("page=2", fetch.call_args_list[1].args[0].full_url)
+
+    def test_upstream_receipt_cannot_satisfy_archive_run(self):
+        self.batch(["alpha"], ["passed"])
+        with patch.dict(os.environ, {"REPRODUCTION_SOURCE_MODE": "archive"}):
+            result = self.collect([["alpha"]])
+        self.assertEqual(result["counts"]["not_reported"], 1)
+        self.assertIn("Source mode does not match", result["warnings"][0])
+
+    def test_archive_receipt_records_mode_in_summary_and_rows(self):
+        with patch.dict(os.environ, {"REPRODUCTION_SOURCE_MODE": "archive"}):
+            self.batch(["alpha"], ["passed"])
+            result = self.collect([["alpha"]])
+        self.assertEqual(result["counts"]["passed"], 1)
+        self.assertEqual(result["results"][0]["source_mode"], "archive")
+        self.assertIn("Build inputs: **archive**", reports.markdown(result))
+
+    def test_executed_rerun_wins_over_newer_queued_duplicate(self):
+        with patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "3"}):
+            self.batch(["alpha"], ["passed"], attempt=3)
+            result = self.collect([["alpha"]], jobs=[
+                {"id": 100, "name": "Reproduce alpha", "run_attempt": 3, "runner_name": "runner-one",
+                 "status": "completed", "conclusion": "success", "html_url": "actual-job"},
+                {"id": 101, "name": "Reproduce alpha", "run_attempt": 3, "runner_name": None,
+                 "status": "queued", "conclusion": None, "html_url": "placeholder"},
+            ])
+        self.assertEqual(result["results"][0]["job_url"], "actual-job")
+        self.assertEqual(result["counts"]["passed"], 1)
 
 
 if __name__ == "__main__":

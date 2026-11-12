@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "archive_revision": "a526fe1c97d36645ae25ac3fdabbbaaa979d91a1",
+  "identity_release_revision": "88f4a665524562532bb4041e6eea600b275f024d",
+  "raw_files_added_and_verified": 20760,
+  "unchanged_identity_release_files_verified": 698,
+  "backfilled_benchmarks": [
+    {
+      "slug": "erbench",
+      "files": 226,
+      "bytes": 387735866
+    },
+    {
+      "slug": "exploitgym",
+      "files": 14,
+      "bytes": 45316065
+    },
+    {
+      "slug": "mergebench",
+      "files": 4,
+      "bytes": 7406759
+    },
+    {
+      "slug": "morqa",
+      "files": 40,
+      "bytes": 34723340
+    },
+    {
+      "slug": "mtbench",
+      "files": 45,
+      "bytes": 26018204
+    },
+    {
+      "slug": "nyu_ctf_bench",
+      "files": 3,
+      "bytes": 2173328559
+    },
+    {
+      "slug": "perfcodebench",
+      "files": 1,
+      "bytes": 13127945
+    },
+    {
+      "slug": "programbench",
+      "files": 26,
+      "bytes": 1661596685
+    },
+    {
+      "slug": "pxplore",
+      "files": 47,
+      "bytes": 96791577
+    },
+    {
+      "slug": "realtimeqa",
+      "files": 4218,
+      "bytes": 425896459
+    },
+    {
+      "slug": "reliancescope",
+      "files": 28,
+      "bytes": 2403928
+    },
+    {
+      "slug": "summeval",
+      "files": 7,
+      "bytes": 541029333
+    },
+    {
+      "slug": "swebench_live",
+      "files": 14693,
+      "bytes": 11745718457
+    },
+    {
+      "slug": "tabarena",
+      "files": 1408,
+      "bytes": 2732903639
+    }
+  ],
+  "archive_coverage": {
+    "hugging_face": 76,
+    "local": 1
+  },
+  "restricted_local_archive": {
+    "benchmark": "medagentboard",
+    "manifest_sha256": "2f5122ccaeec909aeb17f99fa14fc568cacab52f46c97d0b010aecbe1ed94369",
+    "files": 56,
+    "bytes": 2085623150,
+    "public_upload": false
+  },
+  "local_archive_reason": "Existing MedAgentBoard curation excludes two processed MIMIC files and holds the complete original archive locally.",
+  "verification": {
+    "reproduction_unit_tests": 71,
+    "source_and_gallery_artifact_tests": {
+      "passed": 103,
+      "subtests": 112
+    },
+    "gallery_tests": {
+      "passed": 87,
+      "subtests": 94
+    },
+    "archive_build_byte_comparisons": {
+      "morqa": {
+        "input_mode": "archive",
+        "reference_revision": "a526fe1c97d36645ae25ac3fdabbbaaa979d91a1",
+        "tables": {
+          "benchmarks.parquet": {
+            "sha256": "d3ffe36d77bc8c92a5782e9319f8bb13130271847aa07e3801bc532bc8687083",
+            "size": 16835
+          },
+          "items.parquet": {
+            "sha256": "b2077c0b93715955755a4fa8c03cac41f0a79eccaf8af78f8620d3286c81eb13",
+            "size": 4132148
+          },
+          "responses.parquet": {
+            "sha256": "7fd41822b07dd9f8a1b03c66ef55850b0416558e798c0b33022081c5f42cebdb",
+            "size": 511430
+          },
+          "subjects.parquet": {
+            "sha256": "2d26ca71e71bb86e614bc0e0b249047a3d026f4079e35300f8aac6d2df7edf80",
+            "size": 7461
+          },
+          "traces.parquet": {
+            "sha256": "b4fbb4422c6532d8e31f573adeefc89fffeeb01569e0425fbe3516b32a22aa68",
+            "size": 13229729
+          }
+        },
+        "seconds": 14.29
+      },
+      "medagentboard": {
+        "input_mode": "archive",
+        "reference_revision": "88f4a665524562532bb4041e6eea600b275f024d",
+        "tables": {
+          "assets.parquet": {
+            "sha256": "a3aee28a08daf2c660bc02aa605b4300aac53e542b1cd237c267b5dcece4e0b9",
+            "size": 43054681
+          },
+          "benchmarks.parquet": {
+            "sha256": "90fdca596554622630e11a362020b5722e8358ecfa262f3e5ddf4e72a9fb4ee4",
+            "size": 17271
+          },
+          "items.parquet": {
+            "sha256": "c2dfd5c8e811ec17fb6e4aca92ba5da4848799dee05898acffba5a71564f5c53",
+            "size": 2021340
+          },
+          "responses.parquet": {
+            "sha256": "d9517dd533d6b012a9b50a0c94372284c0106fd166d3d0442439d1d760e3bbd2",
+            "size": 383518
+          },
+          "subjects.parquet": {
+            "sha256": "a208c6e7282a3c2e8e25dc477435fa55552290240ecb432d14b2eed877820a56",
+            "size": 11744
+          },
+          "traces.parquet": {
+            "sha256": "2ccca485d386d3d83c76ff33e3666c6463fbd66618765ae57f1a3d9bf00c2f25",
+            "size": 37580482
+          }
+        },
+        "seconds": 48.487
+      }
+    }
+  },
+  "ci_behavior": {
+    "pull_request_and_push": "archive",
+    "manual_choices": [
+      "archive",
+      "upstream"
+    ],
+    "immutable_revision_required": true,
+    "every_input_hash_verified": true,
+    "strict_table_bytes_and_file_sets": true,
+    "implicit_upstream_fallback": false
+  }
+}
