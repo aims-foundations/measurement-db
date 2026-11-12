@@ -6,8 +6,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    # These preview branches reuse the already verified data snapshot.
-    branches-ignore: [preview/disconnected-subject-identities, feat/coverage-explorer]
+    branches: ['**']
   workflow_dispatch:
     inputs:
       benchmark:

@@ -6,25 +6,25 @@ import "./load-typescript.mjs";
 const { agenticFirst, laterInCatalog } =
   await import("../content/curated/catalog-order.ts");
 const { compareCatalogOrder } = await import("../lib/catalog-order.ts");
-const records = JSON.parse(
+// Canonical record manifests are prepared by the gallery job, so a clean
+// checkout intentionally has an empty gallery-records.json. The lightweight
+// catalog is the published benchmark inventory available before preparation.
+const catalog = JSON.parse(
   readFileSync(
-    new URL("../content/generated/gallery-records.json", import.meta.url),
+    new URL("../content/generated/benchmark-cards.json", import.meta.url),
     "utf8",
   ),
-);
-const catalog = Object.entries(records).map(([slug, record]) => {
-  const benchmark = record.manifest.benchmark;
-  return {
-    slug,
-    name: benchmark.name,
-    year: Number.parseInt(benchmark.release_date) || null,
-  };
-});
+).map((entry) => ({
+  slug: entry.slug,
+  name: entry.name,
+  year: Number.parseInt(entry.releaseDate) || null,
+}));
+const published = new Set(catalog.map((entry) => entry.slug));
 
 test("editorial entries refer to published benchmarks with no duplicates or overlaps", () => {
   const entries = [...agenticFirst, ...laterInCatalog];
   assert.equal(new Set(entries).size, entries.length);
-  for (const slug of entries) assert.ok(records[slug], slug);
+  for (const slug of entries) assert.ok(published.has(slug), slug);
 });
 
 test("the complete catalog retains every benchmark and defers static QA", () => {

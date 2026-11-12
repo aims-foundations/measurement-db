@@ -74,6 +74,7 @@ jobs:
           node website/scripts/test-gallery-source-route.mjs
           node website/scripts/test-vercel-fetch.mjs
       - run: pnpm --dir website network:test
+      - run: pnpm --dir website catalog:test
       - run: pnpm --dir website lint
       - run: pnpm --dir website build
       - run: pnpm --dir website search:check
