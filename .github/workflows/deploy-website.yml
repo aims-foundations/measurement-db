@@ -22,6 +22,10 @@ on:
         description: 'PR number for the review alias (optional)'
         type: string
         required: false
+      preview_gallery_revision:
+        description: 'Pinned unpromoted gallery commit for a migration preview (non-main only)'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -81,6 +85,7 @@ jobs:
       GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
       DEPLOY_CODE_DIR: ${{ vars.GALLERY_SCRATCH_DIR != '' && format('{0}/website-{1}-{2}/repo', vars.GALLERY_SCRATCH_DIR, github.run_id, github.run_attempt) || github.workspace }}
       REUSE_PUBLISHED_GALLERY: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_published_gallery || false }}
+      PREVIEW_GALLERY_REVISION: ${{ github.event_name == 'workflow_dispatch' && inputs.preview_gallery_revision || '' }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       PYTHONUNBUFFERED: '1'
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -173,20 +178,26 @@ jobs:
           echo "$DEPLOY_JOB_DIR/venv/bin" >> "$GITHUB_PATH"
           "$DEPLOY_JOB_DIR/venv/bin/pip" install 'huggingface_hub>=1,<2'
       - name: Download the validated candidate matching this Git tree
-        if: env.REUSE_PUBLISHED_GALLERY != 'true'
+        if: env.REUSE_PUBLISHED_GALLERY != 'true' && env.PREVIEW_GALLERY_REVISION == ''
         run: >-
           python -m scripts.ci.gallery_release download
           --run-id "$CANDIDATE_RUN_ID"
           --candidate "$DEPLOY_JOB_DIR/candidate"
       - name: Restore verified static files and generated catalogs
-        if: env.REUSE_PUBLISHED_GALLERY != 'true'
+        if: env.REUSE_PUBLISHED_GALLERY != 'true' && env.PREVIEW_GALLERY_REVISION == ''
         run: >-
           python -m scripts.ci.gallery_release restore
           --candidate "$DEPLOY_JOB_DIR/candidate"
       - name: Restore accepted published data for a fast website preview
-        if: env.REUSE_PUBLISHED_GALLERY == 'true'
+        if: env.REUSE_PUBLISHED_GALLERY == 'true' && env.PREVIEW_GALLERY_REVISION == ''
         run: >-
           python -m scripts.ci.gallery_release preview
+          --candidate "$DEPLOY_JOB_DIR/candidate"
+      - name: Restore pinned unpromoted data for a migration preview
+        if: env.PREVIEW_GALLERY_REVISION != ''
+        run: >-
+          python -m scripts.ci.gallery_preview
+          --revision "$PREVIEW_GALLERY_REVISION"
           --candidate "$DEPLOY_JOB_DIR/candidate"
       - run: pnpm --dir website install --frozen-lockfile
       - run: pnpm --dir website lint

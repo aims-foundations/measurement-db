@@ -7772,7 +7772,7 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
                 trajectory = dict(info=dict(config=config,mini_version='2.0',instance_id=task,exit_status='Submitted'),
                     messages=[dict(role='system',content='Exact source system instructions'),
                         dict(role='user',content='Original task '+task+' 完整'),
-                        dict(object='response',output=[dict(content='Full output 完整\n' * 2000)])])
+                        dict(object='response',output=[dict(type='message',content=[dict(type='output_text',text='Full output 完整\n' * 2000)])])])
                 records[task+'/'+task+'.traj.json'] = trajectory
                 if run=='run_b' and task=='task_two':continue
                 verdicts = {'suite/pass':True,'suite/fail':False,'suite/ignored':False} if task=='task_one' else {}
@@ -7826,13 +7826,13 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
                     value=json.loads(items.loc[index,'verifier']);spec=json.loads(value['spec']);spec['active_test_names'].pop();value['spec']=json.dumps(spec);items.loc[index,'verifier']=json.dumps(value)
                 elif change=='grading_rule':items.loc[0,'grading_criterion']=json.dumps(dict(rule='Binary threshold'))
                 elif change.startswith('trace_'):
-                    index=next(i for i,value in enumerate(traces.trace) if json.loads(value)['published_tests'])
+                    index=next(i for i,value in enumerate(traces.trace) if json.loads(value)['native'].get('published_tests'))
                     value=json.loads(traces.loc[index,'trace'])
-                    if change=='trace_clip':value['trajectory']['messages'][2]['output'][0]['content']='clipped'
-                    elif change=='trace_task':value['task_id']='task_two'
-                    elif change=='trace_grade':value['published_tests']['suite/pass']=False
-                    elif change=='trace_settings':value['trajectory']['info']['config']['model']['model_kwargs']['temperature']=1.
-                    else:value['evaluation']['test_results'].pop(0)
+                    if change=='trace_clip':value['steps'][2]['content']='clipped'
+                    elif change=='trace_task':value['native']['task_id']='task_two'
+                    elif change=='trace_grade':value['native']['published_tests']['suite/pass']=False
+                    elif change=='trace_settings':value['native']['info']['config']['model']['model_kwargs']['temperature']=1.
+                    else:value['evaluation']['tests'].pop(0)
                     traces.loc[index,'trace']=json.dumps(value)
                 elif change=='trial':responses.loc[0,'trial']=2
                 elif change=='condition':responses.loc[0,'test_condition']='different'

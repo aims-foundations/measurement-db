@@ -11,12 +11,109 @@ import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.build_base import ConvertedTrace, Judge, StructuredTraceBuild
+from measurement_db.scripts.build_measurement_tables.trace_converters import mini_swe_agent
 
 
-class ProgramBench(BenchmarkBuild):
+class ProgramBench(StructuredTraceBuild):
     def download(self):
         return self.fetch_sources('*')
+
+    @staticmethod
+    def _client_metadata(messages):
+        """Keep client fields the common mini-swe-agent mapping does not expose."""
+        block_fields = {
+            'text': {'type', 'text'}, 'thinking': {'type', 'thinking'},
+            'tool_use': {'type', 'id', 'name', 'input'},
+            'tool_result': {'type', 'tool_use_id', 'content'},
+            'redacted_thinking': {'type'},
+        }
+
+        def blocks(content, mapped=None):
+            result = {}
+            for index, block in enumerate(content if isinstance(content, list) else []):
+                if not isinstance(block, dict):
+                    continue
+                used = block_fields.get(block.get('type'), set(block))
+                rest = {key: value for key, value in block.items() if key not in used}
+                if block.get('type') == 'tool_result' and block.get('text') == block.get('content'):
+                    rest.pop('text', None)
+                if mapped is not None:
+                    other = mapped[index] if isinstance(mapped, list) and index < len(mapped) else {}
+                    other = other if isinstance(other, dict) else {}
+                    for key in used - {'type'}:
+                        if key in block and block[key] != other.get(key):
+                            rest[key] = block[key]
+                if rest:
+                    result[str(index)] = rest
+            return result
+
+        def calls(values):
+            result = {}
+            for index, call in enumerate(values or []):
+                rest = {key: value for key, value in call.items() if key not in {'id', 'type', 'function'}}
+                function = {key: value for key, value in (call.get('function') or {}).items()
+                            if key not in {'name', 'arguments'}}
+                if function:
+                    rest['function'] = function
+                if rest:
+                    result[str(index)] = rest
+            return result
+
+        metadata = {}
+        for index, message in enumerate(messages):
+            fields = {key: message[key] for key in ('created_at', 'completed_at') if key in message}
+            response = (message.get('extra') or {}).get('response') or {}
+            for key in ('created', 'created_at', 'completed_at'):
+                if key in response:
+                    fields['response_' + key] = response[key]
+            content_fields = blocks(message.get('content'))
+            response_fields = blocks(response.get('content'), message.get('content'))
+            if content_fields:
+                fields['content_blocks'] = content_fields
+            if response_fields and response_fields != content_fields:
+                fields['response_content_blocks'] = response_fields
+            call_fields = calls(message.get('tool_calls'))
+            if call_fields:
+                fields['tool_calls'] = call_fields
+            choice_fields = {}
+            for choice_index, choice in enumerate(response.get('choices') or []):
+                extra_calls = calls((choice.get('message') or {}).get('tool_calls'))
+                if extra_calls and extra_calls != call_fields:
+                    choice_fields[str(choice_index)] = extra_calls
+            if choice_fields:
+                fields['response_tool_calls'] = choice_fields
+            if fields:
+                metadata[str(index)] = fields
+        return metadata
+
+    def convert_trace(self, source, *, context):
+        native = {key: source[key] for key in ('source_run', 'task_id', 'published_tests')
+                  if source[key] is not None}
+        evaluation = source['evaluation']
+        if evaluation is not None:
+            tests, fields = [], {}
+            for index, result in enumerate(evaluation.get('test_results') or []):
+                if not all(isinstance(result.get(key), str) for key in ('branch', 'name', 'status')):
+                    raise ValueError('Each native test result needs its branch, name and status')
+                tests.append(dict(name=result['branch'] + '/' + result['name'], status=result['status']))
+                # The branch remains explicit so a full name can be reversed
+                # even when the original test name itself contains slashes.
+                fields[str(index)] = {key: value for key, value in result.items() if key not in {'name', 'status'}}
+            evaluation = {**evaluation, 'test_results': tests}
+            if fields:
+                native['test_result_fields'] = fields
+        client = self._client_metadata(source['trajectory'].get('messages') or [])
+        if client:
+            native['client_metadata'] = client
+        value, counts = mini_swe_agent.convert(
+            source['trajectory'], evaluation=evaluation, native=native,
+        )
+        if source['published_tests'] is not None:
+            # An explicitly empty published map is a graded zero; absence is
+            # an ungraded attempt. The common helper omits empty dictionaries.
+            value.setdefault('native', {})['published_tests'] = source['published_tests']
+        return ConvertedTrace(value, counts)
 
     def build_tables(self) -> dict[str, pd.DataFrame]:
         parameters = self.build_parameters
@@ -99,12 +196,12 @@ class ProgramBench(BenchmarkBuild):
             grader_version=row.grader_version, active_test_names=row.active_test_names), sort_keys=True))
             for row in items.itertuples()]
 
-        # 5. Retain native records in full, without turning absent evaluations into failures.
+        # 5. Pass native records to the shared trace/1 conversion boundary.
         traces = calls[['response_key']].copy()
-        traces['trace'] = [json.dumps(dict(source_run=row.source_run, task_id=row.task_id,
+        traces['trace'] = [dict(source_run=row.source_run, task_id=row.task_id,
             trajectory=row.trajectory, evaluation=row.evaluation if isinstance(row.evaluation, dict) else None,
-            published_tests=row.published_tests if isinstance(row.published_tests, dict) else None),
-            ensure_ascii=False, allow_nan=False) for row in calls.itertuples()]
+            published_tests=row.published_tests if isinstance(row.published_tests, dict) else None)
+            for row in calls.itertuples()]
         calls['item_key'] = calls.response_key
         calls['test_condition'] = 'run=' + calls.source_run + ';grader=' + calls.grader_version
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
