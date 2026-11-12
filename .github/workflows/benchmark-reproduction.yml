@@ -157,6 +157,9 @@ jobs:
             mkdir -p "$scratch"
             echo "TMPDIR=$scratch" >> "$GITHUB_ENV"
             echo "REPRODUCTION_SCRATCH=$scratch" >> "$GITHUB_ENV"
+            # Author downloads belong to the same bounded job storage as builds.
+            echo "HF_HUB_CACHE=$scratch/huggingface/hub" >> "$GITHUB_ENV"
+            echo "HF_XET_CACHE=$scratch/huggingface/xet" >> "$GITHUB_ENV"
           fi
       - name: Rebuild from declared upstream sources and compare every table byte for byte
         env:
