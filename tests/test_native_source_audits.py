@@ -422,7 +422,8 @@ class ThreeEEDSourceAuditTests(unittest.TestCase):
     def test_corruption_of_original_associations_or_content_is_rejected(self):
         cases = ['grade', 'missing_grade', 'item_link', 'subject_link', 'content', 'criterion', 'verifier',
                  'asset_bytes', 'asset_link', 'trace_member', 'trace_record', 'missing_trace',
-                 'missing_response', 'trial', 'condition', 'configuration', 'preprocessing', 'item_alias']
+                 'missing_response', 'trial', 'condition', 'configuration', 'preprocessing', 'item_alias',
+                 'subject_name', 'source_alias', 'missing_source_alias']
         for case in cases:
             frames = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
             responses, items, traces = (frames[key] for key in ['responses', 'items', 'traces'])
@@ -452,6 +453,15 @@ class ThreeEEDSourceAuditTests(unittest.TestCase):
                 frames['subjects'].loc[0, 'subject_features_extra'] = features_string(canonicalize_features(features))
             elif case == 'preprocessing': items.loc[0, 'item_features'] = '{}'
             elif case == 'item_alias': items.loc[0, 'raw_item_id'] = 'wrong/frame'
+            elif case == 'subject_name': frames['subjects'].loc[0, 'display_name'] = 'wrong reviewed label'
+            elif case in ['source_alias', 'missing_source_alias']:
+                subjects = frames['subjects']
+                index = next(i for i, value in subjects.subject_features_extra.items()
+                             if 'source_display_name' in _features(value))
+                features = _features(subjects.loc[index, 'subject_features_extra'])
+                if case == 'source_alias': features['source_display_name'] = 'wrong original alias'
+                else: del features['source_display_name']
+                subjects.loc[index, 'subject_features_extra'] = features_string(canonicalize_features(features))
             with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
                 _threeeed(self.directory, frames, self.metadata)
 
@@ -5140,7 +5150,8 @@ class MorphKVNativeAuditTests(unittest.TestCase):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _morphkv, _morphkv_sources
         source = _morphkv_sources(self.directory)
         for change in ['grade', 'equal_sum_swap', 'null_to_zero', 'subject', 'item', 'criterion', 'verifier', 'prompt',
-                       'trace', 'position', 'bank_index', 'constraint', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+                       'trace', 'position', 'bank_index', 'constraint', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace',
+                       'subject_name', 'source_alias', 'missing_source_alias', 'settings']:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
                 if change == 'grade': frames['responses'].loc[0, 'response'] = 0.
@@ -5171,6 +5182,15 @@ class MorphKVNativeAuditTests(unittest.TestCase):
                 elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
                 elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
                 elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change == 'subject_name': frames['subjects'].loc[0, 'display_name'] = 'wrong reviewed label'
+                elif change in ['source_alias', 'missing_source_alias']:
+                    subjects = frames['subjects']
+                    index = next(i for i, value in subjects.subject_features_extra.items()
+                                 if 'source_display_name' in _features(value))
+                    features = _features(subjects.loc[index, 'subject_features_extra'])
+                    if change == 'source_alias': features['source_display_name'] = 'wrong original alias'
+                    else: del features['source_display_name']
+                    subjects.loc[index, 'subject_features_extra'] = features_string(canonicalize_features(features))
                 else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
                 with self.assertRaises((ValueError, KeyError)):
                     _morphkv(self.directory, frames, self.metadata, source)
@@ -5266,7 +5286,8 @@ class MORQANativeAuditTests(unittest.TestCase):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _morqa, _morqa_sources
         source = _morqa_sources(self.directory)
         for change in ['snap', 'equal_sum_swap', 'null_to_zero', 'subject', 'item', 'query', 'candidate', 'references',
-                       'human_rating', 'verifier', 'trace', 'position', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+                       'human_rating', 'verifier', 'trace', 'position', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace',
+                       'subject_name', 'source_alias', 'missing_source_alias', 'settings']:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
                 if change == 'snap': frames['responses'].loc[frames['responses'].response.eq(.75), 'response'] = .5
@@ -5300,6 +5321,15 @@ class MORQANativeAuditTests(unittest.TestCase):
                 elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
                 elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
                 elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change == 'subject_name': frames['subjects'].loc[0, 'display_name'] = 'wrong reviewed label'
+                elif change in ['source_alias', 'missing_source_alias']:
+                    subjects = frames['subjects']
+                    index = next(i for i, value in subjects.subject_features_extra.items()
+                                 if 'source_display_name' in _features(value))
+                    features = _features(subjects.loc[index, 'subject_features_extra'])
+                    if change == 'source_alias': features['source_display_name'] = 'wrong original alias'
+                    else: del features['source_display_name']
+                    subjects.loc[index, 'subject_features_extra'] = features_string(canonicalize_features(features))
                 else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
                 with self.assertRaises((ValueError, KeyError)):
                     _morqa(self.directory, frames, self.metadata, source)

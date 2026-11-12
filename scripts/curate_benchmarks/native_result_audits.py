@@ -23754,7 +23754,10 @@ def _morphkv(directory, tables, metadata, source=None):
     subjects, subject_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_run']
-        _check(row.display_name, model, 'MorphKV literal original run identity')
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(model, model)
+        _check(row.display_name, label, 'MorphKV reviewed model identity')
+        if label != model:
+            _check(_features(row.subject_features_extra)['source_display_name'], model, 'MorphKV retained original run alias')
         _check(row.harness, 'MorphKV/LongGenBench', 'MorphKV source evaluation harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'MorphKV no guessed historical setting: ' + field)
@@ -23865,7 +23868,10 @@ def _morqa(directory, tables, metadata, source=None):
     subjects, model_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_evaluator']
-        _check(row.display_name, model, 'MORQA literal evaluator identity')
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(model, model)
+        _check(row.display_name, label, 'MORQA reviewed evaluator identity')
+        if label != model:
+            _check(_features(row.subject_features_extra)['source_display_name'], model, 'MORQA retained original evaluator alias')
         _check(row.harness, 'MORQA multireference evaluation', 'MORQA source evaluation condition')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'MORQA no inferred historical setting: ' + field)
@@ -30323,7 +30329,7 @@ def _rclicks(directory, tables, metadata):
     for row in tables['subjects'].itertuples():
         features = _features(row.subject_features_extra)
         name = features['native_identifier']
-        _check((row.display_name, features), (name,
+        _check((row.display_name, features), (parameters['models'][name],
             dict(native_identifier=name, algorithm=parameters['models'][name])), 'RClicks original algorithm identity')
         subjects[row.subject_id] = name
     _check(Counter(subjects.values()), Counter({key[2]: 1 for key in native}), 'RClicks complete recorded algorithms')
@@ -30984,10 +30990,15 @@ def _threeeed(directory, tables, metadata):
         features['configuration'] = json.loads(features['configuration'])
         run = features['source_run']
         _check(run in configurations, True, '3EED original run identity')
-        _check(subject.display_name, labels['subject'] + ' [' + run + ']', '3EED distinct recorded configuration label')
+        raw_label = labels['subject'] + ' [' + run + ']'
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(raw_label, raw_label)
+        _check(subject.display_name, label, '3EED reviewed configuration label')
         _check(subject.harness, labels['harness'], '3EED harness attribution')
-        _check(features, dict(source_run=run, configuration_member=run + '/config.json',
-            configuration=configurations[run], checkpoint_scope=labels['checkpoint_scope']), '3EED full native run configuration')
+        expected_features = dict(source_run=run, configuration_member=run + '/config.json',
+            configuration=configurations[run], checkpoint_scope=labels['checkpoint_scope'])
+        if label != raw_label:
+            expected_features['source_display_name'] = raw_label
+        _check(features, expected_features, '3EED full native run configuration')
         subjects[subject.subject_id] = run
     _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), '3EED complete separate run configurations')
     items = {}
