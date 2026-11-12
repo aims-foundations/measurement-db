@@ -137,9 +137,17 @@ jobs:
             measurement_db/requirements.txt
             measurement_db/scripts/ci/reproduction-constraints.txt
       - name: Create a fresh job environment
+        env:
+          ENVIRONMENT_BASE: ${{ vars.REPRODUCTION_ENVIRONMENT_DIR }}
+          MATRIX_INDEX: ${{ strategy.job-index }}
         run: |
-          python -m venv --clear "$RUNNER_TEMP/measurement-db-venv"
-          echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
+          environment="$RUNNER_TEMP/measurement-db-venv"
+          if [ -n "$ENVIRONMENT_BASE" ]; then
+            environment="$ENVIRONMENT_BASE/reproduction-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$MATRIX_INDEX"
+          fi
+          echo "REPRODUCTION_ENVIRONMENT=$environment" >> "$GITHUB_ENV"
+          python -m venv --clear "$environment"
+          echo "$environment/bin" >> "$GITHUB_PATH"
       - name: Install the build dependencies and matching Parquet writer
         run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
       - name: Select LexEval's declared ROUGE implementation
@@ -179,11 +187,14 @@ jobs:
           name: benchmark-results-${{ github.run_attempt }}-${{ strategy.job-index }}
           path: ${{ runner.temp }}/benchmark-report/results.json
           if-no-files-found: warn
-      - name: Remove this job's build scratch
+      - name: Remove this job's build scratch and Python environment
         if: always()
         run: |
           if [ -n "${REPRODUCTION_SCRATCH:-}" ]; then
             rm -rf -- "$REPRODUCTION_SCRATCH"
+          fi
+          if [ -n "${REPRODUCTION_ENVIRONMENT:-}" ]; then
+            rm -rf -- "$REPRODUCTION_ENVIRONMENT"
           fi
 
   report:

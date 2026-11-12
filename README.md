@@ -465,8 +465,11 @@ require more runner installations and a higher `max-parallel` setting.
 Set the repository Actions variable `REPRODUCTION_SCRATCH_DIR` to place native
 source downloads, generated tables, and comparison references on storage with
 enough capacity for concurrent jobs. Each job owns and removes its own subdirectory.
-This storage may be mounted `noexec`: Python environments and executable tools
-remain in the runner's normal directories. If unset, reproduction uses
+This storage may be mounted `noexec`. Python environments use the runner's normal
+temporary directory unless `REPRODUCTION_ENVIRONMENT_DIR` points to separate
+executable storage with capacity for concurrent dependency installations. Each
+environment is isolated by run, attempt, and matrix index and removed after its
+job, including failures. If `REPRODUCTION_SCRATCH_DIR` is unset, reproduction uses
 `GALLERY_SCRATCH_DIR`, then the runner's default temporary storage. Gallery and
 website builds continue to use `GALLERY_SCRATCH_DIR`, which must support execution.
 
