@@ -3,7 +3,8 @@
 This records the October 27 experiment. Its one-off deployment workflows have
 been retired. Current PRs use the standard benchmark reproduction and gallery
 preparation workflows, which validate the current schema and published data.
-The revisions and counts below describe that historical preview.
+The revisions and counts below describe that historical preview. See the
+[current identity refresh](subject-identity-refresh.md) for the current release.
 
 The preview combines the current canonical gallery with the subject fixes in
 `635a74e2955d970b48837cee1a109a9ef96845c3`. The complete machine-readable build
