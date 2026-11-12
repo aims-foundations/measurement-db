@@ -1,17 +1,17 @@
 # Plan: a standard trace format and a structured trace viewer
 
-Status: staged implementation. PR #15 provides the schema, converter helpers, mini-swe-agent
-converter and structured website viewer. PR #16 introduces `StructuredTraceBuild`,
-write-time validation and format-aware paging. Existing benchmark builders still write their
-legacy traces until they explicitly migrate. The survey and measurements below describe the
+Status: staged implementation. PR #15 provides the deployed schema, converter helpers,
+mini-swe-agent converter and structured website viewer. PR #16 adds `StructuredTraceBuild`,
+write-time validation and format-aware paging. PR #17 migrates ProgramBench; other builders
+retain legacy traces until they explicitly migrate. The survey and measurements below describe the
 original 2026-11-09 research spike; refresh them against pinned inputs for each migration.
 
 The viewer and schema landed in [#15](https://github.com/aims-foundations/measurement-db/pull/15).
 The builder contract follows in [#16](https://github.com/aims-foundations/measurement-db/pull/16)
 (`feat/structured-trace-build` → `main`). The ProgramBench pilot is
 [#17](https://github.com/aims-foundations/measurement-db/pull/17)
-(`feat/programbench-structured-traces` → `feat/structured-trace-build`). Land parents first and
-retarget each dependent PR as its parent lands.
+(`feat/programbench-structured-traces` → `main`). The reader and abstract contract are merged;
+the ProgramBench release follows on main.
 
 ## 1. Goal
 
@@ -335,8 +335,8 @@ to about 56 KB.
 
 A migrated builder inherits `StructuredTraceBuild`. Its existing `trace` input can contain
 native dictionaries, message lists or text; the shared pipeline handles serialization. The
-ProgramBench pilot can adapt its current envelope with a hook like this (not yet enabled in
-the production ProgramBench builder):
+following simplified ProgramBench example illustrates the hook; its actual adapter also
+preserves provider metadata and complete test-result identities:
 
 ```python
 from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild
@@ -354,8 +354,8 @@ class ProgramBench(StructuredTraceBuild):
 
 Legacy `BenchmarkBuild` subclasses keep accepting only trace strings and retain their existing
 output. Inheriting `StructuredTraceBuild` is the migration opt-in; no per-benchmark metadata flag
-or external postprocessing command is needed. This stacked foundation changes no real builder
-outputs. The next PR migrates and audits ProgramBench before additional converter families.
+or external postprocessing command is needed. ProgramBench is the first audited migration;
+additional converter families follow incrementally.
 
 ### 7.3 Write-time validation
 
@@ -655,9 +655,9 @@ Review this stack in order: trace viewer (#15), abstract builder contract (#16),
 then ProgramBench. Compare the migration with its parent builder using the same
 inputs and pinned writer environment. Non-trace files must remain byte identical;
 only trace payloads, the format marker and trace page layout should change.
-Publishing the converted tables to the canonical dataset is a later release
-step, coordinated with the merged trace reader. The normal reproduction check
-against canonical HF tables will report a difference until that release.
+Publish converted tables to the canonical dataset after the compatible reader
+is deployed. The normal reproduction check then compares the migrated builder
+against that published revision before the builder PR is merged.
 
 For isolated review, `deploy-website.yml` accepts `preview_gallery_revision`, an
 immutable commit in the gallery repository containing `preview/manifest.json`.
