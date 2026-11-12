@@ -14,7 +14,7 @@ tables:
     logical_sha256: 1d040c2bd418d3fee1e4831ccf810c772dd637adcdd98ef8c475199fbf346d4e
   benchmarks:
     rows: 1
-    logical_sha256: 75ed8ffcb85122b74915d624abf1f6829af6eb4972aa377c193d019ecc505461
+    logical_sha256: e0e26ee5f9a882d6dc706a23d7d9670cc4b58b6e27fd96e359bcca1b8a50c892
 source_claims:
   source_responses:
     kind: count

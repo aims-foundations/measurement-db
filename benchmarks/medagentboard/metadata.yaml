@@ -329,6 +329,6 @@ sources:
   - name: paper
     url: https://arxiv.org/html/2505.12371v2
     file: paper.html
-    size: 1818958
-    sha256: 6dcc3a90af820d269883ddf30cd0695aae1fc92ef67d21a288fdfaa59b3c0478
+    size: 1819048
+    sha256: eb408c58e870b8c8e8fcd14a5eacd4827be0b6e00b6f658583f10ffe4597dd88
     revision: arxiv-2505.12371v2

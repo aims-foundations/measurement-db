@@ -30,6 +30,15 @@ def _subject_field_is_expected(row, field):
     return bool(pd.isna(value)) if expected is None else value == expected
 
 
+def _reviewed_subject_alias(metadata, raw_label, features):
+    """Apply only a reviewed label mapping and require its original alias."""
+    label = metadata['build']['parameters'].get('subject_labels', {}).get(raw_label, raw_label)
+    expected = dict(features)
+    if label != raw_label:
+        expected['source_display_name'] = raw_label
+    return label, expected
+
+
 def _agc_source_records(directory, metadata):
     """Read the native rows independently of the builder's DataFrame joins."""
     import csv
@@ -7317,13 +7326,17 @@ def _crow(directory, tables, metadata, source_records=None):
         features = _features(row.subject_features_extra)
         digest = features["export_sha256"]
         original = exports[digest]
-        _check(features, dict(checkpoint="not_recorded", defense="not_recorded", export_sha256=digest,
-            reported_model=original["model"]), "CROW no guessed defense or checkpoint identity")
-        _check(row.display_name, "CROW / " + original["model"] + " / result export " + digest[:12],
-               "CROW subject distinguishes native exports without claiming independent checkpoints")
+        raw_label = "CROW / " + original["model"] + " / result export " + digest[:12]
+        label = metadata["build"]["parameters"].get("subject_labels", {}).get(raw_label, raw_label)
+        expected = dict(checkpoint="not_recorded", defense="not_recorded", export_sha256=digest,
+                        reported_model=original["model"])
+        if label != raw_label:
+            expected["source_display_name"] = raw_label
+        _check(features, expected, "CROW preserved export identity without guessed defense or checkpoint")
+        _check(row.display_name, label, "CROW reviewed model label with separate native exports")
         _check(row.harness, "CROW", "CROW reported harness")
         for field in ["normalized_name", "provider", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "CROW unavailable historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "CROW no invented " + field)
         subjects[row.subject_id] = digest
     _check(Counter(subjects.values()), Counter({key: 1 for key in exports}), "CROW every unique result export once")
     items = {row.item_id: row for row in tables["items"].itertuples()}
@@ -12849,8 +12862,11 @@ def _kormedmcqa(directory, tables, metadata, source=None):
         label = features["source_model_label"]
         _check(label in configurations, True, "KorMedMCQA source-supported configuration label")
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        display = parameters.get("subject_labels", {}).get(label, label)
+        if display != label:
+            expected["source_display_name"] = label
         _check(features, dict(**expected, source_model_label=label), "KorMedMCQA no guessed inference settings")
-        _check(row.display_name, label, "KorMedMCQA unchanged export model label")
+        _check(row.display_name, display, "KorMedMCQA reviewed model label with original export identity")
         _check(row.harness, parameters["subject_features"]["harness"], "KorMedMCQA source harness")
         for column in ["harness_version", "reasoning_effort", "release_date", "access_date", "provider", "normalized_name"]:
             _check(_subject_field_is_expected(row, column), True, "KorMedMCQA no invented " + column)
@@ -15045,8 +15061,9 @@ def _medagentboard(directory, tables, metadata, source=None):
         expected = dict(parameters['subject_features'], source_configuration=key,
                         recorded_configuration=source['configurations'][key])
         expected.pop('harness')
+        label, expected = _reviewed_subject_alias(metadata, key, expected)
         _check(_features(row.subject_features_extra), canonicalize_features(expected), 'Exact original subject configuration')
-        _check(row.display_name, key, 'Literal source-labelled subject')
+        _check(row.display_name, label, 'Reviewed model label with original source configuration')
         _check(row.harness, 'MedAgentBoard', 'Native harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'No invented historical setting: ' + field)
@@ -17819,8 +17836,10 @@ def _realtimeqa(directory, tables, metadata, source=None):
         token = features["source_model_token"]
         mode = "generation" if token.endswith("_gen") else "multiple_choice"
         expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
-        _check(features, dict(**expected, source_model_token=token, answer_mode=mode), "RealTime QA literal configuration")
-        _check(row.display_name, token, "RealTime QA literal model token")
+        label, expected = _reviewed_subject_alias(metadata, token,
+            dict(**expected, source_model_token=token, answer_mode=mode))
+        _check(features, expected, "RealTime QA literal configuration and original model token")
+        _check(row.display_name, label, "RealTime QA reviewed model label")
         _check(row.harness, parameters["subject_features"]["harness"], "RealTime QA source harness")
         for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
             _check(_subject_field_is_expected(row, field), True, "RealTime QA no invented historical setting: " + field)
@@ -20475,12 +20494,18 @@ def _summeval(directory, tables, metadata, source=None):
         _check(row.trial, position + 1, 'SummEval local rater position')
         model = record['model_id']
         subject = subjects[row.subject_id]
+        raw_label = parameters['model_names'][model]
+        label = parameters.get('subject_labels', {}).get(raw_label, raw_label)
         _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
-            (parameters['model_names'][model], labels['harness'], True), 'SummEval literal source model identity')
-        _check(_features(subject['subject_features_extra']), dict(source_model_alias=model,
-            source_model_name=parameters['model_names'][model], model_paper=parameters['model_papers'][model],
+            (label, labels['harness'], True), 'SummEval reviewed model label with original source identity')
+        expected_features = dict(source_model_alias=model,
+            source_model_name=raw_label, model_paper=parameters['model_papers'][model],
             source_title=parameters['model_titles'][model], model_type=parameters['model_types'][model],
-            configuration_status=labels['configuration_status']), 'SummEval explicit model provenance and unknown settings')
+            configuration_status=labels['configuration_status'])
+        if label != raw_label:
+            expected_features['source_display_name'] = raw_label
+        _check(_features(subject['subject_features_extra']), expected_features,
+               'SummEval explicit model provenance and unknown settings')
         configurations[row.subject_id] = model
         item, path = items[row.item_id], record['filepath'].removeprefix('cnndm/')
         _check((item['content'], item['raw_item_id']), (source['articles'][path], record['id'] + '::' + group + '::' + dimension), 'SummEval exact source article and task identity')
@@ -20673,14 +20698,19 @@ def _swe_live_tabular(directory, tables, metadata, source=None):
         _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
             True, 'SWE-Live exact final verdict or unavailable grade')
         run, instance_id = key
-        label = run.removeprefix('submissions/').removeprefix('website/')
+        raw_label = run.removeprefix('submissions/').removeprefix('website/')
         subject = subjects[row.subject_id]
-        _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
-            (label, labels['harness'], True), 'SWE-Live literal submission and harness identity')
         readme = parameters['layout']['release'] + '/' + run + '/README.md'
-        features = canonicalize_features(dict(source_submission=run, configuration_scope=labels['configuration_scope'],
-            source_readme=readme if (raw / readme).is_file() else None))
-        _check(subject['subject_features_extra'], features_string(features), 'SWE-Live explicit source configuration provenance')
+        label, features = _reviewed_subject_alias(metadata, raw_label,
+            dict(source_submission=run, configuration_scope=labels['configuration_scope'],
+                 source_readme=readme if (raw / readme).is_file() else None))
+        _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
+            (label, parameters.get('subject_harnesses', {}).get(raw_label, labels['harness']), True),
+            'SWE-Live reviewed model label and recorded harness')
+        effort = parameters.get('subject_reasoning_efforts', {}).get(raw_label)
+        _check(pd.isna(subject['reasoning_effort']) if effort is None else subject['reasoning_effort'] == effort,
+            True, 'SWE-Live source-supported reasoning effort')
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)), 'SWE-Live explicit source configuration provenance')
         configurations[row.subject_id] = run
         item, task = items[row.item_id], expected['task']
         record = task['record']
@@ -20828,7 +20858,8 @@ def _swe_poly_tabular(directory, tables, metadata, source=None):
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
 
     source = source or _swe_poly_sources(directory, metadata)
-    labels = metadata['build']['parameters']['labels']
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
     for name, key in [('responses', 'response_id'), ('subjects', 'subject_id'), ('items', 'item_id'), ('traces', 'response_id')]:
         _check(tables[name][key].is_unique, True, 'PolyBench unique ' + name + ' IDs')
     subjects = tables['subjects'].set_index('subject_id').to_dict('index')
@@ -20850,11 +20881,14 @@ def _swe_poly_tabular(directory, tables, metadata, source=None):
         _check(row.trial, 1, 'PolyBench one recorded trial per source configuration')
         _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'PolyBench no invented response conditions')
         subject = subjects[row.subject_id]
+        raw_label = source['configurations'][run]['name']
+        label, features = _reviewed_subject_alias(metadata, raw_label,
+            dict(source_submission=run, configuration_scope=labels['configuration_scope'],
+                 source_readme='release/' + run + '/README.md'))
         _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
-            (source['configurations'][run]['name'], labels['harness'], True), 'PolyBench literal source configuration')
-        features = canonicalize_features(dict(source_submission=run, configuration_scope=labels['configuration_scope'],
-            source_readme='release/' + run + '/README.md'))
-        _check(subject['subject_features_extra'], features_string(features), 'PolyBench complete configuration provenance')
+            (label, parameters.get('subject_harnesses', {}).get(raw_label, labels['harness']), True),
+            'PolyBench reviewed model label and recorded harness')
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)), 'PolyBench complete configuration provenance')
         task, split = expected['task']['record'], expected['split']
         item = items[row.item_id]
         _check((item['content'], item['raw_item_id']), (task['problem_statement'], split + '/' + instance),
@@ -22016,9 +22050,11 @@ def _visit_bench(directory, tables, metadata, source=None):
         _check(model in {row['model'] for row in source['native'].values()}, True, 'VisIT original model label')
         mode = labels['caption_input'] if model == labels['reference_alias'] else labels['visual_input']
         _check(subject['harness'], labels['harness'], 'VisIT original harness')
-        _check(subject['display_name'], labels['reference_model'] if model == labels['reference_alias'] else model, 'VisIT human-verified reference model identity')
-        _check(subject['subject_features_extra'], features_string(canonicalize_features(dict(source_model_label=model, input_scope=mode,
-            configuration_status=labels['configuration_status']))), 'VisIT complete recorded subject configuration')
+        raw_label = labels['reference_model'] if model == labels['reference_alias'] else model
+        label, expected_features = _reviewed_subject_alias(metadata, raw_label,
+            dict(source_model_label=model, input_scope=mode, configuration_status=labels['configuration_status']))
+        _check(subject['display_name'], label, 'VisIT reviewed model label and human-verified reference identity')
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(expected_features)), 'VisIT complete recorded subject configuration')
         models[identity] = model
     _check(Counter(models.values()), Counter({row['model']: 1 for row in source['native'].values()}), 'VisIT every original model')
     assets = tables['assets'].set_index('asset_id').to_dict('index')
@@ -22303,7 +22339,8 @@ def _frontieror(directory, tables, metadata, source=None):
         kinds = {record["kind"] for (_, name), record in records.items() if name == model}
         _check(len(kinds), 1, "FrontierOR one native evaluation kind per model label")
         kind = kinds.pop()
-        _check(row.display_name, model, "FrontierOR literal model/configuration label")
+        _check(row.display_name, labels.get("subject_prefix", "") + model,
+               "FrontierOR declared model/configuration label")
         harness = "FrontierOR one-shot" if kind == "model" else "FrontierOR " + model.split(" + ")[-1] + " self-evolution"
         _check(row.harness, harness, "FrontierOR distinct recorded evolution harness")
         _check(extra, dict(recorded_model_label=model, evaluation_kind=kind, result_snapshot=labels["snapshot"],
@@ -24666,8 +24703,12 @@ def _pxplore(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         model = features['source_run']
         expected = source['models'][model]
-        _check(features, dict(source_run=model, method=expected['method'], input_mode=expected['mode']), 'Pxplore literal run and input configuration')
-        _check(row.display_name, model, 'Pxplore no guessed source model/checkpoint')
+        label = metadata['build']['parameters'].get('subject_labels', {}).get(model, model)
+        expected_features = dict(source_run=model, method=expected['method'], input_mode=expected['mode'])
+        if label != model:
+            expected_features['source_display_name'] = model
+        _check(features, expected_features, 'Pxplore literal run and input configuration')
+        _check(row.display_name, label, 'Pxplore reviewed model label with original run identity')
         _check(row.harness, 'Pxplore learner-state alignment', 'Pxplore original evaluation protocol')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
             _check(_subject_field_is_expected(row, field), True, 'Pxplore no guessed historical setting: ' + field)
@@ -24902,10 +24943,11 @@ def _programbench(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         key = features['source_run'], features['configuration_sha256']
         original = source['subjects'][key]
-        _check(features, dict(source_run=key[0], configuration_sha256=key[1], model_alias=original['model_alias'], provider=original['provider']),
-            'ProgramBench complete recorded model/configuration identity')
+        label, expected_features = _reviewed_subject_alias(metadata, original['model_alias'],
+            dict(source_run=key[0], configuration_sha256=key[1], model_alias=original['model_alias'], provider=original['provider']))
+        _check(features, expected_features, 'ProgramBench complete recorded model/configuration identity')
         _check((row.display_name,row.harness,row.harness_version),
-            (original['model_alias'],metadata['build']['parameters']['labels']['harness'],original['mini_version']),
+            (label,metadata['build']['parameters']['labels']['harness'],original['mini_version']),
             'ProgramBench original model label, provider and scaffold version')
         _check(all(_subject_field_is_expected(row, field) for field in ['provider', 'normalized_name', 'release_date']), True, 'ProgramBench exact registered model mapping')
         _check(None if pd.isna(row.reasoning_effort) else row.reasoning_effort, original['reasoning_effort'],
@@ -26993,7 +27035,9 @@ def _wikihow_agent(directory, tables, metadata):
         configuration = {role: yaml.safe_load((raw / 'protocol' / name).read_text())
             for role, name in zip(['teacher', 'learner', 'evaluator'], config_files)}
         encoded = json.dumps(configuration, sort_keys=True).replace(';', r'\u003b').replace('=', r'\u003d')
-        expected_features = features_string(canonicalize_features(dict(source_configuration=encoded)))
+        label, expected_features = _reviewed_subject_alias(metadata,
+            configuration['learner']['llm']['model'], dict(source_configuration=encoded))
+        expected_features = features_string(canonicalize_features(expected_features))
         for number, original in enumerate(document['total_conversations']):
             key = str(path.relative_to(raw)), number
             native_keys.add(key)
@@ -27001,7 +27045,7 @@ def _wikihow_agent(directory, tables, metadata):
             _check(trace['record'], original, 'WikiHowAgent complete unmodified original record and conversation')
             _check(trace['config_files'], config_files, 'WikiHowAgent recorded configuration-file association')
             subject, item = subjects[response['subject_id']], items[response['item_id']]
-            _check(subject['display_name'], configuration['learner']['llm']['model'], 'WikiHowAgent literal learner model alias')
+            _check(subject['display_name'], label, 'WikiHowAgent reviewed learner label with original alias')
             _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'WikiHowAgent harness')
             _check(subject['subject_features_extra'], expected_features, 'WikiHowAgent complete teacher/learner/evaluator configuration')
             grade = original['evaluation']['Completion Achieved']
@@ -27302,10 +27346,11 @@ def _tensortrust(directory, tables, metadata):
                     _check(bool(re.match(r'^\W*access granted\W*$', native['llm_output'], re.IGNORECASE)),
                            flag, 'Tensor Trust recorded flag agrees with published matcher on available output')
                 subject, item = subjects[response['subject_id']], items[response['item_id']]
-                _check(subject['display_name'], native['llm_choice'], 'Tensor Trust literal recorded model choice')
+                label, expected_features = _reviewed_subject_alias(metadata, native['llm_choice'],
+                    dict(recorded_model_choice=native['llm_choice'], request_configuration='not recorded per attempt'))
+                _check(subject['display_name'], label, 'Tensor Trust reviewed model label with original choice')
                 _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'Tensor Trust game harness')
-                _check(_features(subject['subject_features_extra']), dict(recorded_model_choice=native['llm_choice'],
-                    request_configuration='not recorded per attempt'), 'Tensor Trust explicit configuration limits')
+                _check(_features(subject['subject_features_extra']), expected_features, 'Tensor Trust explicit configuration limits')
                 stimulus = dict(opening_defense=native['opening_defense'],
                     user_input=native['attacker_input'] if stage == 'attack' else native['access_code'],
                     closing_defense=native['closing_defense'])

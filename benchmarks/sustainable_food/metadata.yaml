@@ -87,8 +87,8 @@ sources:
     url: https://arxiv.org/html/2503.04734v1
     revision: 2503.04734v1
     file: paper.html
-    size: 597935
-    sha256: 210e68366d73ecf203500aa0c9319aa1c5c8c77d8c64b8a141ad18eceeb79e1c
+    size: 598025
+    sha256: 1e394547100da8520261c4b971113f0d5fd32abccdaf6660652fcc95d0d64de7
 grading:
   rule: 'Apply the released model-specific parser and compare the numeric choice to ground_truth (1 or 2). GPT-3.5
     checks Recipe 1 before Recipe 2, then numeric conversion. Gemini takes the first character. o1 takes the first

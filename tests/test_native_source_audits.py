@@ -7808,6 +7808,8 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
         folder = ROOT / 'benchmarks/programbench'
         self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
         self.metadata['build']['parameters']['runs'] = {'run_a':'run_a.tar.gz', 'run_b':'run_b.tar.gz'}
+        self.metadata['build']['parameters']['subject_labels'].update(
+            {'fixture/run_a': 'gpt-4o', 'fixture/run_b': 'gpt-4o'})
         (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         self.documents = {'registry': {'ignored_tests.json': {'task_one':['suite/ignored']}}}
         for run in ['run_a','run_b']:
@@ -7860,7 +7862,7 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _programbench, _programbench_sources
         source = _programbench_sources(self.directory,self.metadata)
         changes = ['fraction','null_to_zero','subject','item','prompt','image','verifier','grading_rule','trace_clip',
-            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort']
+            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort','source_alias','missing_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
@@ -7894,6 +7896,11 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
                 elif change=='model':subjects.loc[0,'display_name']='A guessed checkpoint'
                 elif change=='version':subjects.loc[0,'harness_version']='current'
                 elif change=='effort':subjects.loc[0,'reasoning_effort']='high'
+                elif change in {'source_alias','missing_alias'}:
+                    fields=_features(subjects.loc[0,'subject_features_extra'])
+                    if change=='missing_alias':del fields['source_display_name']
+                    else:fields['source_display_name']='wrong-source'
+                    subjects.loc[0,'subject_features_extra']=features_string(fields)
                 with self.assertRaises((ValueError,KeyError)):
                     _programbench(self.directory,frames,self.metadata,source)
 
@@ -7917,6 +7924,8 @@ class PxploreNativeAuditTests(unittest.TestCase):
         self.raw.mkdir(parents=True)
         folder = ROOT / 'benchmarks/pxplore'
         self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['subject_labels'].update(
+            prompt_stub='gpt-4o', steering_stub='gpt-4o')
         (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         for name in ['service/scripts/prompts/snippet_selection.txt', 'model/prompts/eval_profile.txt']:
             path = self.raw / name
@@ -7973,7 +7982,7 @@ class PxploreNativeAuditTests(unittest.TestCase):
         source = _pxplore_sources(self.directory, self.metadata)
         changes = ['grade_swap', 'null_to_zero', 'subject', 'item', 'prompt', 'candidate', 'axis', 'rule', 'verifier',
             'answer', 'history', 'state', 'judgment', 'source_row', 'source_file', 'status', 'condition', 'trial',
-            'drop', 'duplicate', 'drop_trace', 'settings']
+            'drop', 'duplicate', 'drop_trace', 'settings', 'label', 'source_alias', 'missing_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
@@ -8014,6 +8023,15 @@ class PxploreNativeAuditTests(unittest.TestCase):
                 elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
                 elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
                 elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change in ['label', 'source_alias', 'missing_alias']:
+                    index = frames['subjects'].index[frames['subjects'].subject_features_extra.str.contains('source_display_name=')][0]
+                    if change == 'label':
+                        frames['subjects'].loc[index, 'display_name'] = 'wrong-model'
+                    else:
+                        fields = _features(frames['subjects'].loc[index, 'subject_features_extra'])
+                        if change == 'missing_alias': del fields['source_display_name']
+                        else: fields['source_display_name'] = 'wrong-source'
+                        frames['subjects'].loc[index, 'subject_features_extra'] = features_string(fields)
                 else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
                 with self.assertRaises((ValueError, KeyError)):
                     _pxplore(self.directory, frames, self.metadata, source)
@@ -8389,6 +8407,8 @@ class WikiHowAgentAuditTests(unittest.TestCase):
         self.directory=Path(temporary.name)/'wikihow_agent'
         self.directory.mkdir()
         self.metadata=yaml.safe_load(((ROOT/'benchmarks/wikihow_agent')/'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['subject_labels'].update(
+            {'learner-a': 'gpt-4o', 'learner-b': 'gpt-4o'})
         (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         folder=self.directory/'raw/protocol/conf';folder.mkdir(parents=True)
         for name in ['teacher-a','teacher-b','learner-a','learner-b','evaluator']:
@@ -8424,7 +8444,7 @@ class WikiHowAgentAuditTests(unittest.TestCase):
 
     def test_corrupt_transformations_fail_even_when_totals_match(self):
         changes=['equal_sum_swap','wrong_subject','wrong_item','drop_record','clip_trace','source_row',
-            'replace_summary','drop_rubric','config_association','subject_configuration','verifier','trial']
+            'replace_summary','drop_rubric','config_association','subject_configuration','verifier','trial','label','source_alias','missing_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
@@ -8441,6 +8461,12 @@ class WikiHowAgentAuditTests(unittest.TestCase):
                 elif change=='verifier':
                     v=json.loads(items.loc[0,'verifier']);v['spec']='{}';items.loc[0,'verifier']=json.dumps(v)
                 elif change=='trial':responses.loc[0,'trial']=0
+                elif change=='label':frames['subjects'].loc[0,'display_name']='wrong-model'
+                elif change in {'source_alias','missing_alias'}:
+                    fields=_features(frames['subjects'].loc[0,'subject_features_extra'])
+                    if change=='missing_alias':del fields['source_display_name']
+                    else:fields['source_display_name']='wrong-source'
+                    frames['subjects'].loc[0,'subject_features_extra']=features_string(fields)
                 else:
                     trace=json.loads(traces.loc[0,'trace'])
                     if change=='clip_trace':trace['record']['conversation']=trace['record']['conversation'][:1]

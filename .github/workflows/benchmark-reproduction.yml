@@ -142,6 +142,11 @@ jobs:
           echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
       - name: Install the build dependencies and matching Parquet writer
         run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
+      - name: Select LexEval's declared ROUGE implementation
+        if: contains(matrix.benchmarks, 'lexeval')
+        # rouge-chinese also installs files in the rouge module. Install the
+        # scorer declared by LexEval last so dependency order cannot change grades.
+        run: python -m pip install --no-deps --force-reinstall 'rouge==1.0.1'
       - name: Use configured scratch storage for upstream builds
         env:
           SCRATCH_BASE: ${{ vars.GALLERY_SCRATCH_DIR }}

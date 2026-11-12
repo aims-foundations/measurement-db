@@ -17,7 +17,7 @@ tables:
     logical_sha256: 7a26ef0d4b07a64f921e6a7d6a7f1d4e585a86e638f7d44a2dd0130efb22a9c2
   benchmarks:
     rows: 1
-    logical_sha256: 0252fd6a8f1c3fe64846add66a33b9571ba86cd441b934b3fa073c61f7fc847f
+    logical_sha256: f8a3d0df7a4af8fa22d52c0ef4f48181debaf0a95792d2e9c26436d9addf7f36
 source_claims:
   source_successes:
     kind: count
