@@ -1,5 +1,6 @@
 """An optional, disposable cache must never weaken artifact verification."""
 import os
+import copy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -44,3 +45,19 @@ class GalleryCacheTests(unittest.TestCase):
         self.archive.write_bytes(b"wrong")
         with self.assertRaisesRegex(ValueError, "unverified"):
             cache.store(self.archive, self.entry)
+
+    def test_record_changes_reuse_charts_but_source_library_and_renderer_changes_do_not(self):
+        old = {"tables": {"items": "a"}, "canonical_records": False,
+               "generator": {"code": "old", "legacy_code": "charts", "libraries": {"numpy": "1"}}}
+        new = copy.deepcopy(old)
+        new["canonical_records"] = True
+        new["generator"]["code"] = "new record exporter"
+        self.assertTrue(cache.same_legacy_inputs(old, new))
+        for changed in [
+            {**new, "tables": {"items": "b"}},
+            {**new, "generator": {**new["generator"], "legacy_code": "changed"}},
+            {**new, "generator": {**new["generator"], "libraries": {"numpy": "2"}}},
+        ]:
+            self.assertFalse(cache.same_legacy_inputs(old, changed))
+        unknown = {**old, "generator": {"code": "unknown", "libraries": {"numpy": "1"}}}
+        self.assertFalse(cache.same_legacy_inputs(unknown, new))

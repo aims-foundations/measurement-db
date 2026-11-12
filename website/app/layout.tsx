@@ -22,7 +22,7 @@ const sourceSerif = Source_Serif_4({
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  // Variable-font URLs retain the extension required by next/font's loader.
   variable: "--font-source-sans",
 });
 
