@@ -66,7 +66,7 @@ class NanoBaseLib(BenchmarkBuild):
 
         # 4. Preserve method identities and full native rows without inventing individual grades.
         subjects = responses[['subject_key', 'modification', 'method']].drop_duplicates().copy()
-        subjects['raw_label'] = labels['subject_prefix'] + subjects.modification + ' / ' + subjects.method
+        subjects['raw_label'] = subjects.method
         subjects['features'] = [dict(**parameters['subject_features'], modification=row.modification,
             source_method=row.method) for row in subjects.itertuples()]
         traces = responses[['response_key']].copy()

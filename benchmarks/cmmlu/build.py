@@ -67,7 +67,7 @@ class CMMLU(BenchmarkBuild):
         subjects = attempts[["subject_key", "prompt_condition"]].drop_duplicates()
         if subjects.subject_key.duplicated().any():
             raise ValueError("CMMLU has an unreviewed within-system prompt protocol change")
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(parameters["subject_protocol"], source_model_label=row.subject_key,
             prompt_condition=row.prompt_condition) for row in subjects.itertuples()]
         items = attempts.drop_duplicates("item_key").copy()

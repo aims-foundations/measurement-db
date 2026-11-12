@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BenchmarkSearchClient } from "@/components/benchmark-search-client";
+import { CatalogResults } from "@/components/catalog-results";
+import { compareCatalogOrder } from "@/lib/catalog-order";
 import { withBase } from "@/lib/base-path";
 import type { LocalBenchmarkSearchDocument } from "@/lib/search-types";
 import {
@@ -46,9 +48,10 @@ const SATURATION_OPTIONS: {
 const saturationKey = (s: boolean | null): SaturationKey =>
   s === null ? "unknown" : s ? "yes" : "no";
 
-type SortKey = "group" | "subjects" | "items" | "name";
+type SortKey = "agentic" | "group" | "subjects" | "items" | "name";
 
 const SORT_CHOICES = [
+  { value: "agentic", label: "Agentic first" },
   { value: "group", label: "Year · newest first" },
   { value: "name:asc", label: "Name · A to Z" },
   { value: "name:desc", label: "Name · Z to A" },
@@ -67,7 +70,7 @@ type FilterPanelKey =
   | "guide"
   | "mobile";
 
-// Benchmarks are grouped by release year, newest first, with everything
+// The optional year sort groups benchmarks newest first, with everything
 // before 2023 collapsed into a single "Earlier" bucket (undated cards land
 // there too). A benchmark's domain is a *filter*, not its shelf — so one that
 // spans several domains (e.g. AlgoTune → math + coding) appears once, under its
@@ -293,7 +296,7 @@ function BenchmarkCard({
           </Link>
         </h4>
 
-        <p className="mt-1.5 line-clamp-1 text-[0.8125rem] leading-5 text-[var(--muted)]">
+        <p className="mt-1.5 text-[0.8125rem] leading-5 text-[var(--muted)]">
           {benchmark.description}
         </p>
 
@@ -317,15 +320,6 @@ function BenchmarkCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function YearHeader({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="mb-5 flex items-baseline gap-3 border-b border-[var(--line)] pb-3">
-      <h3 className="type-h3 text-[1.25rem] text-[var(--ink)]">{label}</h3>
-      <span className="font-mono text-sm text-[var(--muted)]">{count}</span>
-    </div>
   );
 }
 
@@ -504,7 +498,7 @@ export function BenchmarkGalleryClient({
   const [minSubjects, setMinSubjects] = useState<number | null>(null);
   const [minItems, setMinItems] = useState<number | null>(null);
   const [minAttacks, setMinAttacks] = useState<number | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("group");
+  const [sortKey, setSortKey] = useState<SortKey>("agentic");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
@@ -676,7 +670,9 @@ export function BenchmarkGalleryClient({
   const sorted = useMemo(() => {
     const arr = [...filtered];
     const mul = dir === "asc" ? 1 : -1;
-    if (sortKey === "name") {
+    if (sortKey === "agentic") {
+      arr.sort(compareCatalogOrder);
+    } else if (sortKey === "name") {
       arr.sort((a, b) => a.name.localeCompare(b.name) * mul);
     } else {
       const v = (b: GalleryItem) =>
@@ -709,7 +705,9 @@ export function BenchmarkGalleryClient({
   const grouped = sortKey === "group";
 
   const sortChoice =
-    sortKey === "group" ? "group" : (`${sortKey}:${dir}` as const);
+    sortKey === "agentic" || sortKey === "group"
+      ? sortKey
+      : (`${sortKey}:${dir}` as const);
 
   const evidenceCount = Number(onlyItemResponses) + satSel.size;
   const moreCount =
@@ -730,12 +728,12 @@ export function BenchmarkGalleryClient({
   }
 
   function changeSort(value: string) {
-    if (value === "group") {
-      setSortKey("group");
+    if (value === "agentic" || value === "group") {
+      setSortKey(value);
       return;
     }
     const [nextKey, nextDir] = value.split(":") as [
-      Exclude<SortKey, "group">,
+      Exclude<SortKey, "agentic" | "group">,
       "asc" | "desc",
     ];
     setSortKey(nextKey);
@@ -1223,29 +1221,20 @@ export function BenchmarkGalleryClient({
         <p className="py-12 text-center text-sm text-[var(--muted)]">
           No {searchScopeLabel} match the current filters.
         </p>
-      ) : grouped ? (
-        <div className="space-y-14">
-          {groups.map(({ key, label, items: groupItems }) => (
-            <section key={key} aria-label={label}>
-              <YearHeader label={label} count={groupItems.length} />
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {groupItems.map((b) => (
-                  <BenchmarkCard
-                    key={b.slug}
-                    benchmark={b}
-                    color={colorFor(b)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {sorted.map((b) => (
-            <BenchmarkCard key={b.slug} benchmark={b} color={colorFor(b)} />
-          ))}
-        </div>
+        <CatalogResults
+          key={JSON.stringify([
+            sortChoice,
+            searchQuery,
+            filtered.map((b) => b.slug),
+          ])}
+          groups={
+            grouped ? groups : [{ key: "all", label: null, items: sorted }]
+          }
+          renderItem={(b) => (
+            <BenchmarkCard benchmark={b} color={colorFor(b)} />
+          )}
+        />
       )}
     </div>
   );

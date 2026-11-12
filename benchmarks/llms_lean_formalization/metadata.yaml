@@ -57,7 +57,6 @@ build:
       results: data/test_data/*.jsonl
       result_pattern: (?P<dataset>miniCTX|minif2f)_(?P<model>.+)_(?P<policy>amend|pass)_x40_(?P<round_limit>\d+)\.jsonl
     labels:
-      subject_prefix: 'LLMsLean / '
       input_scope: released_theorem_and_Lean_context
     documented_models:
       deepseek: deepseek-ai/DeepSeek-Prover-V2-7B

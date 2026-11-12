@@ -422,7 +422,8 @@ class ThreeEEDSourceAuditTests(unittest.TestCase):
     def test_corruption_of_original_associations_or_content_is_rejected(self):
         cases = ['grade', 'missing_grade', 'item_link', 'subject_link', 'content', 'criterion', 'verifier',
                  'asset_bytes', 'asset_link', 'trace_member', 'trace_record', 'missing_trace',
-                 'missing_response', 'trial', 'condition', 'configuration', 'preprocessing', 'item_alias']
+                 'missing_response', 'trial', 'condition', 'configuration', 'preprocessing', 'item_alias',
+                 'subject_name', 'source_alias', 'missing_source_alias']
         for case in cases:
             frames = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
             responses, items, traces = (frames[key] for key in ['responses', 'items', 'traces'])
@@ -452,6 +453,15 @@ class ThreeEEDSourceAuditTests(unittest.TestCase):
                 frames['subjects'].loc[0, 'subject_features_extra'] = features_string(canonicalize_features(features))
             elif case == 'preprocessing': items.loc[0, 'item_features'] = '{}'
             elif case == 'item_alias': items.loc[0, 'raw_item_id'] = 'wrong/frame'
+            elif case == 'subject_name': frames['subjects'].loc[0, 'display_name'] = 'wrong reviewed label'
+            elif case in ['source_alias', 'missing_source_alias']:
+                subjects = frames['subjects']
+                index = next(i for i, value in subjects.subject_features_extra.items()
+                             if 'source_display_name' in _features(value))
+                features = _features(subjects.loc[index, 'subject_features_extra'])
+                if case == 'source_alias': features['source_display_name'] = 'wrong original alias'
+                else: del features['source_display_name']
+                subjects.loc[index, 'subject_features_extra'] = features_string(canonicalize_features(features))
             with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
                 _threeeed(self.directory, frames, self.metadata)
 
@@ -3601,7 +3611,7 @@ class EmbodiedArchiveAuditTests(unittest.TestCase):
         with ZipFile(raw / "answers.zip", "w") as archive:
             archive.writestr(member, json.dumps(records, ensure_ascii=False))
             archive.writestr("__MACOSX/" + member, b"not JSON: macOS resource metadata")
-        subjects = [dict(subject_id="model-a", display_name="Embodied Agent Interface / model-a",
+        subjects = [dict(subject_id="model-a", display_name="model-a",
             harness="Embodied Agent Interface",
             subject_features_extra="recorded_model_label=model-a;historical_inference_settings=not_recorded",
             normalized_name=None, release_date=None, access_date=None, harness_version=None, reasoning_effort=None)]
@@ -3964,8 +3974,8 @@ class WeaveBenchAuditTests(unittest.TestCase):
         self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
         (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
         paths = self.metadata["build"]["parameters"]["paths"]
-        rows = [dict(task_id="task-a", model="model-a", harness="codex", score=.8),
-                dict(task_id="task-b", model="model-a", harness="openclaw", score=.7999999999999),
+        rows = [dict(task_id="task-a", model="gpt-4o", harness="codex", score=.8),
+                dict(task_id="task-b", model="gpt-4o", harness="openclaw", score=.7999999999999),
                 dict(task_id="task-c", model="model-b", harness="codex", score=None),
                 dict(task_id="task-d", model="model-b", harness="codex", score=0.)]
         for i, row in enumerate(rows):
@@ -3998,6 +4008,29 @@ class WeaveBenchAuditTests(unittest.TestCase):
         self.assertEqual(_weavebench(self.directory, self.tables, self.metadata), dict(source_responses=4,
             source_items=4, source_subjects=3, source_models=2, source_traces=4, source_screenshots=4,
             source_trace_entries=8, source_action_steps=4, source_passes=1, source_ungraded=1))
+
+    def test_model_identity_links_across_harnesses_without_merging_configurations(self):
+        subjects = self.tables["subjects"]
+        known = subjects.loc[subjects.display_name.eq("gpt-4o")]
+        self.assertEqual(len(known), 2)
+        self.assertEqual(set(known.normalized_name), {"OpenAI GPT-4o"})
+        self.assertEqual(set(known.provider), {"OpenAI"})
+        self.assertEqual(set(known.harness), {"codex", "openclaw"})
+        self.assertEqual(known.subject_id.nunique(), 2)
+        unknown = subjects.loc[subjects.display_name.eq("model-b")]
+        self.assertTrue(unknown.normalized_name.isna().all())
+        self.assertTrue(unknown.provider.isna().all())
+        self.assertTrue(self.tables["responses"].subject_id.isin(subjects.subject_id).all())
+        self.assertEqual(set(self.tables["traces"].response_id), set(self.tables["responses"].response_id))
+
+    def test_audit_rejects_incorrect_registry_attribution(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench
+        for column in ["normalized_name", "release_date"]:
+            with self.subTest(column=column):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                tables["subjects"].loc[0, column] = "incorrect attribution"
+                with self.assertRaises(ValueError):
+                    _weavebench(self.directory, tables, self.metadata)
 
     def test_scores_configuration_linkage_checks_screenshots_and_selection_policy(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench
@@ -5117,7 +5150,8 @@ class MorphKVNativeAuditTests(unittest.TestCase):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _morphkv, _morphkv_sources
         source = _morphkv_sources(self.directory)
         for change in ['grade', 'equal_sum_swap', 'null_to_zero', 'subject', 'item', 'criterion', 'verifier', 'prompt',
-                       'trace', 'position', 'bank_index', 'constraint', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+                       'trace', 'position', 'bank_index', 'constraint', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace',
+                       'subject_name', 'source_alias', 'missing_source_alias', 'settings']:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
                 if change == 'grade': frames['responses'].loc[0, 'response'] = 0.
@@ -5148,6 +5182,15 @@ class MorphKVNativeAuditTests(unittest.TestCase):
                 elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
                 elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
                 elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change == 'subject_name': frames['subjects'].loc[0, 'display_name'] = 'wrong reviewed label'
+                elif change in ['source_alias', 'missing_source_alias']:
+                    subjects = frames['subjects']
+                    index = next(i for i, value in subjects.subject_features_extra.items()
+                                 if 'source_display_name' in _features(value))
+                    features = _features(subjects.loc[index, 'subject_features_extra'])
+                    if change == 'source_alias': features['source_display_name'] = 'wrong original alias'
+                    else: del features['source_display_name']
+                    subjects.loc[index, 'subject_features_extra'] = features_string(canonicalize_features(features))
                 else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
                 with self.assertRaises((ValueError, KeyError)):
                     _morphkv(self.directory, frames, self.metadata, source)
@@ -5243,7 +5286,8 @@ class MORQANativeAuditTests(unittest.TestCase):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _morqa, _morqa_sources
         source = _morqa_sources(self.directory)
         for change in ['snap', 'equal_sum_swap', 'null_to_zero', 'subject', 'item', 'query', 'candidate', 'references',
-                       'human_rating', 'verifier', 'trace', 'position', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+                       'human_rating', 'verifier', 'trace', 'position', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace',
+                       'subject_name', 'source_alias', 'missing_source_alias', 'settings']:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
                 if change == 'snap': frames['responses'].loc[frames['responses'].response.eq(.75), 'response'] = .5
@@ -5277,6 +5321,15 @@ class MORQANativeAuditTests(unittest.TestCase):
                 elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
                 elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
                 elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change == 'subject_name': frames['subjects'].loc[0, 'display_name'] = 'wrong reviewed label'
+                elif change in ['source_alias', 'missing_source_alias']:
+                    subjects = frames['subjects']
+                    index = next(i for i, value in subjects.subject_features_extra.items()
+                                 if 'source_display_name' in _features(value))
+                    features = _features(subjects.loc[index, 'subject_features_extra'])
+                    if change == 'source_alias': features['source_display_name'] = 'wrong original alias'
+                    else: del features['source_display_name']
+                    subjects.loc[index, 'subject_features_extra'] = features_string(canonicalize_features(features))
                 else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
                 with self.assertRaises((ValueError, KeyError)):
                     _morqa(self.directory, frames, self.metadata, source)
@@ -5967,16 +6020,21 @@ class OSHarmNativeAuditTests(unittest.TestCase):
                     _audit_os_harm(self.directory, frames, self.metadata)
 
     def test_invalid_native_grades_are_rejected(self):
-        path = next((self.directory / 'raw').glob('drive/*/*/*/*/*/*/judgment/gpt-4.1/aer/v3/judgment.json'))
+        # Choose an included execution: the fixture also has an intentionally
+        # excluded empty instruction, and filesystem glob order is not stable.
+        trace = json.loads(self.frames['traces'].iloc[0].trace)
+        path = self.directory / 'raw' / trace['judgment_file']
         original = path.read_bytes()
         for value in [None, 0.5, float('inf')]:
             with self.subTest(value=value):
                 record = json.loads(original)
                 record['safety'] = value
                 path.write_text(json.dumps(record))
-                with self.assertRaises(ValueError):
-                    self.builder(str(self.directory / 'build.py')).build_tables()
-                path.write_bytes(original)
+                try:
+                    with self.assertRaises(ValueError):
+                        self.builder(str(self.directory / 'build.py')).build_tables()
+                finally:
+                    path.write_bytes(original)
 
 
 class MMLUNativeAuditTests(unittest.TestCase):
@@ -7755,6 +7813,8 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
         folder = ROOT / 'benchmarks/programbench'
         self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
         self.metadata['build']['parameters']['runs'] = {'run_a':'run_a.tar.gz', 'run_b':'run_b.tar.gz'}
+        self.metadata['build']['parameters']['subject_labels'].update(
+            {'fixture/run_a': 'gpt-4o', 'fixture/run_b': 'gpt-4o'})
         (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         self.documents = {'registry': {'ignored_tests.json': {'task_one':['suite/ignored']}}}
         for run in ['run_a','run_b']:
@@ -7807,7 +7867,7 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _programbench, _programbench_sources
         source = _programbench_sources(self.directory,self.metadata)
         changes = ['fraction','null_to_zero','subject','item','prompt','image','verifier','grading_rule','trace_clip',
-            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort']
+            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort','source_alias','missing_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
@@ -7841,6 +7901,11 @@ class ProgramBenchNativeAuditTests(unittest.TestCase):
                 elif change=='model':subjects.loc[0,'display_name']='A guessed checkpoint'
                 elif change=='version':subjects.loc[0,'harness_version']='current'
                 elif change=='effort':subjects.loc[0,'reasoning_effort']='high'
+                elif change in {'source_alias','missing_alias'}:
+                    fields=_features(subjects.loc[0,'subject_features_extra'])
+                    if change=='missing_alias':del fields['source_display_name']
+                    else:fields['source_display_name']='wrong-source'
+                    subjects.loc[0,'subject_features_extra']=features_string(fields)
                 with self.assertRaises((ValueError,KeyError)):
                     _programbench(self.directory,frames,self.metadata,source)
 
@@ -7864,6 +7929,8 @@ class PxploreNativeAuditTests(unittest.TestCase):
         self.raw.mkdir(parents=True)
         folder = ROOT / 'benchmarks/pxplore'
         self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['subject_labels'].update(
+            prompt_stub='gpt-4o', steering_stub='gpt-4o')
         (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         for name in ['service/scripts/prompts/snippet_selection.txt', 'model/prompts/eval_profile.txt']:
             path = self.raw / name
@@ -7920,7 +7987,7 @@ class PxploreNativeAuditTests(unittest.TestCase):
         source = _pxplore_sources(self.directory, self.metadata)
         changes = ['grade_swap', 'null_to_zero', 'subject', 'item', 'prompt', 'candidate', 'axis', 'rule', 'verifier',
             'answer', 'history', 'state', 'judgment', 'source_row', 'source_file', 'status', 'condition', 'trial',
-            'drop', 'duplicate', 'drop_trace', 'settings']
+            'drop', 'duplicate', 'drop_trace', 'settings', 'label', 'source_alias', 'missing_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
@@ -7961,6 +8028,15 @@ class PxploreNativeAuditTests(unittest.TestCase):
                 elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
                 elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
                 elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change in ['label', 'source_alias', 'missing_alias']:
+                    index = frames['subjects'].index[frames['subjects'].subject_features_extra.str.contains('source_display_name=')][0]
+                    if change == 'label':
+                        frames['subjects'].loc[index, 'display_name'] = 'wrong-model'
+                    else:
+                        fields = _features(frames['subjects'].loc[index, 'subject_features_extra'])
+                        if change == 'missing_alias': del fields['source_display_name']
+                        else: fields['source_display_name'] = 'wrong-source'
+                        frames['subjects'].loc[index, 'subject_features_extra'] = features_string(fields)
                 else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
                 with self.assertRaises((ValueError, KeyError)):
                     _pxplore(self.directory, frames, self.metadata, source)
@@ -8336,6 +8412,8 @@ class WikiHowAgentAuditTests(unittest.TestCase):
         self.directory=Path(temporary.name)/'wikihow_agent'
         self.directory.mkdir()
         self.metadata=yaml.safe_load(((ROOT/'benchmarks/wikihow_agent')/'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['subject_labels'].update(
+            {'learner-a': 'gpt-4o', 'learner-b': 'gpt-4o'})
         (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
         folder=self.directory/'raw/protocol/conf';folder.mkdir(parents=True)
         for name in ['teacher-a','teacher-b','learner-a','learner-b','evaluator']:
@@ -8371,7 +8449,7 @@ class WikiHowAgentAuditTests(unittest.TestCase):
 
     def test_corrupt_transformations_fail_even_when_totals_match(self):
         changes=['equal_sum_swap','wrong_subject','wrong_item','drop_record','clip_trace','source_row',
-            'replace_summary','drop_rubric','config_association','subject_configuration','verifier','trial']
+            'replace_summary','drop_rubric','config_association','subject_configuration','verifier','trial','label','source_alias','missing_alias']
         for change in changes:
             with self.subTest(change=change):
                 frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
@@ -8388,6 +8466,12 @@ class WikiHowAgentAuditTests(unittest.TestCase):
                 elif change=='verifier':
                     v=json.loads(items.loc[0,'verifier']);v['spec']='{}';items.loc[0,'verifier']=json.dumps(v)
                 elif change=='trial':responses.loc[0,'trial']=0
+                elif change=='label':frames['subjects'].loc[0,'display_name']='wrong-model'
+                elif change in {'source_alias','missing_alias'}:
+                    fields=_features(frames['subjects'].loc[0,'subject_features_extra'])
+                    if change=='missing_alias':del fields['source_display_name']
+                    else:fields['source_display_name']='wrong-source'
+                    frames['subjects'].loc[0,'subject_features_extra']=features_string(fields)
                 else:
                     trace=json.loads(traces.loc[0,'trace'])
                     if change=='clip_trace':trace['record']['conversation']=trace['record']['conversation'][:1]

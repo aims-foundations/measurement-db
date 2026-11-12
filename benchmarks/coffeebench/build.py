@@ -89,7 +89,7 @@ class CoffeeBench(BenchmarkBuild):
         runs["environment"] = runs.features.map(lambda value: json.dumps(value, sort_keys=True))
         runs["item_key"] = runs.groupby(["content", "environment"], sort=True).ngroup()
         subjects = runs[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(harness=self.name, recorded_model_id=model, historical_inference_settings="not_recorded")
                                 for model in subjects.subject_key]
         items = runs.drop_duplicates("item_key").copy()

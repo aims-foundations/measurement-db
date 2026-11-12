@@ -143,7 +143,7 @@ class MathVistaMini(BenchmarkBuild):
         evidence = extractions.groupby('response_key', sort=False).extraction_evidence.agg(list)
         responses['extractions'] = responses.response_key.map(evidence).map(lambda value: value if isinstance(value, list) else [])
         subjects = responses[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(**parameters['subject_features'], source_model_label=value) for value in subjects.subject_key]
         traces = responses[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(export_hash=row.export_hash, prediction_record=row.prediction_record,

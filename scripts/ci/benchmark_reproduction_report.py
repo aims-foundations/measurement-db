@@ -47,7 +47,10 @@ def save(path: Path, data: dict) -> None:
     temporary.replace(path)
 
 
-def new_batch(slugs: list[str], revision: str = "") -> dict:
+def new_batch(slugs: list[str], revision: str = "", *, source_mode=None) -> dict:
+    source_mode = source_mode or os.environ.get("REPRODUCTION_SOURCE_MODE", "upstream")
+    if source_mode not in ("archive", "upstream"):
+        raise ValueError(f"Invalid source mode: {source_mode}")
     if not slugs or len(set(slugs)) != len(slugs) or any(
         not re.fullmatch(r"[a-z][a-z0-9_]*", slug) for slug in slugs
     ):
@@ -58,6 +61,7 @@ def new_batch(slugs: list[str], revision: str = "") -> dict:
         "run_attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
         "head_sha": os.environ.get("GITHUB_SHA", ""),
         "hf_revision": revision,
+        "source_mode": source_mode,
         "runner": os.environ.get("RUNNER_NAME", ""),
         "job_name": "Reproduce " + ", ".join(slugs),
         "created_at": utc_now(),
@@ -129,6 +133,9 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
                     raise ValueError(f"{key} does not match this run")
             if data["hf_revision"] != revision:
                 raise ValueError("HF revision does not match this run")
+            mode = data.get("source_mode", "upstream")
+            if mode not in ("archive", "upstream") or mode != os.environ.get("REPRODUCTION_SOURCE_MODE", "upstream"):
+                raise ValueError("Source mode does not match this run")
             data["run_attempt"] = int(data["run_attempt"])
             if data["run_attempt"] > int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")):
                 raise ValueError("report is from a later attempt")
@@ -148,8 +155,12 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
             warnings.append(f"Could not use {path.parent.name}/{path.name}: {safe_message(exc)}")
 
     latest_jobs = {}
+    def execution_key(value):
+        return (int(value.get("run_attempt", 1)), bool(value.get("runner_name")),
+                value.get("status") == "completed", value.get("id", -1))
     for job in jobs:
-        if job["id"] > latest_jobs.get(job["name"], {}).get("id", -1):
+        # Failed-only reruns can leave queued duplicates after the executed job.
+        if execution_key(job) > execution_key(latest_jobs.get(job["name"], {})):
             latest_jobs[job["name"]] = job
     rows = [dict(withheld_result(slug, reason), job_url="", runner="", hf_revision=revision,
                  run_attempt=int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")))
@@ -187,7 +198,8 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
         for result in result_rows:
             row = dict(result)
             row.update(job_url=job.get("html_url", ""), runner=latest["runner"] if latest else job.get("runner_name", ""),
-                       run_attempt=latest["run_attempt"] if latest else job.get("run_attempt"), hf_revision=revision)
+                       run_attempt=latest["run_attempt"] if latest else job.get("run_attempt"), hf_revision=revision,
+                       source_mode=latest.get("source_mode", "upstream") if latest else os.environ.get("REPRODUCTION_SOURCE_MODE", "upstream"))
             rows.append(row)
     counts = Counter(row["status"] for row in rows)
     if changes_result != "success":
@@ -195,6 +207,7 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
     return {"schema_version": 1, "run_id": os.environ.get("GITHUB_RUN_ID", ""),
             "run_attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
             "head_sha": os.environ.get("GITHUB_SHA", ""), "hf_revision": revision,
+            "source_mode": os.environ.get("REPRODUCTION_SOURCE_MODE", "upstream"),
             "generated_at": utc_now(), "counts": {status: counts[status] for status in STATUSES},
             "warnings": warnings, "results": sorted(rows, key=lambda row: row["benchmark"])}
 
@@ -215,6 +228,7 @@ def markdown(data: dict) -> str:
                  f"{counts[status]} {label}" for status, label in STATUSES.items()), ""]
     if data.get("hf_revision"):
         lines.extend([f"HF reference: `{data['hf_revision']}`", ""])
+    lines.extend([f"Build inputs: **{data.get('source_mode', 'upstream')}**", ""])
     if data.get("head_sha"):
         lines.extend([f"Source commit: `{data['head_sha']}`", ""])
     for warning in data.get("warnings", []):
@@ -234,7 +248,7 @@ def markdown(data: dict) -> str:
             build = STATUSES.get(row.get("build_status"), "—")
             comparison = STATUSES.get(row.get("comparison_status"), "—")
             lines.append(f"| `{row['benchmark']}` | {STATUSES[row['status']]} | {build} | {comparison} | {duration} | {detail} | {link} |")
-        lines.extend(["", "PASS requires both a successful upstream build and an exact byte comparison.",
+        lines.extend(["", "PASS requires both a successful build from the selected inputs and an exact byte comparison.",
                       "SKIPPED (WITHHELD) means release metadata prevented execution; no build or comparison ran.",
                       "REFERENCE MISSING means the build passed but published tables are absent; REFERENCE ERROR",
                       "means reference preparation failed (for example, access or network errors). Neither counts as PASS.",
@@ -287,7 +301,7 @@ def main() -> int:
     save(args.output_dir / "results.json", data)
     with (args.output_dir / "results.csv").open("w", newline="", encoding="utf-8") as output:
         fields = ["benchmark", "status", "build_status", "comparison_status", "duration_seconds", "message",
-                  "job_url", "runner", "run_attempt", "hf_revision"]
+                  "job_url", "runner", "run_attempt", "hf_revision", "source_mode"]
         writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(data["results"])

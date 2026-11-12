@@ -60,8 +60,6 @@ build:
       gpt-5-mini: gpt-5-mini
       llama-3.3-70B-instruct-turbo: meta-llama/Llama-3.3-70B-Instruct-Turbo
       mistral-7B-instruct-v0.3: mistralai/Mistral-7B-Instruct-v0.3
-    labels:
-      subject_prefix: 'LLM survey simulation / '
     subject_features:
       harness: UQ LLM survey simulation
       historical_configuration: request_parameters_and_persona_assignments_not_recorded

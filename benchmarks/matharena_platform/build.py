@@ -66,7 +66,7 @@ class MathArenaPlatform(BenchmarkBuild):
         # 4. Distinguish published model configurations and full task/grading definitions.
         subjects = records[['model_name', 'model_config']].drop_duplicates().copy()
         subjects['subject_key'] = range(len(subjects))
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.model_name
+        subjects['raw_label'] = subjects.model_name
         subjects['features'] = [dict(**parameters['subject_features'], source_model_label=row.model_name,
             source_model_config=row.model_config) for row in subjects.itertuples()]
         records = records.merge(subjects[['model_name', 'model_config', 'subject_key']],

@@ -64,7 +64,7 @@ class RelianceScope(BenchmarkBuild):
         # 3. Keep each model and prompting strategy as a separate configuration.
         calls['subject_key'] = calls.model + ':' + calls.prompting
         subjects = calls.drop_duplicates('subject_key').copy()
-        subjects['raw_label'] = subjects.model_identifier + parameters['labels']['subject_separator'] + subjects.prompting
+        subjects['raw_label'] = subjects.model_identifier
         subjects['features'] = [dict(harness=parameters['labels']['harness'], prompting_strategy=row.prompting,
             reported_model_identifier=row.model_identifier, reported_temperature=row.temperature)
             for row in subjects.itertuples()]

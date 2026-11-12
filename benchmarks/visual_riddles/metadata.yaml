@@ -56,7 +56,6 @@ build:
       table: release/test/metadata.csv
       images: release/test
     labels:
-      subject_prefix: 'Visual Riddles / '
       harness: Visual Riddles open-ended human-rated evaluation
     input_modes:
       LVLM: image

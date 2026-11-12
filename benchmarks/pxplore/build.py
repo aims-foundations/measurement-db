@@ -84,7 +84,7 @@ class Pxplore(BenchmarkBuild):
         # 4. Keep all literal run configurations separate without guessing checkpoints.
         subjects = calls[['source_run', 'method', 'input_mode']].drop_duplicates().copy()
         subjects['subject_key'] = subjects.source_run
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.source_run
+        subjects['raw_label'] = subjects.source_run
         subjects['features'] = [dict(source_run=row.source_run, method=row.method, input_mode=row.input_mode,
             harness=parameters['labels']['harness']) for row in subjects.itertuples()]
         responses['subject_key'] = responses.source_run

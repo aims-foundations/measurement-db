@@ -45,7 +45,6 @@ build:
       tasks: release/data/data_final.json
       generations: release/llm_generations/*.jsonl
     labels:
-      subject_prefix: 'ComplexBench / '
       condition: released_generation; historical_judgments_unavailable
 sources:
   upstream:

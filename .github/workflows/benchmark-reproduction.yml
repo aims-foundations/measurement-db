@@ -17,6 +17,11 @@ on:
         description: 'Prepare a complete reusable gallery after validation (bootstrap or data refresh)'
         type: boolean
         default: false
+      source_mode:
+        description: 'Archived snapshots for reproduction, or upstream for author-source checks'
+        type: choice
+        options: [archive, upstream]
+        default: archive
 
 permissions:
   contents: read
@@ -90,8 +95,8 @@ jobs:
       - name: Resolve the HF branch to one immutable commit
         id: reference
         if: (steps.select.outputs.has_benchmarks == 'true' || steps.gallery.outputs.prepare == 'true') && steps.hub.outcome == 'success'
-        # Reference availability must never prevent the upstream builds.
-        # An empty revision makes successful builds report REFERENCE ERROR.
+        # Upstream mode can still build if reference resolution fails.
+        # Archive mode requires an immutable input revision before execution.
         continue-on-error: true
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -106,6 +111,8 @@ jobs:
     timeout-minutes: ${{ contains(matrix.benchmarks, 'stanford_orb') && 720 || 360 }}
     env:
       HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
+      REPRODUCTION_SOURCE_MODE: ${{ inputs.source_mode || 'archive' }}
+      REPRODUCTION_LOCAL_ARCHIVE_DIR: ${{ vars.REPRODUCTION_LOCAL_ARCHIVE_DIR }}
       BENCHMARKS_JSON: ${{ toJSON(matrix.benchmarks) }}
       # Keep library thread pools bounded when many builders share this host.
       OMP_NUM_THREADS: '2'
@@ -116,8 +123,8 @@ jobs:
       ARROW_IO_THREADS: '4'
     strategy:
       fail-fast: false
-      # Sixty-four native runner instances each execute one job at a time.
-      max-parallel: 64
+      # Bound concurrent environments and builds to the host's available storage.
+      max-parallel: ${{ fromJSON(vars.REPRODUCTION_MAX_PARALLEL || '64') }}
       matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     defaults:
       run:
@@ -137,14 +144,27 @@ jobs:
             measurement_db/requirements.txt
             measurement_db/scripts/ci/reproduction-constraints.txt
       - name: Create a fresh job environment
+        env:
+          ENVIRONMENT_BASE: ${{ vars.REPRODUCTION_ENVIRONMENT_DIR }}
+          MATRIX_INDEX: ${{ strategy.job-index }}
         run: |
-          python -m venv --clear "$RUNNER_TEMP/measurement-db-venv"
-          echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
+          environment="$RUNNER_TEMP/measurement-db-venv"
+          if [ -n "$ENVIRONMENT_BASE" ]; then
+            environment="$ENVIRONMENT_BASE/reproduction-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$MATRIX_INDEX"
+          fi
+          echo "REPRODUCTION_ENVIRONMENT=$environment" >> "$GITHUB_ENV"
+          python -m venv --clear "$environment"
+          echo "$environment/bin" >> "$GITHUB_PATH"
       - name: Install the build dependencies and matching Parquet writer
         run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
-      - name: Use configured scratch storage for upstream builds
+      - name: Select LexEval's declared ROUGE implementation
+        if: contains(matrix.benchmarks, 'lexeval')
+        # rouge-chinese also installs files in the rouge module. Install the
+        # scorer declared by LexEval last so dependency order cannot change grades.
+        run: python -m pip install --no-deps --force-reinstall 'rouge==1.0.1'
+      - name: Use configured scratch storage for benchmark builds
         env:
-          SCRATCH_BASE: ${{ vars.GALLERY_SCRATCH_DIR }}
+          SCRATCH_BASE: ${{ vars.REPRODUCTION_SCRATCH_DIR || vars.GALLERY_SCRATCH_DIR }}
           MATRIX_INDEX: ${{ strategy.job-index }}
         run: |
           if [ -n "$SCRATCH_BASE" ]; then
@@ -152,13 +172,16 @@ jobs:
             mkdir -p "$scratch"
             echo "TMPDIR=$scratch" >> "$GITHUB_ENV"
             echo "REPRODUCTION_SCRATCH=$scratch" >> "$GITHUB_ENV"
+            # Source downloads belong to the same bounded job storage as builds.
+            echo "HF_HUB_CACHE=$scratch/huggingface/hub" >> "$GITHUB_ENV"
+            echo "HF_XET_CACHE=$scratch/huggingface/xet" >> "$GITHUB_ENV"
           fi
-      - name: Rebuild from declared upstream sources and compare every table byte for byte
+      - name: Rebuild selected inputs and compare every table byte for byte
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           PYTHONUNBUFFERED: '1'
-        run: python scripts/ci/benchmark_reproduction.py verify --revision "$HF_REVISION" --report "$RUNNER_TEMP/benchmark-report/results.json"
+        run: python scripts/ci/benchmark_reproduction.py verify --source-mode "$REPRODUCTION_SOURCE_MODE" --revision "$HF_REVISION" --report "$RUNNER_TEMP/benchmark-report/results.json"
       - name: Summarize this group's benchmark results
         if: always()
         env:
@@ -171,15 +194,20 @@ jobs:
           name: benchmark-results-${{ github.run_attempt }}-${{ strategy.job-index }}
           path: ${{ runner.temp }}/benchmark-report/results.json
           if-no-files-found: warn
-      - name: Remove this job's build scratch
+      - name: Remove this job's build scratch and Python environment
         if: always()
         run: |
           if [ -n "${REPRODUCTION_SCRATCH:-}" ]; then
             rm -rf -- "$REPRODUCTION_SCRATCH"
           fi
+          if [ -n "${REPRODUCTION_ENVIRONMENT:-}" ]; then
+            rm -rf -- "$REPRODUCTION_ENVIRONMENT"
+          fi
 
   report:
     name: Benchmark report
+    env:
+      REPRODUCTION_SOURCE_MODE: ${{ inputs.source_mode || 'archive' }}
     needs: [changes, reproduce]
     if: always() && needs.changes.result != 'skipped'
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]

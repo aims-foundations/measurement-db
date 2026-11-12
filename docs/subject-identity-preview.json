@@ -1,0 +1,2170 @@
+{
+  "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+  "hf_repository": "aims-foundations/measurement-db",
+  "hf_branch": "preview/subject-identities-20261027",
+  "hf_revision": "9a8a4e098dd39b02f02104f08362f99c6b8cb250",
+  "previous_hf_revision": "54074453da7b9911be0f48e4c560be547bc84d21",
+  "verified_remote_files": 522,
+  "published_benchmarks": 270,
+  "rebuilt_observations": 19352542,
+  "normalized_model_names": 901,
+  "excluded_withheld_benchmarks": [
+    "medarabiq",
+    "osworld",
+    "swe_together"
+  ],
+  "validation": "Author-source rebuilds match the reviewed logical hashes of every table. The reviewed mapping preserves grades, items, traces, and configurations.",
+  "builds": {
+    "auditing_sabotage_bench": {
+      "benchmark": "auditing_sabotage_bench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793115051.6828003,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 18,
+          "logical_sha256": "7f03c2ea7ebf76957b42ff08736274a6b87df6cab2f9caee87a45b3ded574dee"
+        },
+        "traces": {
+          "rows": 1869,
+          "logical_sha256": "2e8a0cc650c38124ca57cb4cdb3efa4ee72e5437e2725037d385c4db60d48a35"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "81d70ceb191dfa264228e14bdbf10557f295249a17ae481a98103657e8f01043"
+        },
+        "responses": {
+          "rows": 1869,
+          "logical_sha256": "ef590f3309cbcaa98baa01a755013b0dd0239c74185a61f7726e7569333c93b8"
+        },
+        "assets": {
+          "rows": 6147,
+          "logical_sha256": "db26fd5e3a25faf44fa0dd5e1b53e9e92dadf4d90c8645b0deb8205d490bb474"
+        },
+        "items": {
+          "rows": 68,
+          "logical_sha256": "a589bd957a75f7a704d7cd310b529f3fc2a0d4cf2e692a43bbdf70fecbcda795"
+        }
+      },
+      "seconds": 311.4
+    },
+    "bedd_basalt": {
+      "benchmark": "bedd_basalt",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793115389.890891,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 15,
+          "logical_sha256": "ca84d5146ba144b6991c2c0478b0e20574e04b90f61bfa1167df862503e1d98d"
+        },
+        "traces": {
+          "rows": 50951,
+          "logical_sha256": "c19e9a3b48ef514ee20fb4c41b67d82bbe2246107d7fcf0a8e654b7adaa801b0"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "f2dfb4485a8b6c6cc8fac20fe65322fb387ca35c7331eccceb568a6a9d0317cc"
+        },
+        "responses": {
+          "rows": 50951,
+          "logical_sha256": "d4c472ad4fe28e6c6753b8eafa3f4f508e3febf426d4741d1491e44dc5c4d3b2"
+        },
+        "items": {
+          "rows": 46266,
+          "logical_sha256": "5ed48affc1b3643d6f078ef1bda9e0b29e294aed53f71c04babbfd305ab68ced"
+        }
+      },
+      "seconds": 114.4
+    },
+    "care_enzymes": {
+      "benchmark": "care_enzymes",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114532.3119378,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 22,
+          "logical_sha256": "39570728b4d03f42743060537fbc8d102b6828baab615a02e69d3eb036406665"
+        },
+        "traces": {
+          "rows": 16817,
+          "logical_sha256": "ce11fcd83758d93e78c3b9a23e9a41401ded0f37eecf194e1e15b634c032231e"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "38ecd3bf110a29e4dda698755c614488f9c3a86808683640b17ec9d0a69fba2a"
+        },
+        "responses": {
+          "rows": 16817,
+          "logical_sha256": "d77b3242edb225bde275aea9ac080ed63a7c437e2b7b2b5895bdba1411735d4e"
+        },
+        "items": {
+          "rows": 4136,
+          "logical_sha256": "7a2bc1eb56268647d402c7b63c77f62ae708cbf094e070830224a73c939c53f9"
+        }
+      },
+      "seconds": 105.8
+    },
+    "classroom_ai": {
+      "benchmark": "classroom_ai",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114656.0602186,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 14,
+          "logical_sha256": "82e3ed0a8ebc8a6abb379ce8cfbc19593521eff150ae4ff0ae2392b67550acdc"
+        },
+        "traces": {
+          "rows": 10360,
+          "logical_sha256": "4af0a7ebdf8983e30f295dfcbcb8762850e99b7960f03c43199ced618d11064c"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "609f6644dbd1669bb443158586fa4f76e65ef8c9daa4993cece1525cd552e5d7"
+        },
+        "responses": {
+          "rows": 10360,
+          "logical_sha256": "8436e74d6b4373b55b68128e2f30b65e1ef585d90068b5a1b0f378f82af48f17"
+        },
+        "items": {
+          "rows": 734,
+          "logical_sha256": "1f0fe2a8eafbce5648bc3c47881c201ec63815113ba14b1fc55980531b8e2cf4"
+        }
+      },
+      "seconds": 12.8
+    },
+    "cmmlu": {
+      "benchmark": "cmmlu",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113640.6342015,
+      "tables": {
+        "subjects": {
+          "rows": 22,
+          "logical_sha256": "345def7b9faf128ab8ea046d5316d232b2122e1902e75e9140a074b45f3ed7ba"
+        },
+        "traces": {
+          "rows": 254804,
+          "logical_sha256": "7a7044fb81203bbc5797013c551eb606862513cb4bf66a31471f18846c61393f"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "04a896357789de9d765ea76d5a4a7c827b00832f2b58263b9164b08a2baf58fd"
+        },
+        "responses": {
+          "rows": 254804,
+          "logical_sha256": "1db7801c870818f9f07ab3f12a225c1ae029a38f08e8ecca730a4e2212f9059f"
+        },
+        "items": {
+          "rows": 23160,
+          "logical_sha256": "486f6cf47c6e5b48e7444e28cd411289b07b4abe36f8ae767c881c8293c26b72"
+        }
+      },
+      "seconds": 3007.1
+    },
+    "coffeebench": {
+      "benchmark": "coffeebench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793112458.7287056,
+      "python_version": "3.11",
+      "reused_prior_author_build": true,
+      "tables": {
+        "subjects": {
+          "rows": 7,
+          "logical_sha256": "6e04c65cc87c489a227b0c11a41c824b0f495eacee0018777f01fdf58ead2229"
+        },
+        "traces": {
+          "rows": 21,
+          "logical_sha256": "bfa7d561c2ed3e29e21b222141992bc441a6e5dc6f2de89fa9e63a8dda578aeb"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "69e3f689fecb56d2510fe9674535db64d4cc9f12429b8ecfe7f194fb165ca4c9"
+        },
+        "responses": {
+          "rows": 21,
+          "logical_sha256": "4ba82f636a988610a7fab2ba326542f99ce450cbe24c0ec8be1b95281ed22186"
+        },
+        "items": {
+          "rows": 1,
+          "logical_sha256": "444922129c684aeaf8dbef181cf380ad396b6da320478e728a4159f9a69c214f"
+        }
+      },
+      "seconds": 34.8
+    },
+    "complexbench": {
+      "benchmark": "complexbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114430.4085002,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 15,
+          "logical_sha256": "48cf5f8c68aaaf3c841b2e97f643136e7f10d6ff78c0671f35064ea6a41f7518"
+        },
+        "traces": {
+          "rows": 17250,
+          "logical_sha256": "42da93f78450dc5912f2ee4f5830b42bd234b6645e3dc2aba264731e8b9fe669"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "1adde531407f0f6dd0455adc63685a28800849b8040d2105ac2e2e8aa204bd98"
+        },
+        "responses": {
+          "rows": 17250,
+          "logical_sha256": "8fea321bbdf7adc6f4df4d5eda26082eac5c2e3f28c1e09164eb14e817a92bd7"
+        },
+        "items": {
+          "rows": 1150,
+          "logical_sha256": "c42b2e1ad6a453932edb6a34ce6b683e3b7487e23bc9deae4b62cb4f590979c3"
+        }
+      },
+      "seconds": 16.2
+    },
+    "csedb": {
+      "benchmark": "csedb",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114212.8475697,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 7,
+          "logical_sha256": "f3870722349c96f031ab384e58282beb333cc722f7df534d7a3435ab8215c6c0"
+        },
+        "traces": {
+          "rows": 41922,
+          "logical_sha256": "3d7ac87a6a74ced564e11ff091394ef044388443c1fb9a1af8636ae2f2f0713d"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "610e1201d9a481e38bd62c578eb6475d734904895be931325715c90bdadda13d"
+        },
+        "responses": {
+          "rows": 41922,
+          "logical_sha256": "ccde6c365676679c52c1e1897a04039b688ab5072d6ee01af123a641426fbb6d"
+        },
+        "items": {
+          "rows": 2069,
+          "logical_sha256": "7401029b9e317509fd32934c4f08361f3bcd7486a9c6caa823be4c00ad304913"
+        }
+      },
+      "seconds": 78.3
+    },
+    "ehrflowbench": {
+      "benchmark": "ehrflowbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793115203.4983013,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 7,
+          "logical_sha256": "6e00a27209e3ca147f1d0a8a7c4d54ea50646f789c874082e86a8f910eacb647"
+        },
+        "traces": {
+          "rows": 140,
+          "logical_sha256": "15f43a39af3757f49f10b8f600af5d8c7665f64e40ec927bfa22c40597ee9e5e"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "281201c74ecc9acce472f68b2dccd9eb3bae16a1ca47ecfa8b804aaeb2481ee6"
+        },
+        "responses": {
+          "rows": 140,
+          "logical_sha256": "f46340399b6680999ff9f262c52ef1fe3eec90493bddb0f7875e665d9a8654a3"
+        },
+        "assets": {
+          "rows": 5,
+          "logical_sha256": "6be668d4bd522f04885b1328c81fa07d4746884ed21c899e7fdd3a318b7f9270"
+        },
+        "items": {
+          "rows": 20,
+          "logical_sha256": "0be73401afab7b7fe0174373069b791e3754936904f99ca7144d346ae46bc21b"
+        }
+      },
+      "seconds": 113.2
+    },
+    "embodied_agent_interface": {
+      "benchmark": "embodied_agent_interface",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114999.9659111,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 25,
+          "logical_sha256": "77910f3ce441be470df2c0881bb666830116d013cf33b0077466208856739e59"
+        },
+        "traces": {
+          "rows": 2500,
+          "logical_sha256": "69a517a3e80040f6d65a28849a3a4b5104bbfc6aa59535c585e821ea78ca9598"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "f4f074a27dbc83f4f4025018850aa028f2911c86d27ef08aa730be14bd79171a"
+        },
+        "responses": {
+          "rows": 2500,
+          "logical_sha256": "afb1bd6fd3fa581c63e04486525d3997bf3b3fbc44feb2ad453dcedca9019b56"
+        },
+        "items": {
+          "rows": 100,
+          "logical_sha256": "35c82702f5c115ed40612a67d2f163619a6e640430655b9d48286b5e832c1ed9"
+        }
+      },
+      "seconds": 14.2
+    },
+    "erbench": {
+      "benchmark": "erbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.8884592,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 8,
+          "logical_sha256": "4be57b63d8b61a4dbaa49de3632ae1edbc329797317cc08ba812830c0f91da0e"
+        },
+        "traces": {
+          "rows": 213110,
+          "logical_sha256": "3225df167560c017f13a26beb0ccf98dd590208fc4af42604597d8f815a9e6b9"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "bc49ac8010d0fa67caba33757f1eff893f78dffef1f30e24c5852805e6b2feeb"
+        },
+        "responses": {
+          "rows": 213110,
+          "logical_sha256": "cf221d212b6dfc628aa903a14d33fda87ba9e5b5f8c035059290059d7cbbf115"
+        },
+        "items": {
+          "rows": 32163,
+          "logical_sha256": "e9386c17be5271b43028549ec6623bc9866c846174fa073566352d7e71aabb26"
+        }
+      },
+      "seconds": 165.1
+    },
+    "exploitgym": {
+      "benchmark": "exploitgym",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114672.5404758,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 5,
+          "logical_sha256": "e33e3b207ac6cd984fd9a22d643d7af787c741cc8ce089301b04b73121aedd4e"
+        },
+        "traces": {
+          "rows": 6357,
+          "logical_sha256": "b8261f9d446f57dbc07df4d9bf70742be18f8752c98a96902d69f0583322c60d"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "0c65125dfdd9f51b34b68f377577b3e37d21c708626cca0cfb733bb3408a4189"
+        },
+        "responses": {
+          "rows": 6357,
+          "logical_sha256": "ed99db918d15f76dd09a51a137a7e8b3a27e36a05e6ba4324580b69d8377a6b2"
+        },
+        "assets": {
+          "rows": 4135,
+          "logical_sha256": "496175c71a4f2c8decc128b057958af8f716ea8f10c4c66a7871588acdb2e588"
+        },
+        "items": {
+          "rows": 1737,
+          "logical_sha256": "7dc36641d025631019a572fe8cf20bd1f2027a848c54818540031bfe3a9a9886"
+        }
+      },
+      "seconds": 17.1
+    },
+    "frontieror": {
+      "benchmark": "frontieror",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793115014.1904092,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 15,
+          "logical_sha256": "6511cc7f015f6936c91b740c72308acb1554a4543bdb66acdb7d290ad5968411"
+        },
+        "traces": {
+          "rows": 2230,
+          "logical_sha256": "dd96cb10443516d48a84bd519c093b88622b6e527e195d58802df27f7a25871f"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "811ebed6ab15dae3c1b24c2e3213789c892e38622a53ce6c36a45c58f9d37e74"
+        },
+        "responses": {
+          "rows": 2230,
+          "logical_sha256": "d981cf6b3094dc0d460258e2dd878e815a4ab2be40c9eb5275b00ce43d907a6c"
+        },
+        "items": {
+          "rows": 180,
+          "logical_sha256": "4b5e42037df691a6fcbe7dfe4413b82f1361263d73c27143f7f97c831c72f6c1"
+        }
+      },
+      "seconds": 294.9
+    },
+    "kmmlu": {
+      "benchmark": "kmmlu",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793112358.9833736,
+      "tables": {
+        "subjects": {
+          "rows": 30,
+          "logical_sha256": "b2dbc67ea61c0e410a914bcca3e1e55ef8dd0012e8c15fdfe8674ee17b1295c9"
+        },
+        "traces": {
+          "rows": 1012300,
+          "logical_sha256": "23c87a9a2e0693b5b41397997c517e936fe98eb1879f02955d69ac5d03d51031"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "6099c43cd4c8e989e63a57a88058c0eff4e2d90e58c08a6740f2e83c94c7665c"
+        },
+        "responses": {
+          "rows": 1012300,
+          "logical_sha256": "fdfec1ff2515c01372e41d93c48f90ccb8b4ec463ee7a1a8438d98c386952cf6"
+        },
+        "items": {
+          "rows": 35015,
+          "logical_sha256": "707ef323b8105c08d4abffedfab18098b121cad2b175490792fb086c1f35d36b"
+        }
+      },
+      "seconds": 594.8
+    },
+    "kormedmcqa": {
+      "benchmark": "kormedmcqa",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114418.7663033,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 7,
+          "logical_sha256": "e244f0349c024509920cb4c4b860e7f5b6b7ebdc0464b9ccca1c17acc4b005a2"
+        },
+        "traces": {
+          "rows": 21391,
+          "logical_sha256": "27b6c3fa0f62f2d6dae9b22e4e1fbb8314745eb706df0edab0212db2415fac03"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "fb22e52352f3f1a53d4baaffee69564fbd85e277be485e5e35fd1236444dd447"
+        },
+        "responses": {
+          "rows": 21391,
+          "logical_sha256": "fa6e9459890f0c8462d59636ea81884d6587cb74c50592b4f9e7150249cb4a6e"
+        },
+        "items": {
+          "rows": 3009,
+          "logical_sha256": "efdbd6d8e0b12c8a0c5ab6408689f59c7d04804a68cf57078ee74fbb30996b1e"
+        }
+      },
+      "seconds": 11.6
+    },
+    "kris_bench": {
+      "benchmark": "kris_bench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.9782248,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 20,
+          "logical_sha256": "ac3b7d00e9fe899e84f32247148c208f4dfa531b2f931d82320f6fe3a6a64d66"
+        },
+        "traces": {
+          "rows": 130192,
+          "logical_sha256": "9d24f79b2f0c6ffb68f48b71b87187ae0ee0e192cd32dd71c6839c6b2e81ceb8"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "7ca8f6e8d1c3e65ff6945c03bb378e6bc80baacd09bf4a54cb9a39e3b9a4e153"
+        },
+        "responses": {
+          "rows": 130192,
+          "logical_sha256": "c138eb16f22edf67f4bc5d33d4d63f4b20bf54b4071b3195f2e27ec57135b47a"
+        },
+        "assets": {
+          "rows": 1665,
+          "logical_sha256": "88440534bd2ba691e2eefa9f4cf1d5b2723fe089ba36cf329e019c1f7e5b7132"
+        },
+        "items": {
+          "rows": 8941,
+          "logical_sha256": "04443b4f98646a82dcdca74cf43e0c3b2b1862f4c528ae315c382a26f4b57edb"
+        }
+      },
+      "seconds": 567.4
+    },
+    "lambda_fp_course": {
+      "benchmark": "lambda_fp_course",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114668.89941,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 9,
+          "logical_sha256": "b8869c644e2d5c21bef9a3abb604300941250333698c0429d5ae184979f46b29"
+        },
+        "traces": {
+          "rows": 6798,
+          "logical_sha256": "aef9a555fd8a9896d717701e3592424f19424622861dffb03428cf68cb50ab41"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "71577341fcacff220882fcc95f00d35c7cebe0d36d9c0c2265cf26df4c251ba9"
+        },
+        "responses": {
+          "rows": 6798,
+          "logical_sha256": "c5077212b89019c762d623154e4db090c6ca1eedd3ca41ce4b6ac99af3357640"
+        },
+        "items": {
+          "rows": 152,
+          "logical_sha256": "0bd760142134dc4531cc791c365148c427b045b6470661bea65466429b574852"
+        }
+      },
+      "seconds": 3.6
+    },
+    "lawbench": {
+      "benchmark": "lawbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793112500.6762047,
+      "python_version": "3.12.12",
+      "tables": {
+        "subjects": {
+          "rows": 51,
+          "logical_sha256": "07fe42123be1b7fcd2dcdb6c7151f7e9a8842623630b05cf91bdc1a9e8bee740"
+        },
+        "traces": {
+          "rows": 918000,
+          "logical_sha256": "0c77484a50c502f9118107f830e31f6dc8626eb7ca9ad435092f4f987aa670ef"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "93c96215aac2eac4b617a991158ab86f71483b196c2e9c3c3fedf1d78bc6619f"
+        },
+        "responses": {
+          "rows": 918000,
+          "logical_sha256": "a27da5ca55cb2de5913b94320429cc3f62e8e81575c5e352d659db356a772f36"
+        },
+        "items": {
+          "rows": 233168,
+          "logical_sha256": "19ec19991e61b3f484f97f4af8fffc0b23643f6637b9e87916c4cd5da7b64989"
+        }
+      },
+      "seconds": 1742.8
+    },
+    "lexeval": {
+      "benchmark": "lexeval",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114350.4689126,
+      "python_version": "3.14.6",
+      "tables": {
+        "subjects": {
+          "rows": 38,
+          "logical_sha256": "6956e9e2391fae3a5fe203dbc0a3fe0ff53bc9beb00e72f5a4fb9daf633183aa"
+        },
+        "traces": {
+          "rows": 1076280,
+          "logical_sha256": "7a8ecd6df781154b2f8d1f60e6f2a0244f193894f9207527cca8020347aca26f"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "332f7be647d8f646095bd6450e0c54161c3501d71a05b021024a771b0a279597"
+        },
+        "responses": {
+          "rows": 1076280,
+          "logical_sha256": "bb33c603e2c7b15d39866bbc0229e90a7bc2dbd4ab824eb3f4f81046269871d5"
+        },
+        "items": {
+          "rows": 39908,
+          "logical_sha256": "499912c71f040edca9c4afff1640de0eb2312561fd45355218908938618c10c4"
+        }
+      },
+      "seconds": 1393.1
+    },
+    "lingoly": {
+      "benchmark": "lingoly",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114351.2792356,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 11,
+          "logical_sha256": "edb55040e50622402f6881d9773276c2339813ed8b51c97322bc52d397f7e545"
+        },
+        "traces": {
+          "rows": 24926,
+          "logical_sha256": "d754b3805ea845e154e935a8e98b9bee7a5d8a3de522115c78cbf53ebdbda189"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "e4c070d9931a3fb0ce7710985863710182c7f4c662afe0a46af363ab467020a1"
+        },
+        "responses": {
+          "rows": 24926,
+          "logical_sha256": "648388d2ea7fa7a178ea090b8da4fd24207020be30da7f10886ec3cfcde7881b"
+        },
+        "items": {
+          "rows": 12463,
+          "logical_sha256": "0b66ae9759859bc0bc3ff6fa8d2c5c630595ddb83de288261c3be26110308a6a"
+        }
+      },
+      "seconds": 35.9
+    },
+    "liveaopsbench": {
+      "benchmark": "liveaopsbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114057.0297623,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 13,
+          "logical_sha256": "8eb9db9afe85a1affa23cb9f079df53a72cf2f881e000ed1d35e2d35b612cee0"
+        },
+        "traces": {
+          "rows": 69264,
+          "logical_sha256": "14dc7c13d469c8b9aa626b82eacc5ad6295c0ed2668730a281bf94a6ef968309"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "2ae133a15f2d8e565f7577b4c70715df1c9cf032f91744c72ce865f81b06976c"
+        },
+        "responses": {
+          "rows": 69264,
+          "logical_sha256": "634baa58dde42649bee08387b7a6d0fd3c872d3e76d9605fcd6c138065499d23"
+        },
+        "items": {
+          "rows": 5323,
+          "logical_sha256": "bf6db91227baed8c0d3c5655f5ff03cdf0fd50c24e7b1905a63c104d76928507"
+        }
+      },
+      "seconds": 31.8
+    },
+    "livebench": {
+      "benchmark": "livebench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.9707859,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 200,
+          "logical_sha256": "4ee1ca3748f7c2485649d5287b506a59865fe3cfba7b6d035c2a54da35be3fb9"
+        },
+        "traces": {
+          "rows": 165334,
+          "logical_sha256": "d9f3dd47a94b5b128180fd92c1c804dc30ea08d0a3f373e0390cf0b52ae51c44"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "3e3329ddc27a1c29ad618b1d4242f0081e56294a3f5fde51d2311a7906777506"
+        },
+        "responses": {
+          "rows": 165334,
+          "logical_sha256": "35450ef3cb2aecd1b910430a89ea3538bd579f18a9f75715d0d34faa0aac05f6"
+        },
+        "items": {
+          "rows": 1286,
+          "logical_sha256": "bf6c1fe026182f1fe897388e87cd99b774a8910ec73a2e57a62ac584f01d3c55"
+        }
+      },
+      "seconds": 164.7
+    },
+    "llm4ir": {
+      "benchmark": "llm4ir",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793112458.722682,
+      "python_version": "3.11",
+      "reused_prior_author_build": true,
+      "tables": {
+        "subjects": {
+          "rows": 19,
+          "logical_sha256": "ac371ee7ea81dd3b6b25a0ceec17846b839654659aecc9d9e816251472e18317"
+        },
+        "traces": {
+          "rows": 5348,
+          "logical_sha256": "087249cfa6d15d032be47803ac5fcc8c1ca58f6842c2052807a330ae61502bfc"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "90cb6035ba8ef5be49b5011e9fc1395bf8e9fa6ee38faafb408278827094d5ad"
+        },
+        "responses": {
+          "rows": 5348,
+          "logical_sha256": "fb8cc46501af18cd08164484a0fa79513ed87b5f22f10f7165c12ff2aac612ed"
+        },
+        "items": {
+          "rows": 1804,
+          "logical_sha256": "f8c201458df9075bcb406a0fe3ba466e127983148ff2879bff4ee1b05989a4b3"
+        }
+      },
+      "seconds": 16.9
+    },
+    "llm_bp_tag": {
+      "benchmark": "llm_bp_tag",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.9453585,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 1,
+          "logical_sha256": "75e27795d2055d95637b0a243836f3f406be800874ff421fd61905f31fc97ae3"
+        },
+        "traces": {
+          "rows": 158596,
+          "logical_sha256": "957fe6d0f48de2bf6d9f9d92f1ace4ccc3a52d3d627f29ccd76f1a98b7a6db16"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "67b1bbc3862880dd1274841fbee11a1577092e48272743f871d9411ce1d1fe72"
+        },
+        "responses": {
+          "rows": 158596,
+          "logical_sha256": "0faddb14eb45bfbb5560a8ed825d6091dd0c76a94232e781423c51660e0deed8"
+        },
+        "items": {
+          "rows": 152139,
+          "logical_sha256": "8af7c1cecd6565ff5e8036c1ec38e76606619dd89a143d3db9e1cb80a144f85b"
+        }
+      },
+      "seconds": 218.9
+    },
+    "llm_survey_simulation": {
+      "benchmark": "llm_survey_simulation",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793112953.8554766,
+      "tables": {
+        "subjects": {
+          "rows": 8,
+          "logical_sha256": "b11f395074e0d373a7f9b48bb010732569056a52e6c9e41a1e43d4e2fd8ed8a6"
+        },
+        "traces": {
+          "rows": 669350,
+          "logical_sha256": "321ca0387db3f5440d878519a2043c07326640783b5fd768ce25abc7a363b22b"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "566c67db5009a3f3a1170239dce5d7fe5dbb8997da4688f7f27ae01a88ed5aa3"
+        },
+        "responses": {
+          "rows": 669350,
+          "logical_sha256": "f3ae29c4c0c0a209ae4503e23b48608f2173e72298a78d96a44fab7f44380083"
+        },
+        "items": {
+          "rows": 797,
+          "logical_sha256": "d2443232c307abede6e5f7af4653e9656b11938174335f568676a9990f85ccae"
+        }
+      },
+      "seconds": 134.9
+    },
+    "llm_uncertainty_bench": {
+      "benchmark": "llm_uncertainty_bench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793111897.707904,
+      "tables": {
+        "subjects": {
+          "rows": 102,
+          "logical_sha256": "12c6334f3e7abb701b883c120bd79986fb4d0eb898eb59e7a89f7067d4869bcd"
+        },
+        "traces": {
+          "rows": 5100000,
+          "logical_sha256": "1157f89cfe982333b4f9a40cd881a4d500921a63823ba6f124d3b3487a6a8cd4"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "90862dbcba0e2f25805161a819c5f33e93da7024eacd9bbb372c67cd8f8cc100"
+        },
+        "responses": {
+          "rows": 5100000,
+          "logical_sha256": "761ba3fc5ee52345e81123752f48b31cdbd20bb789eefd70e9f3cb85758290ff"
+        },
+        "items": {
+          "rows": 149793,
+          "logical_sha256": "233211a2f02cb940d683ddf98e7c71d5381c41d29d942824dd5d7bee4b2c2dc5"
+        }
+      },
+      "seconds": 4952.9
+    },
+    "llms_lean_formalization": {
+      "benchmark": "llms_lean_formalization",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114088.869461,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 120,
+          "logical_sha256": "43050980bd4464b3de1676883bebbe59cf11d3b1d5a17a323fc5adb1019018a9"
+        },
+        "traces": {
+          "rows": 64960,
+          "logical_sha256": "b9ed0024439305226650cb39f47a696d47c011bef895a434ed7a738ef78fcfd0"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "bae5cac244cbd6a1a79b961863f392779fdcba213244e550fc7b780f47022f60"
+        },
+        "responses": {
+          "rows": 64960,
+          "logical_sha256": "ae19abfde4058a4f3edbb3f0b9182b7dd7cf380efb74ae2be9e45fd26d327b4c"
+        },
+        "items": {
+          "rows": 588,
+          "logical_sha256": "79f3242c265a1cfe1067a77d652462c4e018d9ce52e81365981e7d507f732a6f"
+        }
+      },
+      "seconds": 42.6
+    },
+    "lohi_drug_discovery": {
+      "benchmark": "lohi_drug_discovery",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793111897.726488,
+      "tables": {
+        "subjects": {
+          "rows": 213,
+          "logical_sha256": "bfed03020cf42076852069db157eb409288ef8b0f95be886173e9751544e272c"
+        },
+        "traces": {
+          "rows": 1246925,
+          "logical_sha256": "f1c935127f3da0f2bb10c0585919e51c2de8a7f05d120a1e16d55bbba7d5f291"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "dc22f736540d9696d64e19c0d66c09be16d66515c76d20fa0e64bc756e253e66"
+        },
+        "responses": {
+          "rows": 1246925,
+          "logical_sha256": "683d9a3c389faa837bdb13d957c9072cc18c96bb3ef95c54fe23ca34d654cff3"
+        },
+        "items": {
+          "rows": 42080,
+          "logical_sha256": "d4614355383855e8afedd979c60ce21dd96918a445cd01f714da09d51c0fa4a8"
+        }
+      },
+      "seconds": 461.2
+    },
+    "matharena_platform": {
+      "benchmark": "matharena_platform",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114291.1779633,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 68,
+          "logical_sha256": "b38e66eab95bffe9e86735a4e53258dbbdfc8099b84b20587eb28772c4d4b609"
+        },
+        "traces": {
+          "rows": 32503,
+          "logical_sha256": "be7a3a1967d04dfa7231d46c9b459df828e500937a1fcc9529765e970b85e066"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "cc32728160caf5d52d494f06b7745fff9d247e6e1155cc0ec67bee2361b93251"
+        },
+        "responses": {
+          "rows": 32503,
+          "logical_sha256": "702f7bfbf87a184d323b42839005ef51ee7c0fd2d670cdbc2cd2f26503615787"
+        },
+        "items": {
+          "rows": 1414,
+          "logical_sha256": "45eaff735a93df0100c473a279ea8a337bd5aea2be83567b7437e91eb9829be2"
+        }
+      },
+      "seconds": 222.5
+    },
+    "mathvista_mini": {
+      "benchmark": "mathvista_mini",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113440.281608,
+      "tables": {
+        "subjects": {
+          "rows": 263,
+          "logical_sha256": "9e64f4ad90d93fe1d51609504434120d42559dd6e660b4bbe7305b4123e8e604"
+        },
+        "traces": {
+          "rows": 285000,
+          "logical_sha256": "8935e6711f8ff9879353aae0b0d28e0297689f5d870296c1844c068f638e5dbe"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "cac355822b19c99369cd04a6ff7d6eaab1a5974a0b37c2e92bb2b70c2f86f656"
+        },
+        "responses": {
+          "rows": 285000,
+          "logical_sha256": "804084d2292e9d7c4a2f6aa302d6e2042c2be5ee87233cd5b8e561c4eae7a210"
+        },
+        "assets": {
+          "rows": 972,
+          "logical_sha256": "8fa10dc20e4fea6689b68370302c942693fc88eb1b6f124b107808e24ff7161b"
+        },
+        "items": {
+          "rows": 1000,
+          "logical_sha256": "c9bc474b5b0ea9e9bcbd35d66bb2adf6a128bc2ce1982ed49c4bbd75a5e6b68f"
+        }
+      },
+      "seconds": 3209.9
+    },
+    "medagentboard": {
+      "benchmark": "medagentboard",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793116028.1381686,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 83,
+          "logical_sha256": "f66e2e11798c58bb212e4558715690919e949c172083cb9e8cdb832b3091e81b"
+        },
+        "traces": {
+          "rows": 16847,
+          "logical_sha256": "7c145f3695569c8076041eefc62163b9989849a2a1f38134a6bc985bcbc38c74"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "928b13424cb5c4c6f27ae81de2b33b1a9aad741a3786f10d69f5a38f71c7a6a1"
+        },
+        "responses": {
+          "rows": 16847,
+          "logical_sha256": "108d6fdd88ec42fc17e0b95be7fbe237d2b468f2c8b8953228e7ece8205d6b0f"
+        },
+        "assets": {
+          "rows": 371,
+          "logical_sha256": "aa3d1c381c28a394a7a5153dfc10ccf6629fafe0cae147a04af36ea7b97642fd"
+        },
+        "items": {
+          "rows": 2301,
+          "logical_sha256": "99ae8bcc6d30b6576d4d50b9afc0178e4ef3348701b4237dc3f2e116b1b0b8f2"
+        }
+      },
+      "seconds": 19.3
+    },
+    "medwatermark_fws": {
+      "benchmark": "medwatermark_fws",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114387.1650178,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 72,
+          "logical_sha256": "a0256ffe04496b161246a4daac0f83d7b3d305f8eeaa7620bb994e3176878701"
+        },
+        "traces": {
+          "rows": 24200,
+          "logical_sha256": "2cd09df960e3943ef6d63908f8efc91f2906c3e43bd1da7e25e0aa43e04459ff"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "c904716e42fef383c4934471e1fc436215131b73ab1a5fd74823099c34e03777"
+        },
+        "responses": {
+          "rows": 24200,
+          "logical_sha256": "bddd60e4e2e22d47b403eae41c89a40c03afb69429d730bd8b764e6c01082c8f"
+        },
+        "items": {
+          "rows": 2376,
+          "logical_sha256": "95d6a5efb254932968d2a777482d67b990e03be2098a5b6eb04f1af8b16f7676"
+        }
+      },
+      "seconds": 10.8
+    },
+    "mergebench": {
+      "benchmark": "mergebench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114775.0345435,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 2,
+          "logical_sha256": "06adf77146ab6e07b9e0a48889aefede84c850e27de85b1230615a6b7db32beb"
+        },
+        "traces": {
+          "rows": 3638,
+          "logical_sha256": "954552c16d84d3c87bc741304d63a6c2b7df42edbea13cd173e54ac0dbb1e866"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "565279d75e1655d92b4aa68416d89020919d6a9e71e25a00816e1279fdb706ae"
+        },
+        "responses": {
+          "rows": 3638,
+          "logical_sha256": "b42d60a8dee8e135ec60873e768db483c1e0aee85dac71961565ae589ae3816d"
+        },
+        "items": {
+          "rows": 1813,
+          "logical_sha256": "1ccae2badad0a0b023c4f9161003bb230a60c5c9bd71e68e2e05772405a798ba"
+        }
+      },
+      "seconds": 7.5
+    },
+    "mind2web": {
+      "benchmark": "mind2web",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114446.6439188,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 1,
+          "logical_sha256": "4d3f051d4a8befa0e25ad51c4dfaab05f7b33723c4066097a526811ebcb3209e"
+        },
+        "traces": {
+          "rows": 17153,
+          "logical_sha256": "e26bcdc848f2f6ee26cad8f4ba2bebf735ddaf5c74f150c61a23708c4e823bcb"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "29078067f59fad593e3dcd5b21b41e6075d568e549d70c4140b4447f726d8616"
+        },
+        "responses": {
+          "rows": 17153,
+          "logical_sha256": "1b893e4b2d90709432a3569499d7caa94e2c97fec1de59729c84f492f4c60a65"
+        },
+        "items": {
+          "rows": 17153,
+          "logical_sha256": "2598b80b7d81f7a2ed6f547f2796e05b8a3fe20f674d5a60a702fc993a3160c4"
+        }
+      },
+      "seconds": 395.5
+    },
+    "mj_bench": {
+      "benchmark": "mj_bench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.9003115,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 82,
+          "logical_sha256": "3cd080c79581b850af00ae78d6cdf2802c8a193179070481f406a9acc504026f"
+        },
+        "traces": {
+          "rows": 209509,
+          "logical_sha256": "1f164e7579f2cd752c34cc0a8b668172453e9b8b9ad846bd92217f0776ef5086"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "9d9ebed49c30c559af4e889a99d46f44b423dc467f4c4b14fc1bbe0ed3d59690"
+        },
+        "responses": {
+          "rows": 209509,
+          "logical_sha256": "cfb4d660385f180c0d53bba841e22ad70c93d70a9972809b095b92e87ecbcb6c"
+        },
+        "assets": {
+          "rows": 5241,
+          "logical_sha256": "1d198bc366b076c2c2626327f6ae4bba1074e64f9b73f7a847b878461b0984e1"
+        },
+        "items": {
+          "rows": 26564,
+          "logical_sha256": "6edcc93724e92dac0ab0727327f3c1ae02e460249ba192c8957fca2b3e086a9b"
+        }
+      },
+      "seconds": 460.2
+    },
+    "mlip_arena": {
+      "benchmark": "mlip_arena",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113994.0042186,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 71,
+          "logical_sha256": "24f826ce27e9e1bee8e7a954fab5e46f5c18ebca587c32faa79f85702ce5f0e2"
+        },
+        "traces": {
+          "rows": 122640,
+          "logical_sha256": "d01ccc4d31b2a5f3797ed9906eadc9dfeca42f7e2d4eb1b6cbf2997376bcc3d1"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "e114e6dfbe1e7a9e8599d58cab90d5660c67fae5eaac8c4ebac8d6c37cd01a1b"
+        },
+        "responses": {
+          "rows": 122640,
+          "logical_sha256": "57ed9413c767f584516ccdf8c32a9448ea0e6479f9ce12e0da87622ce9a98db8"
+        },
+        "items": {
+          "rows": 13706,
+          "logical_sha256": "b6f9ae5ef24e2d292fbff516276e6003ceeb82ecbb94e0742bf7eaaf3aa759eb"
+        }
+      },
+      "seconds": 424.8
+    },
+    "mmbench_v11": {
+      "benchmark": "mmbench_v11",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793111897.7237558,
+      "tables": {
+        "subjects": {
+          "rows": 251,
+          "logical_sha256": "d9576abbff978acac113d4538c85fa87fc60bd4115378c118425a11c85837ec8"
+        },
+        "traces": {
+          "rows": 3262900,
+          "logical_sha256": "ee449196764adb31182b817de93fcfaacd2b83c3195caebe8405494b3ab58db6"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "77d5b92a520cc224b1ad2a85e84491356b14bc78b0a29a98299d89eb697115a6"
+        },
+        "responses": {
+          "rows": 3262900,
+          "logical_sha256": "d6e52b5f315eda1ee8b20ff260f03234097d86c61276653433e1f66b90f35af6"
+        },
+        "assets": {
+          "rows": 3092,
+          "logical_sha256": "5fd53453280fbaa9d020982a375dc4875cb13e8f1d3933328922ae861e7cc3ad"
+        },
+        "items": {
+          "rows": 12175,
+          "logical_sha256": "a336ed3661f18bf910e2e76238abc406599b3bfbdef16c52a2417fefa74ed7fb"
+        }
+      },
+      "seconds": 1542.5
+    },
+    "mmoral_bench": {
+      "benchmark": "mmoral_bench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114307.231289,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 85,
+          "logical_sha256": "f91d2e6cd1a60b8508c862a2d26083b48ba70e11906b500811cf92d719730bcc"
+        },
+        "traces": {
+          "rows": 28679,
+          "logical_sha256": "1bbf3e219dbdf11eb6d1663d9729e91da71ed8cac63f9032fbb5b839fc1b7e49"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "9ff91769b707dc2629f52fe57369768799e65026cfd78e3c7ff5aeccfff4a508"
+        },
+        "responses": {
+          "rows": 28679,
+          "logical_sha256": "604b44f07668db63a88f319bd8f61f18759865f81f5ec174f1fdb53f09587e2d"
+        },
+        "assets": {
+          "rows": 200,
+          "logical_sha256": "4d35d460791e3201fd5d0ced0404ef1300b2fceac083991f646d0e1d8d158636"
+        },
+        "items": {
+          "rows": 1069,
+          "logical_sha256": "5f269a5c3002a1f3ecbe51be67436762b2bd9061c73dc4a677f07e174ccf4442"
+        }
+      },
+      "seconds": 44.0
+    },
+    "morphkv": {
+      "benchmark": "morphkv",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114733.9260418,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 11,
+          "logical_sha256": "cd60a512f81cf85892d076d689f9716db1c4e6f3bdfc1e5f515c0e4295b28263"
+        },
+        "traces": {
+          "rows": 4105,
+          "logical_sha256": "a7d7812bf5ed693f4637fc6a93cd9cb566ca8d5894ecd192c2ba789dbb2fdb6e"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "d08aa8e0f707341147d8be0ffa9abe3118cb25276748f1b05ddef222cc80ffba"
+        },
+        "responses": {
+          "rows": 4105,
+          "logical_sha256": "2aba44048955c405bd67a55d49ffab69c16a1fe6f9ea5543fdb9f6a2efa08511"
+        },
+        "items": {
+          "rows": 537,
+          "logical_sha256": "85f4b398315a6f1676b466057b11904495e3733aa1181e3328e2387aded84c5b"
+        }
+      },
+      "seconds": 11.7
+    },
+    "morqa": {
+      "benchmark": "morqa",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114454.1454628,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 4,
+          "logical_sha256": "e29a2fb801a0f05e2374241d6e4ad359c263335bb41ad6e3bb88ad5cfd0cd14b"
+        },
+        "traces": {
+          "rows": 17136,
+          "logical_sha256": "d40dd6341d0550baf80e6220d91f976d86e629afaed65e21a0307e6d3f9c138e"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "b6f7a0e53619aead84fb1b2bb15d1ec2baab22e56b967fd544cc732da0e44190"
+        },
+        "responses": {
+          "rows": 17136,
+          "logical_sha256": "669d7b9eb8bb8df08f8d6de00858435055a3cd5a3f1dc88be3ce310ff69fbcd6"
+        },
+        "items": {
+          "rows": 5443,
+          "logical_sha256": "f684267c3b394961435be7f1386f05609b1ae667215e725386a7d6f7aafd6dfc"
+        }
+      },
+      "seconds": 78.2
+    },
+    "mtbbench": {
+      "benchmark": "mtbbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114668.1771505,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 25,
+          "logical_sha256": "3ec605633daa6a9d1fd70d44e83876591c9406c40b9bd9af9a9d69d026f93b50"
+        },
+        "traces": {
+          "rows": 8412,
+          "logical_sha256": "b031594c95b4d0bac719f4f2121bc9103e1c495cb7856df7933b9f8007d879f5"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "f456e79373929f592f3265e71701222faf4b7b0b4aa7877092922f8dea144a14"
+        },
+        "responses": {
+          "rows": 8412,
+          "logical_sha256": "72a3b16dc0c2bee256518b5dcd76d421ae328bf57852fe4cb01cf7e4c22aaec0"
+        },
+        "assets": {
+          "rows": 1280,
+          "logical_sha256": "3e12e205d9c42a58b5417f6f3a22a923919c67f96592f556daa7baa81756504c"
+        },
+        "items": {
+          "rows": 573,
+          "logical_sha256": "421c2cd1bb22ceb73cd1555ddf910342f8cb52071a6bafa9bf52770db451b37d"
+        }
+      },
+      "seconds": 925.3
+    },
+    "mtbench": {
+      "benchmark": "mtbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114705.8664863,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 34,
+          "logical_sha256": "91e52a43c5df725c4976bdb20a01a2f3c77a0d729ce0b26aec8b0bb7050b7864"
+        },
+        "traces": {
+          "rows": 5440,
+          "logical_sha256": "6d629720a7b4abf5a65efa1f107699351f70ba3c4398c9723e602b287124da9f"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "38365ad92d70ca18886863655835504294b107d3fe1f73b6984d57e8b3eb4b13"
+        },
+        "responses": {
+          "rows": 5440,
+          "logical_sha256": "598183b4805becf2e122d91b0689b175444389d8c3cd6119f037a8a620d34e3f"
+        },
+        "items": {
+          "rows": 2716,
+          "logical_sha256": "1fcb87acd35955bf3b25274a6b8ffa8e9479a36a28333ae45dcdda89d769cdf0"
+        }
+      },
+      "seconds": 19.3
+    },
+    "nanobaselib": {
+      "benchmark": "nanobaselib",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113369.0719438,
+      "tables": {
+        "subjects": {
+          "rows": 10,
+          "logical_sha256": "f9110c685c746b9f14f783acd7c62b60b39b0a75e021272423670be50955f997"
+        },
+        "traces": {
+          "rows": 319289,
+          "logical_sha256": "a8e58b24c7708076c5a5e79f79b0b53674ac9fe65784c064279a73974bc3bac6"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "c79c5e39aede88cda883238ff320e87c53bf9ef70cc28e538a15d75ae3eec5ea"
+        },
+        "responses": {
+          "rows": 319289,
+          "logical_sha256": "b22c890d0b60134d7fdfcdb01e0558ceeedda2906766eaa2af52b547ddbe3b6f"
+        },
+        "items": {
+          "rows": 45970,
+          "logical_sha256": "c6e8a9c9928ba77f5a1f877ae9562dfe30d4deecd2ff21ab360e104d283f71b0"
+        }
+      },
+      "seconds": 271.6
+    },
+    "nyu_ctf_bench": {
+      "benchmark": "nyu_ctf_bench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114843.400619,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 15,
+          "logical_sha256": "391d25b4a4a943ceb32e892b1b723c190706328d4f391dcb8182621de23f8a23"
+        },
+        "traces": {
+          "rows": 2979,
+          "logical_sha256": "3e8cd9e36fcc5d41d3495bac724f523efc8de9c83d9129ef7f3c750d88dd1fbb"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "6a45983090a029cb1e2da55ce9d79d818015fe96ac4f7fab8de41ebba84bcde7"
+        },
+        "responses": {
+          "rows": 2979,
+          "logical_sha256": "5cdf297ca3ae266e1811dddd7842b648c1b0ae9d345f9148ec04d04110be01a2"
+        },
+        "assets": {
+          "rows": 244,
+          "logical_sha256": "c2e300f14baa7806e2e3f017f350a1bdf78165336e2465df558bb3e6f08dad62"
+        },
+        "items": {
+          "rows": 400,
+          "logical_sha256": "fb27a01316bbece9b7242584625cf57d58487eec55790a847ae28193fe6edd18"
+        }
+      },
+      "seconds": 208.3
+    },
+    "perfcodebench": {
+      "benchmark": "perfcodebench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114397.9857326,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 20,
+          "logical_sha256": "4ae8ffb2e8cc9d17592f9fb0ba8f1c86528de43f3e1c60e85b7abff4d2ebcd40"
+        },
+        "traces": {
+          "rows": 23854,
+          "logical_sha256": "3b926c6fb7a36fafec9af3452c0aff3db035d8ea451c643582b1145341bd5734"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "277b206a49ae2ba6bf630760659a17e582becb44bc25fcc2b64659008369fc10"
+        },
+        "responses": {
+          "rows": 23854,
+          "logical_sha256": "15b73957a40a7cf765d370239447d3f6e5cf673bd609db2362519916e5b895ce"
+        },
+        "items": {
+          "rows": 1854,
+          "logical_sha256": "448a079f82db6947ab5446c08671ff847b1d3112bd427fbbd0a6eedf0c3c837c"
+        }
+      },
+      "seconds": 20.8
+    },
+    "perumedqa": {
+      "benchmark": "perumedqa",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.9974527,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 11,
+          "logical_sha256": "7f372a98d00dc8e106a2186bc217b5c0cca4c0f29c5e3cd39b92057c6ba73197"
+        },
+        "traces": {
+          "rows": 92180,
+          "logical_sha256": "801993fb033e8028c34f24f19bc05014196184277e5d52f20f4d756cbd7b7d46"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "e7db5f85b4c89e692f4197692b03f42ad0a9bee91c8fe73ceb2e3f93050e4c2e"
+        },
+        "responses": {
+          "rows": 92180,
+          "logical_sha256": "78e565587e0497a61dbe5cbcbbeb41c519e79abfdeae824a09d62bbe22f42fd7"
+        },
+        "items": {
+          "rows": 8259,
+          "logical_sha256": "84d247f4ec0ca9044fd8be384af5348e7d6dfcb37f816367d8aa151f7f148000"
+        }
+      },
+      "seconds": 63.0
+    },
+    "planbench": {
+      "benchmark": "planbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114240.0138147,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 42,
+          "logical_sha256": "b6201a8c8c3a73affc3e2fd5d5b275ba3e7c2892affb582efbaa5fd104d1329d"
+        },
+        "traces": {
+          "rows": 38061,
+          "logical_sha256": "945bb113553347b1012ff242d0606db9968e4d8783f8505d4c097f2a1e9ed965"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "f8bf38b22d0a57d067c271f695be288e2fac976e0ef67b5506bbff6088829828"
+        },
+        "responses": {
+          "rows": 38061,
+          "logical_sha256": "5f2da22e0d39476109cf219f47ff7ca8133453a0690ab678176375ba9048cba2"
+        },
+        "items": {
+          "rows": 11076,
+          "logical_sha256": "536d1d7ef07ff7034429de5875a0658b4c5daee8aac7cc31210c1a117dad2397"
+        }
+      },
+      "seconds": 67.2
+    },
+    "programbench": {
+      "benchmark": "programbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114725.2032235,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 28,
+          "logical_sha256": "5f228e04910ae4cc691703811d3d2c8cd37e78ba6c16d10a5fc801f63b831c13"
+        },
+        "traces": {
+          "rows": 4965,
+          "logical_sha256": "d1bbfd1fe7cb4ef4e6304bf7b34f7d51b8f29a7cbdbbd9ba4ec238024d7fe2e5"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "df07691b4e5bdc61786299e1f9c41bbef0b2bc974c3f3ad435864905fb32d544"
+        },
+        "responses": {
+          "rows": 4965,
+          "logical_sha256": "ffdfa967cb06784cf005b3c2d1efa3dc375379a500211dcfb76fb8c853d7f44e"
+        },
+        "items": {
+          "rows": 1317,
+          "logical_sha256": "8a393263746e2f1f76708212faba0c5b4f03a5c2012b8a32fa74ce6b382c02b6"
+        }
+      },
+      "seconds": 659.0
+    },
+    "pxplore": {
+      "benchmark": "pxplore",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114745.6529942,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 14,
+          "logical_sha256": "8de479ff4b35583bca406a6f5e75d6a13d8bfb6ae259ac7686e9e7992bce8c26"
+        },
+        "traces": {
+          "rows": 4079,
+          "logical_sha256": "2d03998ca42236bd85b6869bbf81cd014174cd793fe101d08f9b8019e9696f04"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "1776c92d09a9241ec31d07f538335ba18e9bd95acc1e87b874b3d9843faddfd2"
+        },
+        "responses": {
+          "rows": 4079,
+          "logical_sha256": "42c9ea2a02413e6929ff073f34ba0b64c8a9b51603717b03f5dfa228099e0745"
+        },
+        "items": {
+          "rows": 787,
+          "logical_sha256": "969f05c04b77a4a596c71f18e6d72b48a93d5c6db0bb65dd987d5e83cbec2637"
+        }
+      },
+      "seconds": 29.4
+    },
+    "rclicks": {
+      "benchmark": "rclicks",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113667.4666038,
+      "tables": {
+        "subjects": {
+          "rows": 16,
+          "logical_sha256": "4a687d1ef16d38a464ec78575b0f2e0819ae3f6a9d38df2cc641ef8188a0d19e"
+        },
+        "traces": {
+          "rows": 251820,
+          "logical_sha256": "d59573d9fcd23ec60ba4b49beeaeb0b39b3a0e0be254cb78a7c878aa77a67f0d"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "96492faa8d73fa93bf443bb36a218dc6ca5a3c6d4a8100a58c2c88a48a6a9d1d"
+        },
+        "responses": {
+          "rows": 251820,
+          "logical_sha256": "5cc52d824a734209db1fa8128affb1a1bd515eb85f67fa896f79d725d6fe3874"
+        },
+        "assets": {
+          "rows": 7256,
+          "logical_sha256": "019c9250d508f52c4282779e67bcea071ba581fd139e4acf54741310a1c6a6c2"
+        },
+        "items": {
+          "rows": 29035,
+          "logical_sha256": "23d20a396ae916dad23c487600dcd252ebff24286dfdb5737cfe9cb782ba259b"
+        }
+      },
+      "seconds": 2989.5
+    },
+    "real_pocqi": {
+      "benchmark": "real_pocqi",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114638.1266873,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 4,
+          "logical_sha256": "0f5f3af10362a4962c47817a88d57840d8579e0e959bc1450277eabf2e7c69b9"
+        },
+        "traces": {
+          "rows": 11560,
+          "logical_sha256": "ff5aa1a5a68e547ea66276dd0e75616cdc6560d5e85bca6ec456073befdb97b7"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "eaa92ba5236c970239b8fe890676d81aae3c15929d35fe27204042c15210f125"
+        },
+        "responses": {
+          "rows": 11560,
+          "logical_sha256": "66015f3ddddfda18c49f7143824e455f46a9963d4986ec4bb29d2b6a982895cb"
+        },
+        "items": {
+          "rows": 3100,
+          "logical_sha256": "a16abc9a81f617109fef094c02d49b5be618026fe58b1c6f2e117fef95eb7a68"
+        }
+      },
+      "seconds": 17.9
+    },
+    "realtimeqa": {
+      "benchmark": "realtimeqa",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114131.497083,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 94,
+          "logical_sha256": "50e14d3dab143c24aea627664f83ad706bd89e94704d2aa04d8f31c715738d26"
+        },
+        "traces": {
+          "rows": 64822,
+          "logical_sha256": "2635ecb49096d1aec2f7a45aeaa2b5543643d02f6fba739e48768f3e63219f8e"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "9b0b93a0ff037e83ac029e0c7b9059262d9312dbe49c16ecdd31246398f45751"
+        },
+        "responses": {
+          "rows": 64822,
+          "logical_sha256": "6c03e2020d26c8bdba1d6809e95d62b0eee2efd9b3c6c5aee6a99ee9ae5de102"
+        },
+        "items": {
+          "rows": 7954,
+          "logical_sha256": "9ca2eec82d6613d416e31fcf57915606283686b23489a6ba5629f56f2ab7661f"
+        }
+      },
+      "seconds": 868.5
+    },
+    "refgrader": {
+      "benchmark": "refgrader",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114689.6251912,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 31,
+          "logical_sha256": "bd5adc244cf34e4074967e2da36e9a387822b6cef2c624add2e18f87d0553a9f"
+        },
+        "traces": {
+          "rows": 6046,
+          "logical_sha256": "818c4bdc72903576589d9d602c5c721c5dd3e2a460628c1caf7ef5bfc1263214"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "583ace6e4953129533845ada5860caa7d6f245f6a9d0d41cea51f87285f8b5f8"
+        },
+        "responses": {
+          "rows": 6046,
+          "logical_sha256": "bc35b11edf17d2e2037b13b0502ad83b965bedc832847a7a14e21ccc2ce07eff"
+        },
+        "items": {
+          "rows": 3597,
+          "logical_sha256": "cb98057e3ac361938937e6fa56fbdc53c0dede10ab7fd68d581e7e5d3f0bcacd"
+        }
+      },
+      "seconds": 44.2
+    },
+    "reliancescope": {
+      "benchmark": "reliancescope",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793112458.698632,
+      "python_version": "3.11",
+      "reused_prior_author_build": true,
+      "tables": {
+        "subjects": {
+          "rows": 24,
+          "logical_sha256": "c340d7358814fc7c54608f17c8af884e7b30a81f1a04c2c87973837a07131b46"
+        },
+        "traces": {
+          "rows": 7200,
+          "logical_sha256": "64111741787809abf0193c87ddfce31673b6fac5e66eb16e9bb177f7e1bc30bb"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "46f9915ad3b398eac771203ed9466006d6404e174a063e4623ec26e5928699fc"
+        },
+        "responses": {
+          "rows": 7200,
+          "logical_sha256": "0510d1dcf32630b9c894c34b1a01bcaf1175a2fd08d413ad898b2088f2948273"
+        },
+        "items": {
+          "rows": 1200,
+          "logical_sha256": "5275900c70ae4c2a67851d7ac736fbf835c0208af4116a3e90cf9ee06324f10d"
+        }
+      },
+      "seconds": 13.1
+    },
+    "researchclawbench": {
+      "benchmark": "researchclawbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793116550.147446,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 37,
+          "logical_sha256": "d963d45733a4e8e757d8637a445b316c3acda09d35b2dbfb354c59dfebdf0b40"
+        },
+        "traces": {
+          "rows": 1432,
+          "logical_sha256": "1c37b4391bf18fe0ca7c42eab3ff196b7ba28c53ecd6705bb4b2734be7840ad6"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "95179e8d2557821717f202281f671edb9b948799b6f14201e2f8fad352534473"
+        },
+        "responses": {
+          "rows": 1432,
+          "logical_sha256": "5bf2641ed2e0c784339dfca4c48c824f8df06c1c0aef4d890abacadb0a50a1c0"
+        },
+        "assets": {
+          "rows": 7610,
+          "logical_sha256": "bc496d1eb91b7d6080f34d68d4571048f6357d02ce795f6f6bfaa2ae3119262c"
+        },
+        "items": {
+          "rows": 40,
+          "logical_sha256": "9ef4ffa94413be956fbbfb579cc2ff64ee2d78a2a4fa0289fc30647bee4758a8"
+        }
+      },
+      "seconds": 35.5
+    },
+    "rewardbench": {
+      "benchmark": "rewardbench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113088.7463927,
+      "tables": {
+        "subjects": {
+          "rows": 167,
+          "logical_sha256": "c79285ab65fcc4b06d225a2f924a4235f7aeb7333a522fa8145ca96af3b9a17c"
+        },
+        "traces": {
+          "rows": 491343,
+          "logical_sha256": "ccc0892a97cc3430df603a998baf8758a66655a0b0241256032c4efcecd144c9"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "8f8423caa5f7c55ae284d8dd4d60d113fc5f842bf69cf635f77f424a900d5b19"
+        },
+        "responses": {
+          "rows": 491343,
+          "logical_sha256": "2947ab129e42d83d7e717219f1038cb527f8a9a7e598ac83031e6b4052d3b238"
+        },
+        "items": {
+          "rows": 4045,
+          "logical_sha256": "7e9f3615dc59b8811eda1e600530ee1395c811809a3d9aea215229fbe93e1c3b"
+        }
+      },
+      "seconds": 578.7
+    },
+    "sugarcrepe": {
+      "benchmark": "sugarcrepe",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114561.3823993,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 1,
+          "logical_sha256": "b15932b3100256992d6c7376940d2ad98fc3e7f8a1d6e5f254749b56d642ba7d"
+        },
+        "traces": {
+          "rows": 15024,
+          "logical_sha256": "4127047e4813e3360f81f88a741870baef5df5aaa3166c5ad50ae6bc9778f2e0"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "1e6f82625263cc6e4c2a37a5e6d3178afe4f8dbdbf8ed8bf5de7fb33bd102540"
+        },
+        "responses": {
+          "rows": 15024,
+          "logical_sha256": "9abfb279e365af6808e1b99e10a0e128128e7e79d918b80479e0c98192790632"
+        },
+        "assets": {
+          "rows": 1561,
+          "logical_sha256": "9db955f537932c21c9fa72bb3e4006ffdda58e688ea03491435c76800bf2515a"
+        },
+        "items": {
+          "rows": 15024,
+          "logical_sha256": "eeeda0f69db6c983ad58ce3356835ea603e3d9cf993308d45cd5f14341a90554"
+        }
+      },
+      "seconds": 75.3
+    },
+    "summeval": {
+      "benchmark": "summeval",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114158.6684413,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 16,
+          "logical_sha256": "e3477cb57d14f5dda28e24aead86ba0043d471479e31264fb8668655e6f50771"
+        },
+        "traces": {
+          "rows": 51200,
+          "logical_sha256": "d699ffd3332d70411bb9f5fd21d5ef8b05e7171455b05c3a3ed3f6a93ef003fc"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "e3d3c8b5c5663d1eadf04bb5add5009b0b40faab5b03c58c24c59c1c4aba554e"
+        },
+        "responses": {
+          "rows": 51200,
+          "logical_sha256": "aa1dab7bcf47426e3e6f401482076c83072a7b01babae32a8c1b3aeba111a316"
+        },
+        "items": {
+          "rows": 800,
+          "logical_sha256": "c9998127b83baea5854ee8558e9e7cada7abd455a78ef5c78f0645add28612e3"
+        }
+      },
+      "seconds": 81.3
+    },
+    "sustainable_food": {
+      "benchmark": "sustainable_food",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114934.9221103,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 6,
+          "logical_sha256": "25c0e84193172cf1281b177c92fd135b5048780414ff6409af0356c169c65316"
+        },
+        "traces": {
+          "rows": 3000,
+          "logical_sha256": "c816ca9dd6c602257dadc5cd558109a7aa82001332c01e209f6a6fb015afb60c"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "15c1232e3720608c81147698557ec93899c05b28886acaed1e1e0346d1aa02d6"
+        },
+        "responses": {
+          "rows": 3000,
+          "logical_sha256": "c06178114a8c75f883845b994c65f18fcb93cbf879c183c3cc6c57f237b3ce07"
+        },
+        "items": {
+          "rows": 500,
+          "logical_sha256": "5213b08a15a1adb4e6456ee65cc013929764381a2abbbffe30bd9c5730049bb2"
+        }
+      },
+      "seconds": 3.6
+    },
+    "synthpai": {
+      "benchmark": "synthpai",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114636.6980205,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 18,
+          "logical_sha256": "f2a63fd8e8248e40e4413cbe66b53558c940c24327b6a3a5d9849e0efbf33791"
+        },
+        "traces": {
+          "rows": 12578,
+          "logical_sha256": "c7d1e6a6fd976c7d9b429cebc9fbf3b265a8965788321d22df5339a9e7d4a904"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "d469a5c17faa4c2085b01a909ee9ea031f5a14bb1cf65347288313d689e95f1d"
+        },
+        "responses": {
+          "rows": 12578,
+          "logical_sha256": "0599288cff3b85fca91241e31b6b6a8d5e2a219fb0423d524b79272515f89efc"
+        },
+        "items": {
+          "rows": 9220,
+          "logical_sha256": "7c89f6edc9421a4dc3cfe06f21fc13c6e3a949327e6854079caedc8b8599e789"
+        }
+      },
+      "seconds": 69.2
+    },
+    "tabarena": {
+      "benchmark": "tabarena",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113666.4799447,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 384,
+          "logical_sha256": "5cb8dac9b9a437cf1295130e0bf7e626f9a379a54b1fe1cb452ef49b91270948"
+        },
+        "traces": {
+          "rows": 2457106,
+          "logical_sha256": "223b01b5f4748b1c7bf437706bfc6b11673166967d61a5250cbad3e92a177b31"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "e9f184469ece529c5ed0cc1040039d88c85370df2f1f402d4798567845e8feef"
+        },
+        "responses": {
+          "rows": 2457106,
+          "logical_sha256": "d8b4d710eef2d44eee52c9c5c5493a22bedc6b0f06b4b8b22fd23e7ecdbcc4cb"
+        },
+        "items": {
+          "rows": 346195,
+          "logical_sha256": "0360bedc8595aa60694989fd628a13a8c37f5aff4454500bc6dd18bea9236731"
+        }
+      },
+      "seconds": 996.3
+    },
+    "tumlu": {
+      "benchmark": "tumlu",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793113993.9514115,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 30,
+          "logical_sha256": "8bb2c2ceb0fa56eddc11150559cd36ed6f291bf325d1d47720c2e66bce7b5a9d"
+        },
+        "traces": {
+          "rows": 143316,
+          "logical_sha256": "434f1655e454f5c54d5dacf6c4f1cd088ca7000180e9df78d338a58c5e5986d4"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "bb12ce8deea844437833469ff45087d15ff54f5150404b8d57ca200173e4019b"
+        },
+        "responses": {
+          "rows": 143316,
+          "logical_sha256": "7c86c6d0926f37835da1e43bf41a30aeedbc84903d69471b57809a6da009999a"
+        },
+        "items": {
+          "rows": 133944,
+          "logical_sha256": "abf19a37ea2b8b4bea965b9b210644ac3feacaadf47314db9b28db5bbccbeeae"
+        }
+      },
+      "seconds": 674.2
+    },
+    "visual_riddles": {
+      "benchmark": "visual_riddles",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793114782.5682738,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 8,
+          "logical_sha256": "38e7802c621512bb77d0eef09c5c1e4b8a39c019cd04ed374310cd749ba08de0"
+        },
+        "traces": {
+          "rows": 3186,
+          "logical_sha256": "292593e51973f2765cf5085ef10a6ebe492a3eff82b1c6785a904431af337e4f"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "19ef30aa3642ecfd6bb794dc9f42757ec9fa7ac9d9d8a015e4703c8e27d1f0e5"
+        },
+        "responses": {
+          "rows": 3186,
+          "logical_sha256": "3919b3c7a423f768fe29084f8abf40f5f71ea4b1189a4d3fa81d2fab38c7d34e"
+        },
+        "assets": {
+          "rows": 400,
+          "logical_sha256": "5c1ae11288a4edbeb144a1ba55689a24f9a36efe992a692b828555b8b97b1434"
+        },
+        "items": {
+          "rows": 793,
+          "logical_sha256": "32a0e75cb63081a19415d430962008d1718e368e0a8fb8a4108a4fb57ffc8a9a"
+        }
+      },
+      "seconds": 370.8
+    },
+    "weavebench": {
+      "benchmark": "weavebench",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793115203.5052173,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 7,
+          "logical_sha256": "9c47f3d5e29192faa294b349c1446ab9ab3320863e57c9de838996be6dc5b408"
+        },
+        "traces": {
+          "rows": 114,
+          "logical_sha256": "445149fc2c7a605864a77ede2234f2cae34ca7353720e2d3154b212d0e17ea6b"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "c7f87c2de6f67b9709d9651c00a37c784ddf8b928a39daa5193df96e18ab38c7"
+        },
+        "responses": {
+          "rows": 114,
+          "logical_sha256": "041a7ba17099d3f8f92744165bdff5f7799df033ef2c2e57953c94fbb78002e4"
+        },
+        "items": {
+          "rows": 114,
+          "logical_sha256": "62e4994a927b88be0d023b42e67ba208528a2a1946b4e8bc03b54797d483abd8"
+        }
+      },
+      "seconds": 129.5
+    },
+    "wonderbread": {
+      "benchmark": "wonderbread",
+      "status": "passed",
+      "phase": "complete",
+      "source_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+      "started": 1793115705.0500493,
+      "python_version": "3.11",
+      "tables": {
+        "subjects": {
+          "rows": 38,
+          "logical_sha256": "bb8bbebffa866e1635dd2727012b664e656ae4834a08698321b93a6df59eaefb"
+        },
+        "traces": {
+          "rows": 21231,
+          "logical_sha256": "cb37c8e23073a1fa00684c8872b8295cd1f12f197c9dc208f945830987e5b074"
+        },
+        "benchmarks": {
+          "rows": 1,
+          "logical_sha256": "83a01f568c2f84d64231b92474a60ab2acb52267f4fe6b929966934b9df8b275"
+        },
+        "responses": {
+          "rows": 21231,
+          "logical_sha256": "de98f10c714b23bef0826ef6c1abc9caaa9664e10294d52b4cdb83e6e5e8a99c"
+        },
+        "assets": {
+          "rows": 4954,
+          "logical_sha256": "d45c6ee7158afb3ae7d9dc15036d433866aff06cf1bb64969666a828cfc6137e"
+        },
+        "items": {
+          "rows": 9091,
+          "logical_sha256": "a8885ecde361000343a50a83c6d1ce2941dd7276fedcc5fee51a6abdf4ba8c90"
+        }
+      },
+      "seconds": 290.4
+    }
+  },
+  "fits_rekeyed_without_refitting": [
+    "auditing_sabotage_bench",
+    "cmmlu",
+    "ehrflowbench",
+    "erbench",
+    "exploitgym",
+    "kmmlu",
+    "kormedmcqa",
+    "lingoly",
+    "liveaopsbench",
+    "llm_bp_tag",
+    "llm_uncertainty_bench",
+    "llms_lean_formalization",
+    "mathvista_mini",
+    "mergebench",
+    "mind2web",
+    "mj_bench",
+    "mmbench_v11",
+    "mmoral_bench",
+    "morphkv",
+    "mtbbench",
+    "nyu_ctf_bench",
+    "perfcodebench",
+    "perumedqa",
+    "planbench",
+    "pxplore",
+    "realtimeqa",
+    "reliancescope",
+    "sugarcrepe",
+    "sustainable_food",
+    "tumlu",
+    "visual_riddles",
+    "weavebench"
+  ],
+  "cached_author_inputs": [
+    {
+      "benchmark": "bedd_basalt",
+      "restored_from_revision": "54074453da7b9911be0f48e4c560be547bc84d21",
+      "verified_files": 11,
+      "restored_files": 2,
+      "verified_bytes": 12070428066,
+      "reason": "Zenodo source transfers were slow or repeatedly failed; reuse pinned original author captures, verified against source manifest SHA256. Normal builder independently validates metadata hashes and source trees."
+    },
+    {
+      "benchmark": "medagentboard",
+      "file": "raw/paper.html",
+      "source_url": "https://arxiv.org/html/2505.12371v2",
+      "sha256": "6dcc3a90af820d269883ddf30cd0695aae1fc92ef67d21a288fdfaa59b3c0478",
+      "size": 1818958,
+      "restored_from": "/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction/deployment/publish-public-23-ad14001/build/measurement_db/benchmarks/medagentboard/raw/paper.html",
+      "reason": "Live paper HTML changed. Restored the exact pinned original capture retained by the prior publication build."
+    },
+    {
+      "benchmark": "researchclawbench",
+      "source_url": "https://huggingface.co/datasets/InternScience/ResearchClawBench",
+      "source_revision": "fa82414b2ead64ea3a4df2c0688512198c42ba59",
+      "verified_files": 8268,
+      "restored_files": 2881,
+      "reason": "Reuse the authors immutable HF snapshot already cached by a previous build; verify every Git/LFS blob digest before installation and normal metadata validation."
+    },
+    {
+      "benchmark": "sustainable_food",
+      "file": "raw/paper.html",
+      "original_source": "https://arxiv.org/html/2503.04734v1",
+      "restored_from_revision": "54074453da7b9911be0f48e4c560be547bc84d21",
+      "verified_sha256": "210e68366d73ecf203500aa0c9319aa1c5c8c77d8c64b8a141ad18eceeb79e1c",
+      "bytes": 597935,
+      "reason": "Live paper HTML changed; use the original author capture declared in metadata."
+    },
+    {
+      "benchmark": "wonderbread",
+      "restored_from_revision": "54074453da7b9911be0f48e4c560be547bc84d21",
+      "verified_files": 3800,
+      "restored_files": 2573,
+      "verified_bytes": 7899581913,
+      "reason": "Zenodo source transfers were slow or repeatedly failed; reuse pinned original author captures, verified against source manifest SHA256. Normal builder independently validates metadata hashes and source trees."
+    }
+  ],
+  "environment_note": "rouge-chinese 1.0.3 also installs files under the rouge module. In the isolated Python 3.14.6 LexEval environment, reinstall rouge 1.0.1 after the shared requirements. Verify its installed files match that distribution's RECORD. The initial conflicting-scorer output was rejected and not published."
+}

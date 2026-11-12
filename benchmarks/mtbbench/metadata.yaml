@@ -62,7 +62,6 @@ build:
       hancock: questions_hancock_bench.json
       msk: questions_msk_bench.json
     labels:
-      subject_prefix: 'MTBBench / '
       harness: MTBBench sequential clinical decisions
     media_types:
       .txt: text/plain

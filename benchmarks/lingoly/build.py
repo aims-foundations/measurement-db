@@ -81,7 +81,7 @@ class LingOly(BenchmarkBuild):
 
         # 4. A stimulus is the complete observed prompt, with its selected part and condition.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=model)
                                 for model in subjects.subject_key]
         keys = ["questions", "questionpart_n", "answer", "condition"]

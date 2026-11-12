@@ -121,7 +121,7 @@ class LLM4IR(BenchmarkBuild):
         # 4. Keep task-specific literal labels and explicit mixed grading scales.
         attempts["subject_key"] = attempts.task + "/" + attempts.model
         subjects = attempts[["subject_key", "task", "model"]].drop_duplicates()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.model
         subjects["features"] = [dict(**parameters["subject_features"], source_task=row.task, source_model_label=row.model)
             for row in subjects.itertuples()]
         items["raw_item_id"] = items.item_key

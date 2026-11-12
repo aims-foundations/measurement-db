@@ -86,7 +86,7 @@ class NYUCTFBench(BenchmarkBuild):
         if not subjects.protocol.isin(self.grading["verifiers"]).all():
             raise ValueError("NYU CTF has an unknown published assessment allowance")
         settings = records.groupby("subject_key").configuration.first()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.metadata.map(lambda value: value["model"])
         subjects["features"] = [dict(harness=row.metadata["agent"], recorded_model_label=row.metadata["model"],
             submission_id=row.subject_key, submission_date=row.metadata["date"], assessment_protocol=row.protocol,
             recorded_configuration=json.loads(settings.get(row.subject_key, "{}"))) for row in subjects.itertuples()]

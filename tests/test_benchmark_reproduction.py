@@ -1,6 +1,7 @@
 """CI selection, isolated execution, and failures that must never pass silently."""
 
 import contextlib
+import hashlib
 import io
 import json
 import os
@@ -369,6 +370,95 @@ output.mkdir()
             reproduction.verify_benchmark(self.root, "alpha", REVISION)
         self.assertEqual(old_raw.read_text(), "local input")
         self.assertEqual(old_output.read_text(), "local output")
+
+    def test_archive_builder_uses_exact_snapshot_and_clears_inherited_overrides(self):
+        self.write("benchmarks/alpha/build.py", f"""
+import os, sys
+from pathlib import Path
+assert sys.argv[1:] == ['--archive']
+assert os.environ['MEASUREMENT_DB_SOURCE_REPO'] == {reproduction.HF_REPOSITORY!r}
+assert os.environ['MEASUREMENT_DB_SOURCE_REVISION'] == {REVISION!r}
+assert 'MEASUREMENT_DB_SOURCE_MANIFEST' not in os.environ
+directory = Path(__file__).parent
+assert not (directory / 'raw').exists()
+output = directory / 'formatted_tables'
+output.mkdir()
+(output / 'responses.parquet').write_bytes(b'fresh build')
+""")
+        with self.mock_hub(), patch.dict(os.environ, {
+                "MEASUREMENT_DB_SOURCE_REPO": "wrong/repository",
+                "MEASUREMENT_DB_SOURCE_REVISION": "main",
+                "MEASUREMENT_DB_SOURCE_MANIFEST": "wrong-manifest"}), \
+                contextlib.redirect_stdout(io.StringIO()):
+            reproduction.verify_benchmark(self.root, "alpha", REVISION, source_mode="archive")
+
+    def test_archive_requires_immutable_revision_before_any_build(self):
+        for revision in ("", "main", "a" * 39):
+            with self.subTest(revision=revision), patch.object(reproduction.subprocess, "run") as run:
+                with self.assertRaisesRegex(ValueError, "immutable HF revision"):
+                    reproduction.verify_benchmark(self.root, "alpha", revision, source_mode="archive")
+                run.assert_not_called()
+
+    def local_archive(self):
+        payload = b'captured input'
+        artifact = {"file": "input.json", "size": len(payload), "hash_kind": "sha256",
+                    "digest": hashlib.sha256(payload).hexdigest(), "url": "local-archive:fixture"}
+        manifest = json.dumps({"format_version": 1, "benchmarks": {"alpha": [artifact]}}).encode()
+        digest = hashlib.sha256(manifest).hexdigest()
+        root = Path(self.temporary.name) / "archives"
+        snapshot = root / digest
+        source = snapshot / "alpha/raw/input.json"
+        source.parent.mkdir(parents=True)
+        source.write_bytes(payload)
+        (snapshot / "manifest.json").write_bytes(manifest)
+        self.write("scripts/ci/local-source-archives.json", json.dumps({"alpha": {"manifest_sha256": digest}}))
+        return root, snapshot, source
+
+    def test_local_archive_is_verified_and_copied_into_isolated_build(self):
+        root, snapshot, source = self.local_archive()
+        self.write("benchmarks/alpha/build.py", """
+import os, json, sys
+from pathlib import Path
+assert sys.argv[1:] == ['--archive']
+assert 'MEASUREMENT_DB_SOURCE_REPO' not in os.environ
+assert 'MEASUREMENT_DB_SOURCE_REVISION' not in os.environ
+manifest = Path(os.environ['MEASUREMENT_DB_SOURCE_MANIFEST'])
+assert manifest.parent == Path.cwd()
+assert json.loads(manifest.read_text())['format_version'] == 1
+directory = Path(__file__).parent
+assert (directory / 'raw/input.json').read_bytes() == b'captured input'
+(directory / 'raw/input.json').write_bytes(b'changed scratch copy')
+output = directory / 'formatted_tables'
+output.mkdir()
+(output / 'responses.parquet').write_bytes(b'fresh build')
+""")
+        with self.mock_hub(), patch.dict(os.environ, {"REPRODUCTION_LOCAL_ARCHIVE_DIR": str(root)}), \
+                contextlib.redirect_stdout(io.StringIO()):
+            reproduction.verify_benchmark(self.root, "alpha", REVISION, source_mode="archive")
+        self.assertEqual(source.read_bytes(), b'captured input')
+        self.assertFalse((self.root / "benchmarks/alpha/raw").exists())
+
+    def test_changed_local_archive_fails_without_running_builder(self):
+        root, snapshot, source = self.local_archive()
+        for path in (source, snapshot / "manifest.json"):
+            original = path.read_bytes()
+            path.write_bytes(b'x' * len(original))
+            with self.subTest(path=path.name), patch.dict(os.environ, {"REPRODUCTION_LOCAL_ARCHIVE_DIR": str(root)}), \
+                    patch.object(reproduction, "copy_build_source"), \
+                    patch.object(reproduction.subprocess, "run") as run:
+                with self.assertRaisesRegex(ValueError, "differs from its pin"):
+                    reproduction.verify_benchmark(self.root, "alpha", REVISION, source_mode="archive")
+                run.assert_not_called()
+            path.write_bytes(original)
+
+    def test_restricted_archive_does_not_fall_back_to_network(self):
+        self.local_archive()
+        with patch.dict(os.environ, {"REPRODUCTION_LOCAL_ARCHIVE_DIR": ""}), \
+                patch.object(reproduction, "copy_build_source"), \
+                patch.object(reproduction.subprocess, "run") as run:
+            with self.assertRaisesRegex(ValueError, "restricted local archive"):
+                reproduction.verify_benchmark(self.root, "alpha", REVISION, source_mode="archive")
+            run.assert_not_called()
 
     def test_nonzero_builder_exit_fails_even_when_outputs_exist(self):
         self.write("benchmarks/alpha/build.py", "raise SystemExit(3)\n")

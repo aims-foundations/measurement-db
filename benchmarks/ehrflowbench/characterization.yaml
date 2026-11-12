@@ -5,7 +5,7 @@ tables:
     logical_sha256: 15f43a39af3757f49f10b8f600af5d8c7665f64e40ec927bfa22c40597ee9e5e
   subjects:
     rows: 7
-    logical_sha256: 9df3410495d9740af3473f585dab5f6828fc8ef6d1680b7ed361ba87d341b78d
+    logical_sha256: 6e00a27209e3ca147f1d0a8a7c4d54ea50646f789c874082e86a8f910eacb647
   responses:
     rows: 140
     logical_sha256: f46340399b6680999ff9f262c52ef1fe3eec90493bddb0f7875e665d9a8654a3
@@ -17,7 +17,7 @@ tables:
     logical_sha256: 0be73401afab7b7fe0174373069b791e3754936904f99ca7144d346ae46bc21b
   benchmarks:
     rows: 1
-    logical_sha256: 18c2209ab7da1f0bdcd4bff4b70cfd921dec0ea592b628a5948b4ab02d248be9
+    logical_sha256: 281201c74ecc9acce472f68b2dccd9eb3bae16a1ca47ecfa8b804aaeb2481ee6
 source_claims:
   source_responses:
     kind: count

@@ -62,8 +62,6 @@ build:
       d: د
       e: هـ
       f: و
-    labels:
-      subject_prefix: 'QIMMA / '
     subject_features:
       harness: QIMMA_LightEval
       version_scope: recorded_configuration_only

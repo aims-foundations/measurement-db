@@ -62,8 +62,6 @@ build:
       JPEG: image/jpeg
       WEBP: image/webp
       MPO: image/jpeg
-    labels:
-      subject_prefix: 'MathVista MINI / '
     subject_features:
       harness: VLMEvalKit
       configuration_scope: literal_released_model_label

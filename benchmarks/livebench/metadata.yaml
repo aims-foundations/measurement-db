@@ -46,8 +46,6 @@ build:
     paths:
       judgments: judgments/*/data/*.parquet
       questions: questions/*/*/data/*.parquet
-    labels:
-      subject_prefix: 'LiveBench / '
     subject_features:
       harness: LiveBench released judgments
       model_identifier_status: literal_published_label

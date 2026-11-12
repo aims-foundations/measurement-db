@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -15,6 +16,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import shutil
 import socket
 import subprocess
 import struct
@@ -102,6 +104,67 @@ def read_http_source(request, *, timeout, consume=None, opener=None,
                                 consume=consume if consume is not None else lambda response: response.read(),
                                 max_retry_delay=max_retry_delay, attempts=attempts,
                                 retry_not_found=retry_not_found, source_name=source_name)
+
+
+def copy_http_ranges(url, output, *, size, headers, chunk_size, workers=4, **options):
+    """Copy bounded concurrent ranges in order, or request a serial fallback.
+
+    Each range resumes its own interrupted response through the usual retry
+    policy. Only ``workers`` chunks can be staged at once. The caller must
+    verify the complete file's pinned size and hash before accepting it.
+    """
+    if size <= 0 or chunk_size <= 0 or not 1 <= workers <= 8:
+        raise ValueError('Invalid bounded range transfer settings')
+
+    class UnsupportedRanges(Exception):
+        pass
+
+    try:
+        with tempfile.TemporaryDirectory(prefix='.ranges-', dir=Path(output.name).parent) as directory:
+            def transfer(start):
+                end = min(start + chunk_size, size) - 1
+                path = Path(directory) / str(start)
+                with path.open('w+b') as part:
+                    def request():
+                        return Request(url, headers={**headers,
+                            'Range': f'bytes={start + part.tell()}-{end}'})
+
+                    def consume(response):
+                        if response.status == 200:
+                            raise UnsupportedRanges()
+                        offset = start + part.tell()
+                        if (response.status != 206 or response.headers.get('Content-Range') !=
+                                f'bytes {offset}-{end}/{size}'):
+                            raise SourceDataError('Upstream returned an unexpected byte range')
+                        remaining = end + 1 - offset
+                        while block := response.read(min(1024 * 1024, remaining + 1)):
+                            if len(block) > remaining:
+                                raise SourceDataError('Upstream exceeded the requested byte range')
+                            part.write(block)
+                            remaining -= len(block)
+                        if remaining:
+                            raise IncompleteRead(b'', remaining)
+
+                    read_http_source(request, consume=consume, **options)
+                return path
+
+            offsets = iter(range(0, size, chunk_size))
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                pending = deque(pool.submit(transfer, start)
+                                for _, start in zip(range(workers), offsets))
+                while pending:
+                    path = pending.popleft().result()
+                    with path.open('rb') as source:
+                        # The ordered assembly is independent of completion order.
+                        shutil.copyfileobj(source, output)
+                    path.unlink()
+                    if (start := next(offsets, None)) is not None:
+                        pending.append(pool.submit(transfer, start))
+    except UnsupportedRanges:
+        output.seek(0)
+        output.truncate()
+        return False
+    return True
 
 
 def github_tree_entries(repository: str, revision: str, paths: list[str] | None = None) -> list[dict]:

@@ -1,0 +1,6 @@
+{
+  "medagentboard": {
+    "manifest_sha256": "2f5122ccaeec909aeb17f99fa14fc568cacab52f46c97d0b010aecbe1ed94369",
+    "reason": "The complete original archive contains excluded processed MIMIC task files and remains local under the existing curation record."
+  }
+}

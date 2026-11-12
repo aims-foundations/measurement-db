@@ -158,7 +158,7 @@ class MedAgentBoard(BenchmarkBuild):
         if subjects.groupby('subject_key').configuration_json.nunique().gt(1).any():
             raise ValueError('A released subject label contains different recorded model settings')
         subjects = subjects.drop_duplicates('subject_key')
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(**parameters['subject_features'], source_configuration=row.subject_key,
             recorded_configuration=row.configuration) for row in subjects.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],

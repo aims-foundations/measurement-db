@@ -64,7 +64,7 @@ class OSWorld(BenchmarkBuild):
         runs["configuration"] = runs.configuration.map(lambda value: value if isinstance(value, dict) else {})
         runs["subject_key"] = runs.archive + "/" + runs.configuration.map(lambda value: json.dumps(value, sort_keys=True))
         subjects = runs.drop_duplicates("subject_key").copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.archive.str.removesuffix(".zip")
+        subjects["raw_label"] = subjects.archive.str.removesuffix(".zip")
         subjects["features"] = [dict(harness=parameters["labels"]["harness"], source_archive=row.archive,
             recorded_configuration=json.dumps(row.configuration, sort_keys=True, allow_nan=False).replace(";", r"\u003b").replace("=", r"\u003d"),
             configuration_scope=parameters["labels"]["configuration_scope"])

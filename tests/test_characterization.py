@@ -39,6 +39,10 @@ class SchemaTests(unittest.TestCase):
                  if not p.parent.name.startswith('_')]
         self.assertGreater(len(paths), 0)
         for path in paths:
+            # Intervention-study pilots have their own schema and tests; they
+            # do not export the six-table benchmark characterization contract.
+            if "study" in yaml.safe_load(path.read_text()):
+                continue
             with self.subTest(benchmark=path.parent.name):
                 load_characterization(path.with_name('characterization.yaml'))
                 self.assertFalse((path.parent / 'testdata').exists())

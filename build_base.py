@@ -31,6 +31,7 @@ import re
 import shutil
 import sys
 import tempfile
+import urllib.parse
 import urllib.request
 from pathlib import Path, PurePosixPath
 
@@ -320,7 +321,18 @@ class BenchmarkBuild(ABC):
                     if length is not None and temporary.tell() < length:
                         raise IncompleteRead(b'', length - temporary.tell())
 
-                if body is not None or expected_size is None or expected_size <= chunk_size:
+                # Zenodo's large archives can be slow on one connection. Keep
+                # the declared source and complete-file integrity checks, with
+                # at most four independently retried ranges in flight.
+                copied = (body is None and expected_sha256 is not None and
+                          expected_size is not None and expected_size >= 4 * chunk_size and
+                          urllib.parse.urlparse(url).hostname == 'zenodo.org' and
+                          _source_files.copy_http_ranges(url, temporary,
+                              size=expected_size, headers=headers, chunk_size=chunk_size,
+                              workers=4, **transfer_options))
+                if copied:
+                    pass
+                elif body is not None or expected_size is None or expected_size <= chunk_size:
                     request = urllib.request.Request(url, headers=headers, data=body)
                     _source_files.read_http_source(request, consume=copy_complete, **transfer_options)
                 else:
@@ -399,7 +411,9 @@ class BenchmarkBuild(ABC):
 
         Call this only from ``build_subject_item_response_rows()``. Subject
         features and the access date are identity-bearing, so they must already
-        be final at this commit boundary.
+        be final at this commit boundary. Optional metadata ``subject_labels``
+        translates reviewed source aliases before registry lookup, preserving
+        each original alias in the subject's provenance.
         """
 
         if self._active_benchmark_id is None:
@@ -407,9 +421,20 @@ class BenchmarkBuild(ABC):
                 f"{self.slug}: add_subject() may only be called from "
                 "build_subject_item_response_rows() while main() is running"
             )
+        features = self.subject_settings(raw_label, features or {})
+        label = self.build_parameters.get("subject_labels", {}).get(raw_label, raw_label)
+        if not isinstance(label, str) or not label.strip():
+            raise BuildContractError(f"{self.slug}: subject label must be a non-empty string")
+        if label != raw_label:
+            # Preserve distinct recorded runs when their model names converge.
+            if features.get("source_display_name", raw_label) != raw_label:
+                raise BuildContractError(
+                    f"{self.slug}: subject_labels conflicts with recorded source_display_name"
+                )
+            features = {**features, "source_display_name": raw_label}
         return _tables.resolve_subject(
-            raw_label,
-            features=self.subject_settings(raw_label, features or {}),
+            label,
+            features=features,
             access_date=access_date,
         )
 

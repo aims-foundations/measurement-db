@@ -59,7 +59,6 @@ build:
       persona: roaster_persona
     labels:
       focal_agent: roaster_A
-      subject_prefix: 'CoffeeBench / '
       prompt_status: reconstructed_reference_instruction_not_original_provider_request
       mechanics_function: _operational_mechanics_block
 sources:

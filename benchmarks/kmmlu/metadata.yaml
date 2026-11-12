@@ -55,7 +55,6 @@ build:
       '4': D
     labels:
       ungraded_marker: FAILED
-      subject_prefix: 'KMMLU / '
       input_scope: Original question and choices. Historical surrounding prompt and demonstrations were not recorded.
     subject_features:
       harness: Korean LLM Benchmark Suite

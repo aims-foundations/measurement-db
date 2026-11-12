@@ -69,8 +69,6 @@ build:
       gpt4/soccer_olympic: Exact CSV-to-log correspondence
       llama/movie_foreign_year: Exact CSV-to-log correspondence
       llama/soccer_olympic: Exact CSV-to-log correspondence
-    labels:
-      subject_prefix: 'ERBench / '
     prompting:
       'False': standard
       'True': chain_of_thought

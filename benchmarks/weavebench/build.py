@@ -47,7 +47,7 @@ class WeaveBench(BenchmarkBuild):
         # 3. Separate recorded model/runtime pairs and keep complete task grading evidence.
         records["subject_key"] = records.model + "/" + records.harness
         subjects = records[["subject_key", "model", "harness"]].drop_duplicates().copy()
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.model + " / " + subjects.harness
+        subjects["raw_label"] = subjects.model
         subjects["features"] = [dict(harness=row.harness, recorded_model_label=row.model,
             settings_status=labels["settings_status"]) for row in subjects.itertuples()]
         items = records.rename(columns={"task_id": "item_key", "task_prompt": "content"}).copy()

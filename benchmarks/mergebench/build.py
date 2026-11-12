@@ -62,7 +62,7 @@ class MergeBench(BenchmarkBuild):
 
         # 3. Identify source model configurations and exact stimulus/grading definitions.
         subjects = attempts[['subject_key', 'base_model', 'merge_configuration']].drop_duplicates().copy()
-        subjects['raw_label'] = labels['subject_prefix'] + subjects.base_model + ' / ' + subjects.merge_configuration
+        subjects['raw_label'] = subjects.base_model + ' / ' + subjects.merge_configuration
         subjects['features'] = [dict(**parameters['subject_features'], source_base_model=row.base_model,
             source_merge_configuration=row.merge_configuration, source_result_file=row.subject_key) for row in subjects.itertuples()]
         identity = ['source_task', 'content', 'judge_prompt', 'protocol']

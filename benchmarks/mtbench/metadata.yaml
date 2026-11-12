@@ -52,7 +52,6 @@ build:
       prompts: harness/fastchat/llm_judge/data/judge_prompts.jsonl
       references: harness/fastchat/llm_judge/data/mt_bench/reference_answer/gpt-4.jsonl
     labels:
-      subject_prefix: 'MT-Bench / '
       settings_status: historical_generation_settings_not_recorded
       condition: published_single_answer_gpt4_judgment
 grading:

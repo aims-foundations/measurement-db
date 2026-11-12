@@ -100,6 +100,15 @@ patterns, and verbatim prompt text inside `metadata.yaml`. The shared builder
 validates their structure and exposes them as `self.build_parameters`, including
 when importing fresh runs with `--source`. ResearchCodeBench provides an example.
 
+For a source-specific model alias, `build.parameters.subject_labels` maps the
+original label to a reviewed model identifier. `add_subject()` applies this before
+the model-registry lookup and retains the original label as `source_display_name`.
+Recorded settings are still looked up by the original label. Keep agent harnesses,
+versions, and run settings in subject features; naming two runs after the same model
+does not merge their configurations. Use the shared model registry for alternate
+spellings that have the same meaning across benchmarks. Leave uncertain model
+identities unmapped instead of guessing from a filename or a current default.
+
 Each public builder explicitly selects its inputs in a short hook:
 
 ```python
@@ -285,6 +294,30 @@ response-table order within each canonical subject, item, condition, and
 interactor combination. Supply `trial` explicitly when the source records it.
 Trace rows link through `response_key` and preserve the complete text.
 
+Use the source's model identifier as a subject's `raw_label` when it is known,
+for example `claude-haiku-4-5`. Keep the agent framework in `features.harness`
+and its version, reasoning settings, prompt configuration, and training
+checkpoint in the corresponding subject features. A benchmark name, task name,
+or export filename should not be prepended to the model identifier. The model
+registry matches this identifier exactly; decorating it prevents cross-benchmark
+model associations. Temporary `subject_key` values may still contain whatever
+source coordinates are needed to join the input tables.
+
+Do not substitute a base model for a fine-tuned checkpoint or guess a model from
+an agent name. Preserve the released system/checkpoint label when the underlying
+model is unknown, and retain known model components and identity limitations in
+its features. A derived model can keep its study-specific name. Different
+configurations of one model must retain different features and subject IDs even
+when they share a `normalized_name`. When fixing subject identities, rebuild
+their referencing responses and traces together and refresh characterizations;
+editing the displayed label in a published table is insufficient.
+
+The [subject identity review](docs/subject-identity-review.csv) records the
+decision and validation scope for each benchmark in the October 2026 pass.
+Its [summary](docs/subject-identity-review.json) distinguishes full published-table
+migrations from fresh author-source rebuilds and lists withheld datasets whose
+fingerprints still require regeneration before release.
+
 Other columns use the corresponding `add_subject`, `add_item`, and `add_response`
 arguments, including `ExactMatcher`/`Judge` verifier objects. Missing DataFrame
 cells become `None`; grading-scale and finite-value checks still apply. Item
@@ -340,9 +373,9 @@ the offline CI tests and change detection, without accessing HF or rebuilding.
 
 Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
 has access to `aims-foundations/measurement-db`. The dataset is gated; missing
-credentials or access prevent reference comparison but do not block upstream
-builds. Author-hosted gated sources still require their own access through this
-token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
+credentials or access prevent archive restoration and reference comparison. In the
+optional upstream mode, author-hosted gated sources require their own access through
+this token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
 Fork PRs are skipped; their reviewed commits
 need a branch in this repository to run this check with repository secrets.
 
@@ -354,21 +387,32 @@ An all-withheld selection runs no reproduction jobs and does not resolve HF.
 Missing, invalid, duplicate, or private release declarations fail selection.
 Direct `verify` commands apply the same release check before executing a builder.
 
-Each run with public benchmarks attempts to resolve the HF `main` branch
-to one immutable commit shared by all jobs. If that preparation fails, upstream
-builds still run and successful builds report **REFERENCE ERROR**. Jobs never
-fall back to independently resolving a moving HF branch.
-Each selected public benchmark first executes `benchmarks/<slug>/build.py`
-in a temporary source checkout, downloading the authors' inputs declared in
-`sources.upstream` in the benchmark's `metadata.yaml`. The HF commit supplies
-only the expected output tables; it does not select the build's raw inputs.
-Only after a successful upstream build does the job list and download those
-reference tables and compare them. Missing reference tables therefore cannot
-prevent an upstream build from being attempted.
-The check clears `MEASUREMENT_DB_SOURCE_REPO`, `MEASUREMENT_DB_SOURCE_REVISION`,
-and `MEASUREMENT_DB_SOURCE_MANIFEST` so inherited archive overrides cannot
-redirect those downloads. Existing local raw inputs and tables are never reused
-or modified. The comparison uses `<slug>/formatted_tables/*.parquet`
+Routine PR and push checks rebuild from captured raw inputs. Each run resolves the
+HF `main` branch once to one immutable commit shared by all jobs. That same commit
+supplies `<slug>/raw/` and the expected formatted tables. Every archived input is
+verified against the commit's file size and content hash, including cache hits.
+Missing or corrupt archives fail explicitly; CI does not silently fetch upstream
+inputs. The builder runs with `--archive` in a clean temporary checkout, with the
+archive repository and revision explicitly set. Inherited source overrides cannot
+redirect the build. Existing working-directory inputs and outputs are untouched.
+
+An existing restriction on the complete MedAgentBoard archive requires its inputs
+to remain local. `scripts/ci/local-source-archives.json` pins the inventory hash;
+`REPRODUCTION_LOCAL_ARCHIVE_DIR` locates the runner's private archive store. The
+layout is `<root>/<manifest-sha256>/manifest.json` plus `<slug>/raw/` beneath that
+snapshot directory. CI verifies the manifest and every input before copying them
+into an isolated build. Missing or changed inputs fail without network fallback.
+The original archive is never uploaded as a workflow artifact or to HF.
+
+Fresh author-source checks remain available as a separate manual workflow run:
+choose `source_mode: upstream` and the benchmark folders to check. This mode fetches
+`sources.upstream` from `metadata.yaml`, clears archive overrides, and attempts the
+build even if reference resolution failed. Direct `verify` commands retain their
+upstream default; pass `--source-mode archive --revision <40-character-HF-commit>`
+to reproduce captured inputs. Reports identify the selected input mode, and a
+receipt from another mode cannot satisfy the current run.
+
+After building, CI downloads reference tables from `<slug>/formatted_tables/*.parquet`
 on HF, or the older flat `<slug>/*.parquet` layout when the modern directory is
 absent. Only the legacy filename `response.parquet` maps to `responses.parquet`;
 no table bytes are normalized or rewritten.
@@ -376,8 +420,10 @@ no table bytes are normalized or rewritten.
 Success requires the exact same set of tables and byte-identical files, including
 optional traces and assets, row order, and Parquet metadata. Missing references,
 missing builders, build errors, extra tables, and any byte difference fail.
-SHA-256 values for both files appear in the job log. Jobs continue independently
-after another benchmark fails. The workflow uses up to 16 concurrent reproduction jobs;
+SHA-256 values for both files appear in the job log. Large pinned Zenodo archives
+use at most four concurrent HTTP ranges, retaining interrupted-transfer retries
+and complete-file size and SHA-256 validation. Jobs continue independently
+after another benchmark fails. Reproduction concurrency is configurable;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
 Jobs use Python 3.11 unless `build.parameters.runtime.python_version` declares
@@ -387,14 +433,14 @@ scorer's floating-point summation must reproduce the published grades; use that
 version for local LawBench builds too.
 
 The final **Benchmark report** job publishes a table on the workflow run's
-**Summary** page, with one row per selected benchmark: overall result, upstream
+**Summary** page, with one row per selected benchmark: overall result, selected input mode,
 build status, comparison status, elapsed time,
 failure details, and a link to its job log. Each grouped job also publishes its
 own summary. The **benchmark-run-report-<attempt>** artifact contains
 `summary.md`, `results.csv`, and `results.json` with full failure messages.
 Results are checkpointed after each benchmark and uploaded even when a job
 fails. A passing benchmark remains visible if another benchmark in its group
-fails. **BUILD FAILED** identifies an upstream download/build failure.
+fails. **BUILD FAILED** identifies an input restoration/download or build failure.
 **COMPARISON FAILED** means the build passed but comparison failed, including
 byte differences and missing or extra generated tables. **REFERENCE MISSING**
 means the build passed but published comparison tables are absent;
@@ -415,15 +461,28 @@ All workflow jobs target a native Linux x64 self-hosted runner with the custom l
 and temporary builds under
 `/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction`. It needs no Docker,
 interactive login, or AFS credentials. Each job creates a fresh Python virtual
-environment. Sixteen independent runner instances process one job each. The original
-instance lives at the installation root, and the other 15 live under
-`runners/02` through `runners/16`. Each has its own checkout, Python tool
-cache, download cache, and temporary directory. Full runs still group benchmarks
-in pairs; each pair runs sequentially within its job, so at most 16 benchmarks
-are being rebuilt at once. Reproduction jobs configure OpenMP, OpenBLAS, MKL,
+environment. Sixty-four independent runner instances process one job each. The
+original instance lives at the installation root, and the others live under
+`runners/02` through `runners/64`. Each has its own checkout, Python tool
+cache, download cache, and temporary directory. Set the repository Actions
+variable `REPRODUCTION_MAX_PARALLEL` to a positive integer to limit concurrent
+jobs to available memory and executable disk storage; the default is 64. The
+matrix groups builders when needed to stay within GitHub's 256-job limit.
+Builders within each group run sequentially. Reproduction jobs configure OpenMP, OpenBLAS, MKL,
 NumExpr, and Arrow CPU pools to use two threads, and Arrow I/O pools to use four.
 These are library settings, not an operating-system CPU quota. Larger pools
 require more runner installations and a higher `max-parallel` setting.
+
+Set the repository Actions variable `REPRODUCTION_SCRATCH_DIR` to place native
+source downloads, generated tables, and comparison references on storage with
+enough capacity for concurrent jobs. Each job owns and removes its own subdirectory.
+This storage may be mounted `noexec`. Python environments use the runner's normal
+temporary directory unless `REPRODUCTION_ENVIRONMENT_DIR` points to separate
+executable storage with capacity for concurrent dependency installations. Each
+environment is isolated by run, attempt, and matrix index and removed after its
+job, including failures. If `REPRODUCTION_SCRATCH_DIR` is unset, reproduction uses
+`GALLERY_SCRATCH_DIR`, then the runner's default temporary storage. Gallery and
+website builds continue to use `GALLERY_SCRATCH_DIR`, which must support execution.
 
 An existing run keeps the workflow configuration from its original commit.
 GitHub's **Re-run jobs** also uses that commit. To apply a new parallelism limit,

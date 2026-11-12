@@ -68,7 +68,7 @@ class KMMLU(BenchmarkBuild):
 
         # 4. Keep the published model/configuration labels, without guessed settings.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=label,
             prompt_condition=label.rsplit("-", 1)[-1] if label.endswith(("-0shot", "-5shot")) else "not_recorded")
             for label in subjects.subject_key]

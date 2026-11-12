@@ -762,6 +762,7 @@ SOURCE_AUDITS["legalbench"] = verify_helm_upstream
 SOURCE_AUDITS["mlrbench"] = source_observations
 
 from measurement_db.scripts.curate_benchmarks.native_result_audits import verify_native_results
+SOURCE_AUDITS["mlip_arena"] = verify_native_results
 SOURCE_AUDITS.update(dict.fromkeys(["openbiorq", "fewshot_ttt_bbh", "prox", "cseo_bench", "risebench", "clasheval", "engdesign", "phyblock", "scigym", "advprompter"], verify_native_results))
 SOURCE_AUDITS["legal_rag_bench"] = verify_native_results
 SOURCE_AUDITS["nester"] = verify_native_results

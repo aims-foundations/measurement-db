@@ -60,7 +60,7 @@ class KorMedMCQA(BenchmarkBuild):
 
         # 4. Retain source model labels; do not infer unrecorded run settings.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=label)
             for label in subjects.subject_key]
 

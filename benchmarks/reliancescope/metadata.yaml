@@ -91,7 +91,6 @@ build:
       response_use: response_use_mode
     labels:
       harness: RelianceScope
-      subject_separator: ' / '
       prompt_origin: transcribed_evaluation_report_not_wire_request
 grading:
   rule: Score each engagement axis separately by comparing the recorded mode with its human reference after stripping

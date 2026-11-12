@@ -61,7 +61,6 @@ build:
       repeat: '0'
       config_suffix: _c1_BAG_L1
     labels:
-      subject_prefix: 'TabArena / '
       configuration_scope: One released default configuration fitted for one OpenML task and outer test split.
       binary: binary
       multiclass: multiclass

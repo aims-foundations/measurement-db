@@ -1,0 +1,765 @@
+{
+  "date": "2026-11-12",
+  "source_commit": "eaf5fcf6425d0d7d381fd96342a451e02c69e043",
+  "source_branch": "feat/coverage-network-followup",
+  "canonical_parent_revision": "52603c340627ad32f1591862d3d4970d5e16b23f",
+  "published_revision": "88f4a665524562532bb4041e6eea600b275f024d",
+  "published_files_verified": 698,
+  "public_benchmarks": 77,
+  "observations_preserved": 27807479,
+  "scope": "Identity refresh on the current schema; no testlet schema migration.",
+  "validation": {
+    "native_builds": "All 77 normal builders used declared upstream author inputs and pinned Parquet writers; no Measurement DB table or archive overrides.",
+    "native_audits": "All required dataset checks passed for all 77 benchmarks, including independent source claims. Reviewed hash-only mismatches were rechecked after exact preservation review; successful source checks were retained when source inputs, generated tables, and audit code were unchanged.",
+    "preservation": "Bijective subject mapping preserved every original configuration and observation, all null and non-null grades, items, assets, and complete trace payloads. Only reviewed subject identity fields, their linked IDs, and benchmark catalog wording may differ.",
+    "publication": "Every staged file rehashed before publication; every remote file verified by immutable Git blob or LFS SHA-256 identity and byte size.",
+    "frontend": "Production build, typecheck, network, gallery, and catalog checks passed. Browser checks at 1440px and 390px covered catalog expansion, network readiness, matrix switching, unmapped list, state preservation, and horizontal overflow.",
+    "regression_tests": {
+      "shared_and_reproduction": 315,
+      "shared_and_reproduction_subtests": 2111,
+      "final_native_audits": 229,
+      "final_native_audit_subtests": 1756
+    },
+    "author_caches": "Captured author inputs were verified against declared immutable source identities. CI may reuse the ordinary Hub cache for those author downloads; builders still verify all selected inputs, and expected Measurement DB tables remain separate.",
+    "source_download_transport": {
+      "scope": "Large pinned Zenodo archives use four bounded concurrent HTTP ranges; author URLs, declared sizes, complete-file SHA-256 validation, retry policy, and reference comparisons are unchanged. Existing raw inputs are not injected into reproduction jobs.",
+      "regression_tests": 183,
+      "subtests": 132,
+      "cases": [
+        "Concurrent completion with ordered assembly",
+        "Interrupted range resumes exactly",
+        "Invalid range and extra bytes rejected",
+        "Complete-file hash corruption rejected",
+        "Access denial not retried",
+        "Empty-response retry budget enforced",
+        "Unsupported ranges fall back to verified complete transfer",
+        "Failed transfers preserve existing file and remove temporary files"
+      ],
+      "live_author_download": {
+        "url": "https://zenodo.org/api/records/8021960/files/code_data_images.zip/content",
+        "size": 3929928,
+        "sha256": "febb8908d6e4f936f2d6744ca450339fdc309ecdcdce5b9d052637e49c01e557",
+        "seconds": 3.691,
+        "result": "Fresh author download passed exact pinned size and SHA-256"
+      }
+    }
+  },
+  "deferred": {
+    "frontieror": {
+      "reason": "Live author result tree changed; the original pinned hash is no longer served. Preserve current canonical data and labels.",
+      "expected_tree_sha256": "da1faa368edd45fd97f77d21fcafe2ab7fd28ff009e77aaec38349d3a2f9e6fe",
+      "observed_tree_sha256": "d32c476a78c4a09e0b7f8d4d7623408f96c6cd148d543065dcc031cabbc5af96"
+    }
+  },
+  "withheld": {
+    "medarabiq": "The captured NYU license withholds further distribution and modification rights; clarification is required before data publication.",
+    "osworld": "The curation record reports potential credentials in the upstream capture and withholds both raw and formatted data.",
+    "swe_together": "Source reproducibility hold, reviewed 2026-10-04: https://togetherbench.com/metrics.js now serves changed scores rather than the pinned 2026-09-30 snapshot with SHA-256 47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5. No immutable author-hosted or author-endorsed copy of that snapshot has been verified. Restore public release after recovering the pinned author snapshot and passing strict table reproduction, or after a separately reviewed version update backed by immutable author inputs."
+  },
+  "paper_html_reviews": [
+    {
+      "slug": "sustainable_food",
+      "url": "https://arxiv.org/html/2503.04734v1",
+      "change": "arXiv site header, footer, scripts and styles; exact article bytes unchanged",
+      "old": {
+        "size": 597935,
+        "sha256": "210e68366d73ecf203500aa0c9319aa1c5c8c77d8c64b8a141ad18eceeb79e1c"
+      },
+      "new": {
+        "size": 598025,
+        "sha256": "1e394547100da8520261c4b971113f0d5fd32abccdaf6660652fcc95d0d64de7"
+      },
+      "article_sha256": "f4783bc69bfa5e396bed293b5076e872e9d7537cc6a1af4c1bbe8fdee3cbbdb8"
+    },
+    {
+      "slug": "medagentboard",
+      "url": "https://arxiv.org/html/2505.12371v2",
+      "change": "arXiv site header, footer, scripts and styles; exact article bytes unchanged",
+      "old": {
+        "size": 1818958,
+        "sha256": "6dcc3a90af820d269883ddf30cd0695aae1fc92ef67d21a288fdfaa59b3c0478"
+      },
+      "new": {
+        "size": 1819048,
+        "sha256": "eb408c58e870b8c8e8fcd14a5eacd4827be0b6e00b6f658583f10ffe4597dd88"
+      },
+      "article_sha256": "40c00071d79d5658da5e51341ee826bc7d9ec014f812483b057cfdc4ca6316f1"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmark": "alpha_sql",
+      "subjects": 1,
+      "changed_subject_ids": 1,
+      "observations": 1534,
+      "traces": 1534,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "auditing_sabotage_bench",
+      "subjects": 18,
+      "changed_subject_ids": 18,
+      "observations": 1869,
+      "traces": 1869,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "bbq",
+      "subjects": 7,
+      "changed_subject_ids": 3,
+      "observations": 380198,
+      "traces": 380198,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "bedd_basalt",
+      "subjects": 15,
+      "changed_subject_ids": 15,
+      "observations": 50951,
+      "traces": 50951,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "care_enzymes",
+      "subjects": 22,
+      "changed_subject_ids": 22,
+      "observations": 16817,
+      "traces": 16817,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "classroom_ai",
+      "subjects": 14,
+      "changed_subject_ids": 14,
+      "observations": 10360,
+      "traces": 10360,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "cmmlu",
+      "subjects": 22,
+      "changed_subject_ids": 22,
+      "observations": 254804,
+      "traces": 254804,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "coffeebench",
+      "subjects": 7,
+      "changed_subject_ids": 7,
+      "observations": 21,
+      "traces": 21,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "complexbench",
+      "subjects": 15,
+      "changed_subject_ids": 15,
+      "observations": 17250,
+      "traces": 17250,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "crow",
+      "subjects": 34,
+      "changed_subject_ids": 34,
+      "observations": 5900,
+      "traces": 5900,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "csedb",
+      "subjects": 7,
+      "changed_subject_ids": 7,
+      "observations": 41922,
+      "traces": 41922,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "ehrflowbench",
+      "subjects": 7,
+      "changed_subject_ids": 0,
+      "observations": 140,
+      "traces": 140,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "embodied_agent_interface",
+      "subjects": 25,
+      "changed_subject_ids": 25,
+      "observations": 2500,
+      "traces": 2500,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "erbench",
+      "subjects": 8,
+      "changed_subject_ids": 8,
+      "observations": 213110,
+      "traces": 213110,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "exploitgym",
+      "subjects": 5,
+      "changed_subject_ids": 5,
+      "observations": 6357,
+      "traces": 6357,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "kmmlu",
+      "subjects": 30,
+      "changed_subject_ids": 30,
+      "observations": 1012300,
+      "traces": 1012300,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "kormedmcqa",
+      "subjects": 7,
+      "changed_subject_ids": 7,
+      "observations": 21391,
+      "traces": 21391,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "kris_bench",
+      "subjects": 20,
+      "changed_subject_ids": 20,
+      "observations": 130192,
+      "traces": 130192,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "lambda_fp_course",
+      "subjects": 9,
+      "changed_subject_ids": 9,
+      "observations": 6798,
+      "traces": 6798,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "lawbench",
+      "subjects": 51,
+      "changed_subject_ids": 51,
+      "observations": 918000,
+      "traces": 918000,
+      "python": "3.12.12"
+    },
+    {
+      "benchmark": "lexeval",
+      "subjects": 38,
+      "changed_subject_ids": 38,
+      "observations": 1076280,
+      "traces": 1076280,
+      "python": "3.14.6"
+    },
+    {
+      "benchmark": "lingoly",
+      "subjects": 11,
+      "changed_subject_ids": 11,
+      "observations": 24926,
+      "traces": 24926,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "liveaopsbench",
+      "subjects": 13,
+      "changed_subject_ids": 13,
+      "observations": 69264,
+      "traces": 69264,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "livebench",
+      "subjects": 200,
+      "changed_subject_ids": 200,
+      "observations": 165334,
+      "traces": 165334,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "llm4ir",
+      "subjects": 19,
+      "changed_subject_ids": 19,
+      "observations": 5348,
+      "traces": 5348,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "llm_bp_tag",
+      "subjects": 1,
+      "changed_subject_ids": 1,
+      "observations": 158596,
+      "traces": 158596,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "llm_survey_simulation",
+      "subjects": 8,
+      "changed_subject_ids": 8,
+      "observations": 669350,
+      "traces": 669350,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "llm_uncertainty_bench",
+      "subjects": 102,
+      "changed_subject_ids": 102,
+      "observations": 5100000,
+      "traces": 5100000,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "llms_lean_formalization",
+      "subjects": 120,
+      "changed_subject_ids": 120,
+      "observations": 64960,
+      "traces": 64960,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "lohi_drug_discovery",
+      "subjects": 213,
+      "changed_subject_ids": 213,
+      "observations": 1246925,
+      "traces": 1246925,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "matharena_platform",
+      "subjects": 68,
+      "changed_subject_ids": 68,
+      "observations": 32503,
+      "traces": 32503,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mathvista_mini",
+      "subjects": 263,
+      "changed_subject_ids": 263,
+      "observations": 285000,
+      "traces": 285000,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "medagentboard",
+      "subjects": 83,
+      "changed_subject_ids": 83,
+      "observations": 16847,
+      "traces": 16847,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "medwatermark_fws",
+      "subjects": 72,
+      "changed_subject_ids": 72,
+      "observations": 24200,
+      "traces": 24200,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mergebench",
+      "subjects": 2,
+      "changed_subject_ids": 2,
+      "observations": 3638,
+      "traces": 3638,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mind2web",
+      "subjects": 1,
+      "changed_subject_ids": 1,
+      "observations": 17153,
+      "traces": 17153,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mj_bench",
+      "subjects": 82,
+      "changed_subject_ids": 82,
+      "observations": 209509,
+      "traces": 209509,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mlip_arena",
+      "subjects": 71,
+      "changed_subject_ids": 71,
+      "observations": 122640,
+      "traces": 122640,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mmbench_v11",
+      "subjects": 251,
+      "changed_subject_ids": 251,
+      "observations": 3262900,
+      "traces": 3262900,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mmlu",
+      "subjects": 150,
+      "changed_subject_ids": 150,
+      "observations": 2106300,
+      "traces": 2106300,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mmoral_bench",
+      "subjects": 85,
+      "changed_subject_ids": 85,
+      "observations": 28679,
+      "traces": 28679,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "morphkv",
+      "subjects": 11,
+      "changed_subject_ids": 11,
+      "observations": 4105,
+      "traces": 4105,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "morqa",
+      "subjects": 4,
+      "changed_subject_ids": 4,
+      "observations": 17136,
+      "traces": 17136,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mtbbench",
+      "subjects": 25,
+      "changed_subject_ids": 25,
+      "observations": 8412,
+      "traces": 8412,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "mtbench",
+      "subjects": 34,
+      "changed_subject_ids": 34,
+      "observations": 5440,
+      "traces": 5440,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "nanobaselib",
+      "subjects": 10,
+      "changed_subject_ids": 10,
+      "observations": 319289,
+      "traces": 319289,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "nyu_ctf_bench",
+      "subjects": 15,
+      "changed_subject_ids": 15,
+      "observations": 2979,
+      "traces": 2979,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "perfcodebench",
+      "subjects": 20,
+      "changed_subject_ids": 20,
+      "observations": 23854,
+      "traces": 23854,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "perumedqa",
+      "subjects": 11,
+      "changed_subject_ids": 11,
+      "observations": 92180,
+      "traces": 92180,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "planbench",
+      "subjects": 42,
+      "changed_subject_ids": 42,
+      "observations": 38061,
+      "traces": 38061,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "programbench",
+      "subjects": 28,
+      "changed_subject_ids": 28,
+      "observations": 4965,
+      "traces": 4965,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "pxplore",
+      "subjects": 14,
+      "changed_subject_ids": 14,
+      "observations": 4079,
+      "traces": 4079,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "rclicks",
+      "subjects": 16,
+      "changed_subject_ids": 16,
+      "observations": 251820,
+      "traces": 251820,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "real_pocqi",
+      "subjects": 4,
+      "changed_subject_ids": 4,
+      "observations": 11560,
+      "traces": 11560,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "realtimeqa",
+      "subjects": 94,
+      "changed_subject_ids": 94,
+      "observations": 64822,
+      "traces": 64822,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "refgrader",
+      "subjects": 31,
+      "changed_subject_ids": 31,
+      "observations": 6046,
+      "traces": 6046,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "reliancescope",
+      "subjects": 24,
+      "changed_subject_ids": 24,
+      "observations": 7200,
+      "traces": 7200,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "researchclawbench",
+      "subjects": 37,
+      "changed_subject_ids": 37,
+      "observations": 1432,
+      "traces": 1432,
+      "python": "3.11",
+      "harness_correction": "Every new harness equals its original recorded_agent; all original configuration fields are preserved."
+    },
+    {
+      "benchmark": "rewardbench",
+      "subjects": 167,
+      "changed_subject_ids": 167,
+      "observations": 491343,
+      "traces": 491343,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "sugarcrepe",
+      "subjects": 1,
+      "changed_subject_ids": 1,
+      "observations": 15024,
+      "traces": 15024,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "summeval",
+      "subjects": 16,
+      "changed_subject_ids": 16,
+      "observations": 51200,
+      "traces": 51200,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "sustainable_food",
+      "subjects": 6,
+      "changed_subject_ids": 6,
+      "observations": 3000,
+      "traces": 3000,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "swebench_live",
+      "subjects": 65,
+      "changed_subject_ids": 65,
+      "observations": 14613,
+      "traces": 14613,
+      "python": "3.11",
+      "configuration_correction": "Harness and explicitly recorded reasoning effort checked against reviewed per-submission maps; every original submission feature preserved."
+    },
+    {
+      "benchmark": "swepolybench",
+      "subjects": 7,
+      "changed_subject_ids": 7,
+      "observations": 1871,
+      "traces": 1871,
+      "python": "3.11",
+      "configuration_correction": "Harness and explicitly recorded reasoning effort checked against reviewed per-submission maps; every original submission feature preserved."
+    },
+    {
+      "benchmark": "synthpai",
+      "subjects": 18,
+      "changed_subject_ids": 18,
+      "observations": 12578,
+      "traces": 12578,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "tabarena",
+      "subjects": 384,
+      "changed_subject_ids": 384,
+      "observations": 2457106,
+      "traces": 2457106,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "tensortrust",
+      "subjects": 3,
+      "changed_subject_ids": 3,
+      "observations": 681726,
+      "traces": 681726,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "theagentcompany",
+      "subjects": 19,
+      "changed_subject_ids": 1,
+      "observations": 3057,
+      "traces": 3057,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "threeeed",
+      "subjects": 4,
+      "changed_subject_ids": 4,
+      "observations": 17232,
+      "traces": 17232,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "truthfulqa_mc",
+      "subjects": 150,
+      "changed_subject_ids": 150,
+      "observations": 122550,
+      "traces": 122550,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "tumlu",
+      "subjects": 30,
+      "changed_subject_ids": 30,
+      "observations": 143316,
+      "traces": 143316,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "visit_bench",
+      "subjects": 19,
+      "changed_subject_ids": 15,
+      "observations": 71406,
+      "traces": 71406,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "visual_riddles",
+      "subjects": 8,
+      "changed_subject_ids": 8,
+      "observations": 3186,
+      "traces": 3186,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "weavebench",
+      "subjects": 7,
+      "changed_subject_ids": 7,
+      "observations": 114,
+      "traces": 114,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "wikihow_agent",
+      "subjects": 12,
+      "changed_subject_ids": 12,
+      "observations": 171412,
+      "traces": 171412,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "wmt_mqm",
+      "subjects": 113,
+      "changed_subject_ids": 113,
+      "observations": 4879368,
+      "traces": 4879368,
+      "python": "3.11"
+    },
+    {
+      "benchmark": "wonderbread",
+      "subjects": 38,
+      "changed_subject_ids": 38,
+      "observations": 21231,
+      "traces": 21231,
+      "python": "3.11"
+    }
+  ],
+  "table_hash_reviews": [
+    {
+      "benchmark": "programbench",
+      "old_trace_logical_sha256": "3cd543acc9d23951efe1f98919a175eb83d80d64171ebdc46199d44ba15fd40e",
+      "new_trace_logical_sha256": "25ac490e7ec2e1894ea0241789fd1fe2f89a3f0a09510cf5feef24078c72fe5c",
+      "rows": 4965,
+      "basis": "Every trace payload equals the current canonical baseline after the verified response-ID translation. Original complete audit process 736783 reported canonical storage, dataset integrity, independent provider claims, and metadata all OK in stdout inspected before its final table check. Focused final table check reproduced only the stale trace hash failure; every other table hash already matches. No source claims, audit code, source data, or generated table changed.",
+      "original_audit_seconds": 7191.24,
+      "log_note": "A waiting helper restarted the failed audit and overwrote its log; the duplicate was stopped. Original source-check completion was observed directly before that restart. The final characterization failure and follow-up are separately retained."
+    }
+  ],
+  "expected_coverage": {
+    "benchmarks": 270,
+    "subjects": 981,
+    "links": 4130,
+    "unmapped_benchmarks": 35,
+    "unmapped_slugs": [
+      "adaptivestep",
+      "afrieval",
+      "averimatec",
+      "brace",
+      "braveguard",
+      "chipbench",
+      "data_juicer2",
+      "decompile_bench",
+      "devbench",
+      "elicitation_game",
+      "engibench",
+      "enginemt_qa",
+      "felm",
+      "fetv",
+      "frontieror",
+      "haiid",
+      "interchangeable_token_embeddings",
+      "katakomba",
+      "lohi_drug_discovery",
+      "mergebench",
+      "mind2web",
+      "mlip_arena",
+      "mmedbench",
+      "mmoral_bench",
+      "mochi",
+      "nanobaselib",
+      "nis3d",
+      "oasst",
+      "prm800k",
+      "proteininvbench",
+      "rclicks",
+      "stanford_orb",
+      "svrpbench",
+      "threeeed",
+      "wmt_mqm"
+    ],
+    "basis": "Unchanged canonical baseline catalog plus all 77 validated native identity builds; compare with the prepared PR gallery."
+  }
+}

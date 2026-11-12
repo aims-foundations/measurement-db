@@ -61,7 +61,7 @@ class SynthPAI(BenchmarkBuild):
 
         # 3. Keep each recorded model configuration separate, without guessing versions.
         subjects = responses[['subject_key', 'log_configuration']].drop_duplicates()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(source_model=row.subject_key, harness=parameters['labels']['harness'],
             configuration_sha256=hashlib.sha256(row.log_configuration.encode()).hexdigest()) for row in subjects.itertuples()]
 
