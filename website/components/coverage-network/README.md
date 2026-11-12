@@ -30,7 +30,8 @@ this snapshot, never failure or a score of zero. Canonical subjects can combine
 several harness configurations. Subjects and benchmarks without records outside
 the published catalog are not introduced by presentation code.
 
-Unlinked benchmarks stay in a labeled list and in the matrix as empty rows.
+Unlinked benchmarks remain on the graph in a separate grid, in the searchable
+list, and in the matrix as empty rows. Their grid positions imply no connections.
 Provider filters cannot attribute these unlinked benchmarks to a provider.
 Matrix ordering changes only row and column positions. All rows and columns
 remain reachable; the overview draws observed edges and the detail grid mounts

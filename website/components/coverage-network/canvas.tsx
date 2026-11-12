@@ -52,7 +52,7 @@ export function CoverageCanvas({
         ([{ default: Sigma }, { default: Graph }, { NodeSquareProgram }]) => {
           if (cancelled || !container.current) return;
           const graph = new Graph({ type: "undirected" });
-          for (const node of data.nodes.filter((n) => n.degree > 0))
+          for (const node of data.nodes)
             graph.addNode(node.id, {
               ...node,
               color: NODE_COLORS[node.kind],
@@ -61,8 +61,8 @@ export function CoverageCanvas({
             });
           for (const edge of data.edges)
             graph.addEdgeWithKey(edge.id, edge.source, edge.target, {
-              size: 0.55,
-              color: "rgba(64, 97, 88, 0.3)",
+              size: 0.5,
+              color: "#d9dfdd",
             });
           const labels = createNetworkLabels();
           class BenchmarkProgram extends NodeSquareProgram {
@@ -171,8 +171,8 @@ export function CoverageCanvas({
             !visible.has(source) ||
             !visible.has(target) ||
             (!!active && !incident),
-          color: incident ? "rgba(35, 94, 81, 0.75)" : attributes.color,
-          size: incident ? 1.25 : attributes.size,
+          color: incident ? "#739b95" : attributes.color,
+          size: incident ? 1 : attributes.size,
         };
       },
     });
@@ -182,13 +182,17 @@ export function CoverageCanvas({
     if (!renderer || !selected) return;
     const graph = renderer.getGraph();
     if (!graph.hasNode(selected)) return;
-    // Reducer updates briefly leave the display cache in raw graph coordinates.
-    // Convert canonical positions explicitly instead of reading that cache.
+    // Reducer updates can leave Sigma's cached forward matrix behind its
+    // inverse. Recompute both conversions from the same camera state so a
+    // selected node is centered, including an unmapped node in the side grid.
+    const cameraState = renderer.getCamera().getState();
     const framedPosition = (id: string) =>
       renderer.viewportToFramedGraph(
         renderer.graphToViewport(
           graph.getNodeAttributes(id) as { x: number; y: number },
+          { cameraState },
         ),
+        { cameraState },
       );
     const point = framedPosition(selected);
     const neighbors = renderer

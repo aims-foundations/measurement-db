@@ -23,6 +23,31 @@ const matrixCode = stripTypeScriptTypes(
 const { buildCoverageMatrix, matrixWindow } = await import(
   `data:text/javascript;base64,${Buffer.from(matrixCode).toString("base64")}`
 );
+const asModuleUrl = (code) =>
+  `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
+const readModule = async (name) =>
+  stripTypeScriptTypes(
+    await readFile(
+      new URL(`../lib/coverage-network/${name}.ts`, import.meta.url),
+      "utf8",
+    ),
+    { mode: "transform" },
+  );
+const appearanceUrl = asModuleUrl(await readModule("appearance"));
+let layoutCode = (await readModule("layout")).replace(
+  '"./appearance"',
+  JSON.stringify(appearanceUrl),
+);
+for (const dependency of [
+  "graphology",
+  "graphology-layout-forceatlas2",
+  "graphology-layout-noverlap",
+])
+  layoutCode = layoutCode.replace(
+    JSON.stringify(dependency),
+    JSON.stringify(import.meta.resolve(dependency)),
+  );
+const { positionCoverageNetwork } = await import(asModuleUrl(layoutCode));
 const benchmarks = [
   { slug: "shared", name: "Shared", categories: ["coding"] },
   { slug: "unmapped", name: "Unmapped", categories: ["safety"] },
@@ -95,6 +120,55 @@ test("domain and provider filters preserve endpoints and handle unmapped benchma
     filterCoverageNetwork(data, { ...filters, showUnmapped: false }).nodes.size,
     3,
   );
+});
+
+test("unmapped benchmarks have distinct canvas positions outside the connected graph", () => {
+  const input = buildCoverageNetwork(
+    [
+      ...benchmarks,
+      ...Array.from({ length: 99 }, (_, i) => ({
+        slug: `unmapped-${i}`,
+        name: `Unmapped ${i}`,
+        categories: [],
+      })),
+    ],
+    subjects,
+    marginals,
+  );
+  const positioned = positionCoverageNetwork(input);
+  const connected = positioned.nodes.filter((n) => n.degree > 0);
+  const unmapped = positioned.nodes.filter((n) => !n.degree);
+  assert.equal(unmapped.length, 100);
+  assert.equal(positioned.nodes.length, input.nodes.length);
+  assert.deepEqual(positioned.edges, input.edges);
+  assert.ok(
+    positioned.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y)),
+  );
+  assert.equal(new Set(unmapped.map((n) => `${n.x},${n.y}`)).size, 100);
+  assert.ok(
+    Math.min(...unmapped.map((n) => n.x)) >
+      Math.max(...connected.map((n) => n.x)),
+  );
+  assert.ok(input.nodes.every((n) => n.x === 0 && n.y === 0));
+});
+
+test("an entirely unmapped or empty catalog still has a valid layout", () => {
+  const data = positionCoverageNetwork(
+    buildCoverageNetwork(benchmarks, [], []),
+  );
+  assert.equal(data.nodes.length, benchmarks.length);
+  assert.equal(
+    new Set(data.nodes.map((n) => `${n.x},${n.y}`)).size,
+    benchmarks.length,
+  );
+  assert.ok(
+    data.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y)),
+  );
+  assert.equal(data.edges.length, 0);
+  assert.deepEqual(positionCoverageNetwork({ nodes: [], edges: [] }), {
+    nodes: [],
+    edges: [],
+  });
 });
 
 test("the real catalog snapshot has valid bipartite edges and retains unlinked benchmarks", async (t) => {

@@ -54,6 +54,17 @@ export function positionCoverageNetwork(
       }),
       settings: { margin: 1.5, ratio: 1.2 },
     });
+  // Keep unmapped benchmarks on the canvas, in a separate grid to the right.
+  // These positions are only for display and do not imply evaluation links.
+  const placed = connected.map((node) => graph.getNodeAttributes(node.id));
+  const right = Math.max(0, ...placed.map((p) => p.x as number));
+  const top = Math.max(0, ...placed.map((p) => p.y as number));
+  const bottom = Math.min(0, ...placed.map((p) => p.y as number));
+  const isolatedCount = data.nodes.length - connected.length;
+  const columns = Math.max(1, Math.ceil(Math.sqrt(isolatedCount)));
+  const rows = Math.ceil(isolatedCount / columns);
+  const gap = 18;
+  let isolatedIndex = 0;
   return {
     ...data,
     nodes: data.nodes.map((node) => {
@@ -65,8 +76,13 @@ export function positionCoverageNetwork(
           y: p.y,
         };
       }
-      // Unlinked benchmarks live in a labeled list, not arbitrary map positions.
-      return { ...node, x: 0, y: 0 };
+      const i = isolatedIndex++;
+      return {
+        ...node,
+        x: right + 70 + (i % columns) * gap,
+        y:
+          (top + bottom) / 2 + ((rows - 1) / 2 - Math.floor(i / columns)) * gap,
+      };
     }),
   };
 }

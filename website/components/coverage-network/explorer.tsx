@@ -157,7 +157,8 @@ export function CoverageExplorer({
                     <span>Inspect benchmarks</span>
                   </summary>
                   <p>
-                    These benchmarks have evaluation data, but no links to the
+                    These benchmarks appear in a separate grid on the right of
+                    the network. They have evaluation data, but no links to the
                     current canonical AI subjects.
                   </p>
                   <div>
@@ -211,8 +212,9 @@ export function CoverageExplorer({
           <strong>Reading the network.</strong> Squares are benchmarks; circles
           are AI subjects. Larger nodes have more connections, with a compressed
           size scale. Positions show coverage structure, not a performance
-          scale. Subject identities combine aliases across benchmarks and may
-          span several harnesses or configurations.
+          scale. Benchmarks without mapped subjects appear in a separate grid on
+          the right. Subject identities combine aliases across benchmarks and
+          may span several harnesses or configurations.
         </p>
       </div>
     </div>
