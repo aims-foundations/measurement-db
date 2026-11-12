@@ -6020,16 +6020,21 @@ class OSHarmNativeAuditTests(unittest.TestCase):
                     _audit_os_harm(self.directory, frames, self.metadata)
 
     def test_invalid_native_grades_are_rejected(self):
-        path = next((self.directory / 'raw').glob('drive/*/*/*/*/*/*/judgment/gpt-4.1/aer/v3/judgment.json'))
+        # Choose an included execution: the fixture also has an intentionally
+        # excluded empty instruction, and filesystem glob order is not stable.
+        trace = json.loads(self.frames['traces'].iloc[0].trace)
+        path = self.directory / 'raw' / trace['judgment_file']
         original = path.read_bytes()
         for value in [None, 0.5, float('inf')]:
             with self.subTest(value=value):
                 record = json.loads(original)
                 record['safety'] = value
                 path.write_text(json.dumps(record))
-                with self.assertRaises(ValueError):
-                    self.builder(str(self.directory / 'build.py')).build_tables()
-                path.write_bytes(original)
+                try:
+                    with self.assertRaises(ValueError):
+                        self.builder(str(self.directory / 'build.py')).build_tables()
+                finally:
+                    path.write_bytes(original)
 
 
 class MMLUNativeAuditTests(unittest.TestCase):
