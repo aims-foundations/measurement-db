@@ -448,12 +448,14 @@ All workflow jobs target a native Linux x64 self-hosted runner with the custom l
 and temporary builds under
 `/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction`. It needs no Docker,
 interactive login, or AFS credentials. Each job creates a fresh Python virtual
-environment. Sixteen independent runner instances process one job each. The original
-instance lives at the installation root, and the other 15 live under
-`runners/02` through `runners/16`. Each has its own checkout, Python tool
-cache, download cache, and temporary directory. Full runs still group benchmarks
-in pairs; each pair runs sequentially within its job, so at most 16 benchmarks
-are being rebuilt at once. Reproduction jobs configure OpenMP, OpenBLAS, MKL,
+environment. Sixty-four independent runner instances process one job each. The
+original instance lives at the installation root, and the others live under
+`runners/02` through `runners/64`. Each has its own checkout, Python tool
+cache, download cache, and temporary directory. Set the repository Actions
+variable `REPRODUCTION_MAX_PARALLEL` to a positive integer to limit concurrent
+jobs to available memory and executable disk storage; the default is 64. The
+matrix groups builders when needed to stay within GitHub's 256-job limit.
+Builders within each group run sequentially. Reproduction jobs configure OpenMP, OpenBLAS, MKL,
 NumExpr, and Arrow CPU pools to use two threads, and Arrow I/O pools to use four.
 These are library settings, not an operating-system CPU quota. Larger pools
 require more runner installations and a higher `max-parallel` setting.
