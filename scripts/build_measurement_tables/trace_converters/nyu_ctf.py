@@ -34,7 +34,7 @@ def convert(source):
                         out.project(step, ['toolCalls', ordinal, 'id'], path + ['tool_calls', ordinal, 'id'])
         if message.get('agent') is not None:
             out.project(step, 'agent', path + ['agent'])
-        elif component != 'messages':
+        elif component not in {'messages', 'history'}:
             step['agent'] = component
         out.add(step, nyu_ctf={'kind': 'message', 'log': log, 'component': component, 'index': index})
         counts[step['type']] += 1

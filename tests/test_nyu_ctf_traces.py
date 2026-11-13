@@ -67,6 +67,15 @@ def test_recorded_unparsed_tool_arguments_remain_literal_even_when_invalid_json(
     assert turn['toolCalls'][0]['arguments'] == call['args']
 
 
+def test_enigma_without_a_recorded_agent_does_not_invent_an_agent_name():
+    native = source()
+    del native['released_traces'][2]['source_record']['history'][1]['agent']
+    value = convert(native).value; validate(value)
+    assert recover_nyu_ctf(value) == native
+    turn = next(s for s in value['steps'] if s['type'] == 'llm' and s.get('content') == 'Actual history output')
+    assert 'agent' not in turn
+
+
 def test_summary_only_null_assessment_does_not_invent_an_attempt():
     native = source(); native['released_traces'] = []
     result = convert(native); validate(result.value)
