@@ -206,7 +206,7 @@ def _agentdojo(directory, tables):
             )
             attack = record.get("attack_type") or (None if attack == "none" else attack)
             trace = (
-                json.dumps(record["messages"], ensure_ascii=False)
+                json.dumps(record["messages"], ensure_ascii=False, sort_keys=True)
                 if record.get("messages")
                 else None
             )
@@ -247,6 +247,19 @@ def _agentdojo(directory, tables):
             None if pd.isna(response.interactors) else response.interactors,
         )
 
+    # Compare complete source messages structurally across both serialization
+    # formats; trace/1's independent projection audit restores nulls and blocks.
+    from measurement_db.scripts.curate_benchmarks.chat_trace_audit import recover_messages
+    tables = dict(tables)
+    tables['traces'] = tables['traces'].copy()
+    content = tables['items'].set_index('item_id').content.to_dict()
+    normalized = []
+    for row in tables['traces'].itertuples():
+        value = json.loads(row.trace)
+        if isinstance(value, dict) and value.get('schema') == 'trace/1':
+            value = recover_messages(value, item_content=content[row.item_id])
+        normalized.append(json.dumps(value, ensure_ascii=False, sort_keys=True))
+    tables['traces']['trace'] = normalized
     _check(_actual(tables, key), expected, "AgentDojo outcomes and trace associations")
     return {
         "source_responses": sum(expected.values()),

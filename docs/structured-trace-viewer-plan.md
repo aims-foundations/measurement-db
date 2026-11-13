@@ -1,6 +1,6 @@
 # Plan: a standard trace format and a structured trace viewer
 
-Status: staged implementation. PR #15 provides the deployed schema, converter helpers,
+Status: ProgramBench released; converter-family migrations in progress. PR #15 provides the deployed schema, converter helpers,
 mini-swe-agent converter and structured website viewer. PR #16 adds `StructuredTraceBuild`,
 write-time validation and format-aware paging. PR #17 migrates ProgramBench; other builders
 retain legacy traces until they explicitly migrate. The survey and measurements below describe the
@@ -11,7 +11,7 @@ The builder contract follows in [#16](https://github.com/aims-foundations/measur
 (`feat/structured-trace-build` → `main`). The ProgramBench pilot is
 [#17](https://github.com/aims-foundations/measurement-db/pull/17)
 (`feat/programbench-structured-traces` → `main`). The reader and abstract contract are merged;
-the ProgramBench release follows on main.
+the ProgramBench release is merged and deployed on main.
 
 ## 1. Goal
 
@@ -687,3 +687,47 @@ prototype is not production code. Ask the plan's author for them.
   - `318db1aaee7dc64c`: gemini-3-1-pro × `sheepla__pingu.926d475` (compile_failed, 0 tests run)
   - `8acab3ff317104fb`: muse-spark-1.2-xhigh × `sheepla__pingu.926d475` (375 steps, format errors)
   - `39197df399b4fad8`: opus-4-7 × `sitkevij__hex.61ae69b` (Anthropic blocks, 389 failing tests)
+
+## 13. Converter-family rollout
+
+Work continues on `feat/trace-converter-families`, based on
+`codex/independent-gallery-workflow`. Reproduction is manually triggered;
+gallery preparation and preview deployment run independently.
+
+| Family | Representative builders | State |
+|---|---|---|
+| mini-swe-agent | ProgramBench | Released |
+| Chat messages and tool calls | tau-bench, AgentDojo | First migration batch |
+| OpenHands events | TheAgentCompany | Next family |
+| BrowserGym steps | WorkArena, VisualWebArena | Planned |
+| Custom and multi-agent records | OS-Harm, NYU CTF, others | Separate adapters after source review |
+| Text, submissions and pairwise sides | Survey each source shape before choosing pilots | Planned |
+
+The chat batch implements `chat@1` through each builder's `convert_trace()` hook.
+Benchmark envelopes and HAL-specific extraction stay in the builders; the shared
+converter handles message roles, content blocks, reasoning, usage and tool calls.
+It retains unused fields and references to mapped values, allowing an independent
+audit to recover every original message, including null fields and provider
+extensions. A task identical to item content is recoverable through the item link.
+
+HAL's duplicate provider wrappers are counted once per recorded response ID.
+Incompatible planner, executor or retry histories remain separate labeled
+contexts. Complete parallel-call proposals survive harness pruning. An ID-less
+result may use the executed call explicitly recorded in the harness history;
+empty IDs do not become invented identifiers. Indistinguishable repeated calls
+are preserved in source order and reported in the conversion counters. Simulator
+messages are labeled separately from the measured agent.
+
+For each family, first migrate representatives, then check full message/envelope
+recovery, source order, call associations, schema validation, observation identity,
+and unchanged measurement tables. Check the staged viewer on desktop and mobile,
+including search, step navigation, tool output, participant labels and errors.
+Only then expand the family to additional builders.
+
+Migration previews convert the pinned published legacy traces with the final
+builder hook and retain the existing measurement files and identities. Fixture
+builds exercise the complete shared builder path. This preview validation is
+separate from a fresh upstream rebuild: the latter remains available as a manual
+release check before canonical publication. Preview data and galleries use
+isolated HF branches and immutable revisions; they do not update the canonical
+dataset or the accepted production gallery.

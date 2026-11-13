@@ -2,12 +2,15 @@
 import importlib.util
 import io
 import json
+import shutil
 from pathlib import Path
 import sys
 import tarfile
 
 import pandas as pd
 import yaml
+import pytest
+from scripts.curate_benchmarks.chat_trace_audit import audit_messages
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
@@ -27,7 +30,9 @@ def test_long_unicode_trace_round_trips_for_both_grades(tmp_path, monkeypatch):
     source = tmp_path / 'source'
     source.mkdir()
     messages = [
-        {'role': 'tool', 'content': 'Long observation: ' + '測定 \\"quoted\\"\n' * 4000},
+        {'role': 'assistant', 'tool_calls': [{'id': None, 'function': 'read', 'args': {}}]},
+        {'role': 'tool', 'tool_call': {'id': None, 'function': 'read', 'args': {}},
+         'content': 'Long observation: ' + '測定 \\"quoted\\"\n' * 4000},
         {'role': 'assistant', 'content': 'The final answer must also survive.'},
     ]
     assert len(json.dumps(messages, ensure_ascii=False)) > 16000
@@ -67,5 +72,39 @@ def test_long_unicode_trace_round_trips_for_both_grades(tmp_path, monkeypatch):
     assert set(traces.response_id) <= set(responses.response_id)
     assert sorted(responses.merge(traces, on='response_id').response.dropna()) == [0.0, 1.0]
     for trace in traces.trace:
-        assert json.loads(trace) == messages
-        assert trace == json.dumps(messages, ensure_ascii=False)
+        value = json.loads(trace)
+        assert value['schema'] == 'trace/1'
+        audit_messages(value, messages)
+
+    from measurement_db.scripts.curate_benchmarks.batch3_audits import _agentdojo
+    raw_archive = bench / 'raw' / metadata['build']['parameters']['layout']['archive']
+    raw_archive.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source / metadata['build']['parameters']['layout']['archive'], raw_archive)
+    tables = {name: pd.read_parquet(output / (name + '.parquet'))
+              for name in ['benchmarks', 'items', 'subjects', 'responses', 'traces']}
+    assert _agentdojo(bench, tables)['source_traces'] == 4
+    corrupt = dict(tables)
+    corrupt['traces'] = tables['traces'].copy()
+    corrupt['traces'].loc[0, 'trace'] = corrupt['traces'].loc[0, 'trace'].replace('Long observation:', 'Changed observation:')
+    with pytest.raises(ValueError, match='AgentDojo outcomes'):
+        _agentdojo(bench, corrupt)
+
+    # The benchmark adapter must change only the trace payload and its marker.
+    from measurement_db.build_base import BenchmarkBuild
+    class Legacy(builder.AgentDojo):
+        _prepare_traces = BenchmarkBuild._prepare_traces
+        _write_trace_table = BenchmarkBuild._write_trace_table
+
+        def build_tables(self):
+            tables = super().build_tables()
+            tables['traces']['trace'] = tables['traces']['trace'].map(
+                lambda value: json.dumps(value, ensure_ascii=False))
+            return tables
+
+    import measurement_db.build_base as api
+    api._tables.reload()
+    baseline = tmp_path / 'legacy'
+    Legacy(str(bench / 'build.py')).main_from_args(
+        ['--source', str(source), '--output', str(baseline)])
+    for name in ['benchmarks', 'items', 'subjects', 'responses']:
+        assert (output / (name + '.parquet')).read_bytes() == (baseline / (name + '.parquet')).read_bytes()
