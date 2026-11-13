@@ -9,10 +9,54 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.build_base import ConvertedTrace, ExactMatcher, StructuredTraceBuild
+from measurement_db.scripts.build_measurement_tables.trace_converters import openhands
+from measurement_db.scripts.build_measurement_tables.trace_converters.source_fields import SourceTrace
 
 
-class TheAgentCompany(BenchmarkBuild):
+class TheAgentCompany(StructuredTraceBuild):
+    def convert_trace(self, source, *, context):
+        try:
+            parsed = json.loads(source) if isinstance(source, str) else source
+        except json.JSONDecodeError:
+            if source.lstrip().startswith(('[', '{')):
+                raise
+            # MUSE releases a complete text transcript, without structured turn
+            # boundaries. Keep it whole instead of guessing messages or tools.
+            out = SourceTrace(source, 'text@1')
+            step = {'type': 'llm'}
+            out.project(step, 'content', [])
+            out.add(step)
+            return ConvertedTrace(out.value(), {'text_transcripts': 1, 'llm': 1})
+        if isinstance(parsed, list) and parsed and all(
+                isinstance(row, dict) and {'user', 'assistant', 'tool_calls'} <= row.keys() for row in parsed):
+            # OWL's paired role-play records are a separate released format.
+            out = SourceTrace(source, 'theagentcompany_roleplay@1', json_encoded=isinstance(source, str))
+            tools = 0
+            for index, row in enumerate(parsed):
+                user = {'type': 'message', 'label': 'user'}
+                out.project(user, 'content', [index, 'user'], json_text=True)
+                out.add(user)
+                reply = {'type': 'llm'}
+                out.project(reply, 'content', [index, 'assistant'], json_text=True)
+                if row['tool_calls']:
+                    reply['toolCalls'] = [{} for _ in row['tool_calls']]
+                for number, call in enumerate(row['tool_calls']):
+                    prefix = [index, 'tool_calls', number]
+                    out.project(reply, ['toolCalls', number, 'name'], prefix + ['func_name'])
+                    out.project(reply, ['toolCalls', number, 'arguments'], prefix + ['args'], json_text=True)
+                out.add(reply)
+                for number, call in enumerate(row['tool_calls']):
+                    prefix = [index, 'tool_calls', number]
+                    step = {'type': 'tool'}
+                    for target, key in [('name', 'func_name'), ('arguments', 'args'), ('output', 'result')]:
+                        out.project(step, target, prefix + [key], json_text=True)
+                    out.add(step)
+                    tools += 1
+            return ConvertedTrace(out.value(), {'roleplay_records': len(parsed), 'llm': len(parsed), 'tool': tools})
+        value, counts = openhands.convert(source)
+        return ConvertedTrace(value, counts)
+
     def download(self):
         return self.fetch_sources("runs", "tasks")
 

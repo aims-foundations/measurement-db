@@ -701,7 +701,7 @@ publication and explicit gallery runs still prepare the published catalog.
 |---|---|---|
 | mini-swe-agent | ProgramBench | Released |
 | Chat messages and tool calls | tau-bench, AgentDojo | First migration batch |
-| OpenHands events | TheAgentCompany | Next family |
+| OpenHands events | TheAgentCompany | 3,057 traces validated; staged preview |
 | BrowserGym steps | WorkArena, VisualWebArena | Planned |
 | Custom and multi-agent records | OS-Harm, NYU CTF, others | Separate adapters after source review |
 | Text, submissions and pairwise sides | Survey each source shape before choosing pilots | Planned |
@@ -737,3 +737,25 @@ separate from a fresh upstream rebuild: the latter remains available as a manual
 release check before canonical publication. Preview data and galleries use
 isolated HF branches and immutable revisions; they do not update the canonical
 dataset or the accepted production gallery.
+
+### OpenHands pilot
+
+TheAgentCompany implements `StructuredTraceBuild.convert_trace()` using `openhands@1`.
+Recorded provider response IDs deduplicate parallel action records; tool outputs
+link through the native event `cause` and recorded call ID. Untimed event records
+retain their original timestamps without assuming a timezone. Provider Unix
+timestamps give partial timing where recorded. Recall, condensation and orphan
+harness errors remain explicit events.
+
+The release also contains OWL role-play records and MUSE text transcripts.
+The builder maps recorded role-play pairs and nested tool results separately;
+plain transcripts remain one complete text step with no guessed turn boundaries.
+Source-field references support independent display validation, and the complete
+native input remains recoverable byte-for-byte for the existing source audit.
+
+The pinned pilot has 2,707 OpenHands event streams, 175 OWL role-play traces, and
+175 MUSE text transcripts. All original inputs and displayed fields passed
+independent recovery checks, all converted documents passed schema validation,
+and the four measurement files and seven observation identity columns stayed
+unchanged. A source-only census found 76,372 distinct saved provider responses;
+all appear in the event-action coverage, with 112 copied action records deduplicated.
