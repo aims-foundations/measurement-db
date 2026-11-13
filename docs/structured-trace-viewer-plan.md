@@ -789,3 +789,12 @@ characterization audit recovers the original answer from either trace format.
 Plain-text traces retain their complete source once in `steps[0].content`,
 with a UTF-8 SHA-256 in native provenance. Independent recovery verifies that
 hash, so the format preserves the original text without duplicating its body.
+
+### Pairwise pilot
+
+AlpacaEval implements the hook through `pairwise@1`, displaying only the
+evaluated model output. The fixed reference side, original soft preference,
+recorded judge completion and source positions stay recoverable. Recorded
+judge text and annotator identity appear in evaluation provenance. Judge
+tokens, elapsed time and price are not attributed to candidate generation.
+Missing judgments remain absent, and no opponent response rows are invented.

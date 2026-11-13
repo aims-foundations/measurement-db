@@ -2998,6 +2998,7 @@ def _alpaca_source_records(directory, metadata):
 def _alpacaeval(directory, tables, metadata, source_records=None):
     """Check every native comparison, its fixed opponent, grade and full judge record."""
     import math
+    from .trace_source_audit import recover_alpacaeval
     from urllib.parse import unquote
 
     native, reference, copies = (
@@ -3036,7 +3037,7 @@ def _alpacaeval(directory, tables, metadata, source_records=None):
     traces = tables["traces"].set_index("response_id").trace.to_dict()
     seen, used_items, counts = Counter(), set(), Counter()
     for response in tables["responses"].itertuples():
-        trace = json.loads(traces[response.response_id])
+        trace = json.loads(recover_alpacaeval(traces[response.response_id]))
         key = trace["source_file"], trace["source_row"]
         original = native[key]
         _check(trace, {"source_file": key[0], "source_row": key[1], "native_record": original},

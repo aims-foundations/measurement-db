@@ -145,3 +145,31 @@ def recover_text(value):
     if value['steps'][0].get('type') != 'llm' or value['steps'][0].get('content') != source:
         raise ValueError('The complete original answer is not preserved')
     return original
+
+
+def recover_alpacaeval(value):
+    original = value
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, dict) or value.get('schema') != 'trace/1':
+        return original
+    if value.get('converter') != 'pairwise@1':
+        raise ValueError('Expected an AlpacaEval pairwise trace')
+    original, source = checked_source(value)
+    record = source['native_record']
+    reference = 'gpt4_1106_preview'
+    if reference not in {record['generator_1'], record['generator_2']}:
+        raise ValueError('The comparison has no released fixed reference')
+    side = 2 if record['generator_1'] == reference else 1
+    if len(value['steps']) != 1 or value['steps'][0]['type'] != 'llm':
+        raise ValueError('Each pairwise trace must display only its evaluated side')
+    step = value['steps'][0]
+    if step.get('model') != record[f'generator_{side}'] or step.get('content') != record[f'output_{side}']:
+        raise ValueError('The opponent output was substituted for the evaluated model')
+    if 'usage' in step or 'cost' in step or 'run' in value:
+        raise ValueError('Judge metrics must not be attributed to candidate generation')
+    completion = record.get('raw_completion')
+    judge = value.get('evaluation', {}).get('judge')
+    if completion is None and judge is not None or completion is not None and judge is None:
+        raise ValueError('Recorded and unavailable judge outputs must remain distinct')
+    return original
