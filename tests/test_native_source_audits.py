@@ -4196,6 +4196,7 @@ class NYUCTFAuditTests(unittest.TestCase):
         import tarfile
         from scripts.build_measurement_tables import reload
 
+        (ROOT / "artifacts").mkdir(exist_ok=True)
         reload()
         self.addCleanup(reload)
         self.temporary = tempfile.TemporaryDirectory(dir=ROOT / "artifacts")
@@ -4279,6 +4280,7 @@ class NYUCTFAuditTests(unittest.TestCase):
 
     def test_grade_protocol_trace_and_input_corruption_are_rejected(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _nyu_ctf
+        from measurement_db.scripts.curate_benchmarks.trace_source_audit import recover_nyu_ctf
         for change in ["grade", "fill_null", "subject", "item", "trial", "protocol", "content", "flag", "verifier",
                        "asset_bytes", "asset_link", "configuration", "clip", "drop_trace", "missing"]:
             with self.subTest(change=change):
@@ -4316,8 +4318,8 @@ class NYUCTFAuditTests(unittest.TestCase):
                 elif change == "configuration":
                     tables["subjects"]["subject_features_extra"] = tables["subjects"].subject_features_extra.str.replace("actual-snapshot", "invented-snapshot")
                 elif change in {"clip", "drop_trace"}:
-                    index = next(i for i, row in tables["traces"].iterrows() if json.loads(row.trace)["released_traces"])
-                    trace = json.loads(tables["traces"].loc[index, "trace"])
+                    index = next(i for i, row in tables["traces"].iterrows() if json.loads(recover_nyu_ctf(row.trace))["released_traces"])
+                    trace = json.loads(recover_nyu_ctf(tables["traces"].loc[index, "trace"]))
                     if change == "clip":
                         trace["released_traces"][0]["source_record"] = {"summary": "clipped"}
                     else:

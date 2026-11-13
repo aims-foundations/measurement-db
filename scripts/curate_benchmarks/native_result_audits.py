@@ -22841,6 +22841,7 @@ def _nyu_ctf_sources(directory, metadata):
 
 
 def _nyu_ctf(directory, tables, metadata, source=None):
+    from .trace_source_audit import recover_nyu_ctf
     import ast
     import hashlib
 
@@ -22882,7 +22883,7 @@ def _nyu_ctf(directory, tables, metadata, source=None):
         _check(json.loads(row.test_condition), dict(kind="published_submission_assessment", protocol=protocol,
             released_trace_files=len(original["trace"]["released_traces"])), "NYU CTF explicit aggregation and trace availability")
         _check(pd.isna(row.interactors), True, "NYU CTF no invented interaction settings")
-        _check(json.loads(traces[row.response_id]), original["trace"], "NYU CTF complete native traces and summary associations")
+        _check(json.loads(recover_nyu_ctf(traces[row.response_id])), original["trace"], "NYU CTF complete native traces and summary associations")
         if row.item_id not in used_items:
             _check(json.loads(item["content"]), challenge["content"], "NYU CTF complete original public challenge definition")
             manifest = json.loads(item["asset_manifest"]) if pd.notna(item["asset_manifest"]) else []
