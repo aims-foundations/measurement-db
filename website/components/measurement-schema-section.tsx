@@ -3,6 +3,7 @@ import path from "node:path";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { SchemaExplorer } from "@/components/schema-explorer";
 
 const schemaPath = path.resolve(process.cwd(), "..", "schema.md");
 
@@ -112,6 +113,7 @@ export async function MeasurementSchemaSection() {
               {implementationSource}
             </ReactMarkdown>
           </article>
+          <SchemaExplorer />
         </ScrollReveal>
       </div>
     </section>

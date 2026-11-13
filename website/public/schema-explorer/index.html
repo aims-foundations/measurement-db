@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Measurement DB — Normalized schema</title>
+    <link rel="stylesheet" href="./schema-explorer.css" />
+    <script src="./schema-explorer.js" defer></script>
+  </head>
+  <body>
+    <div id="mdb-schema-expanded">
+      <section class="schema-app" aria-label="Expanded schema explorer">
+        <div class="s-controls">
+          <label
+            >Fields
+            <select data-fields aria-label="Fields shown on table cards">
+              <option value="keys" selected>Connection keys</option>
+              <option value="essential">Keys + useful fields</option>
+              <option value="all">All fields</option>
+            </select></label
+          >
+          <label
+            ><input type="checkbox" data-focus /> Selected table’s joins
+            only</label
+          >
+        </div>
+        <div class="s-map">
+          <svg
+            class="s-wires"
+            role="img"
+            aria-label="General schema relationships. Arrows point from referenced tables to referencing tables. Definitions are ordered top to bottom; groups flow left to right."
+          ></svg>
+          <div class="s-nodes"></div>
+        </div>
+        <div class="s-legend">
+          <span>Referenced table → referencing table</span
+          ><span>Solid: required reference · Dashed: nullable reference</span
+          ><span>PK primary key · FK foreign key · JSON nested reference</span>
+        </div>
+        <section class="s-detail" aria-live="polite"></section>
+      </section>
+    </div>
+
+    <noscript>JavaScript is required to explore this diagram.</noscript>
+  </body>
+</html>
