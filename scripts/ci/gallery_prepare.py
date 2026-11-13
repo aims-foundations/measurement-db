@@ -1,4 +1,4 @@
-"""Prepare independent static gallery bundles after strict HF validation.
+"""Prepare static gallery bundles from pinned published HF tables.
 
 Run via ``python -m scripts.ci.gallery_prepare``. Worker processes own isolated
 directories; only the parent assembles shared catalogs. No HF writes occur here.
@@ -278,7 +278,7 @@ def assemble(summaries: dict, destination: Path) -> None:
     (destination / "benchmark-attributions.json").write_text(attributions.render_manifest(payload))
 
 
-def prepare(report_path: Path, candidate: Path, workers: int) -> None:
+def prepare(candidate: Path, workers: int) -> None:
     from huggingface_hub import HfApi, RepoFolder, hf_hub_download
     from huggingface_hub.errors import RemoteEntryNotFoundError
     from .benchmark_release import load_release
@@ -294,8 +294,6 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
         raise ValueError("HF_REVISION must be pinned before preparation")
     sha, tree = git("rev-parse", "HEAD"), git("rev-parse", "HEAD^{tree}")
     run_id, attempt = os.environ["GITHUB_RUN_ID"], int(os.environ["GITHUB_RUN_ATTEMPT"])
-    report = json.loads(report_path.read_text())
-    receipts = artifacts.validate_report(report, revision=revision, sha=sha, run_id=run_id, attempt=attempt)
     api = HfApi()
     gallery_revision = api.dataset_info(artifacts.GALLERY_REPO).sha
     try:
@@ -318,11 +316,6 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
         source = describe_source(api, slug, revision)
         if source is None:
             continue
-        if slug in receipts:
-            expected = {name: {"size": item["size"], "sha256": item["sha256"]}
-                        for name, item in source["tables"].items()}
-            if receipts[slug] != expected:
-                raise ValueError(f"{slug}: gallery source differs from byte-validated tables")
         inputs = benchmark_inputs(slug, source, generator, ROOT / "website")
         tasks.append({"slug": slug, "source": source, "inputs": inputs,
                       "candidate": str(candidate.resolve()), "gallery_revision": gallery_revision,
@@ -348,6 +341,16 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
         target = candidate / catalog["path"]
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(archive, target)
+    # Record the published inputs consumed by the gallery. Reproduction of
+    # those tables from raw benchmark sources is a separate manual workflow.
+    report = {"kind": "gallery-preparation", "head_sha": sha, "hf_revision": revision,
+              "run_id": run_id, "run_attempt": attempt,
+              "results": [{"benchmark": slug, "status": "prepared",
+                           "tables": {name: {"size": table["size"], "sha256": table["sha256"]}
+                                      for name, table in entry["inputs"]["tables"].items()}}
+                          for slug, entry in sorted(entries.items())]}
+    report_path = candidate / "validation.json"
+    artifacts.write_json(report_path, report)
     manifest = {"schema_version": artifacts.SCHEMA_VERSION, "git_sha": sha, "git_tree": tree,
                 "source_repo": artifacts.SOURCE_REPO, "source_revision": revision,
                 "validation": {"run_id": run_id, "run_attempt": attempt,
@@ -362,7 +365,6 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
                                                 if entry["path"] in known)}
     artifacts.validate_manifest(manifest)
     artifacts.write_json(candidate / "manifest.json", manifest)
-    shutil.copyfile(report_path, candidate / "validation.json")
     artifacts.write_json(candidate / "timings.json", timings)
     stage_handoff(candidate, manifest)
     hits = sum(t["cache_hit"] for t in timings.values())
@@ -401,11 +403,10 @@ def stage_handoff(candidate: Path, manifest: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
-    prepare(args.report, args.out, args.workers)
+    prepare(args.out, args.workers)
 
 
 if __name__ == "__main__":

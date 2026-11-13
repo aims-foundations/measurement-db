@@ -145,7 +145,7 @@ class GalleryArtifactTests(unittest.TestCase):
         artifacts.write_json(report_path, report)
         self.manifest["validation"]["report_sha256"] = artifacts.file_digest(report_path)
         artifacts.write_json(self.candidate / "manifest.json", self.manifest)
-        with self.assertRaisesRegex(ValueError, "byte-validated"):
+        with self.assertRaisesRegex(ValueError, "recorded source"):
             release.verify_candidate(self.candidate, tree=TREE)
 
     def test_failed_missing_reference_and_unvalidated_results_are_rejected(self):
@@ -153,8 +153,32 @@ class GalleryArtifactTests(unittest.TestCase):
         for status in ("failed", "reference_error", "pending", "passed"):
             with self.subTest(status=status):
                 report["results"][0] = {"benchmark": "alpha", "status": status}
-                with self.assertRaisesRegex(ValueError, "byte-comparison"):
+                with self.assertRaisesRegex(ValueError, "reproduction record"):
                     artifacts.validate_report(report, revision=REVISION, sha=COMMIT, run_id="123", attempt=2)
+
+    def test_preparation_provenance_checks_every_source_without_reproduction(self):
+        report_path = self.candidate / "validation.json"
+        report = json.loads(report_path.read_text())
+        report["kind"] = "gallery-preparation"
+        report["results"][0]["status"] = "prepared"
+        for corruption, message in ((None, None), ("missing", "every prepared benchmark"),
+                                    ("hash", "recorded source"), ("status", "gallery-preparation record")):
+            with self.subTest(corruption=corruption):
+                changed = json.loads(json.dumps(report))
+                if corruption == "missing":
+                    changed["results"] = []
+                elif corruption == "hash":
+                    changed["results"][0]["tables"]["items.parquet"]["sha256"] = "f" * 64
+                elif corruption == "status":
+                    changed["results"][0]["status"] = "passed"
+                artifacts.write_json(report_path, changed)
+                self.manifest["validation"]["report_sha256"] = artifacts.file_digest(report_path)
+                artifacts.write_json(self.candidate / "manifest.json", self.manifest)
+                if message:
+                    with self.assertRaisesRegex(ValueError, message):
+                        release.verify_candidate(self.candidate, tree=TREE)
+                else:
+                    self.assertEqual(release.verify_candidate(self.candidate, tree=TREE), self.manifest)
 
     def test_archives_reject_paths_links_and_unindexed_members_even_with_valid_archive_hash(self):
         for name, kind, indexed in (("../escape", tarfile.REGTYPE, True),
@@ -199,6 +223,10 @@ class GalleryArtifactTests(unittest.TestCase):
                 "head_repository": {"full_name": release.REPOSITORY},
                 "status": "completed", "conclusion": "success"}
         release.checked_run(good)
+        release.checked_run({**good, "path": release.LEGACY_WORKFLOW})
+        release.checked_run({**good, "event": "push", "head_branch": "main"})
+        with self.assertRaises(ValueError):
+            release.checked_run({**good, "event": "push", "head_branch": "feature"})
         for changes in ({"head_repository": {"full_name": "someone/fork"}},
                         {"event": "push"}, {"conclusion": "failure"}, {"path": "other.yml"}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):

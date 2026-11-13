@@ -7,6 +7,7 @@ import importlib.util
 import json
 import multiprocessing
 import os
+import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -97,6 +98,49 @@ class GalleryPreparationTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
         self.addCleanup(gallery.source_tables.cache_clear)
         self.addCleanup(gallery.source_revision.cache_clear)
+
+    def test_complete_preparation_writes_source_provenance_without_reproduction(self):
+        from huggingface_hub import RepoFolder
+        from test_gallery_artifacts import candidate_fixture, COMMIT, TREE, REVISION
+        from scripts.ci import gallery_release
+
+        previous, manifest = candidate_fixture(self.root)
+        entry = manifest["benchmarks"]["alpha"]
+        source = {"revision": REVISION, "tables": entry["inputs"]["tables"]}
+        output = self.root / "prepared"
+        artifacts.write_json(self.root / "website/content/curated/hidden-benchmarks.json", [])
+
+        def prepare_workers(worker, tasks):
+            task = list(tasks)[0]
+            self.assertEqual(task["source"]["revision"], REVISION)
+            target = output / entry["path"]
+            target.parent.mkdir(parents=True)
+            shutil.copyfile(previous / entry["path"], target)
+            return [("alpha", entry, {"records": {"ready": True}}, {"cache_hit": True, "total_seconds": 0})]
+
+        pool = Mock()
+        pool.__enter__ = Mock(return_value=Mock(map=prepare_workers))
+        pool.__exit__ = Mock(return_value=False)
+        with patch.object(prepare, "ROOT", self.root), \
+             patch.object(prepare, "git", side_effect=["", COMMIT, TREE]), \
+             patch.dict(os.environ, HF_REVISION=REVISION, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_STEP_SUMMARY=""), \
+             patch("huggingface_hub.HfApi") as api_factory, \
+             patch("huggingface_hub.hf_hub_download", return_value=previous / "manifest.json"), \
+             patch.object(prepare, "generator_identity", return_value={}), \
+             patch.object(prepare, "source_tree", return_value=[RepoFolder(path="alpha", oid=REVISION)]), \
+             patch.object(prepare, "describe_source", return_value=source), \
+             patch.object(prepare, "benchmark_inputs", return_value=entry["inputs"]), \
+             patch.object(prepare, "ProcessPoolExecutor", return_value=pool), \
+             patch.object(prepare, "assemble", side_effect=lambda summaries, target: shutil.copytree(self.root / "generated", target)):
+            # Pin the accepted gallery separately from the canonical table source.
+            api_factory.return_value.dataset_info.return_value.sha = REVISION
+            prepare.prepare(output, workers=1)
+        report = json.loads((output / "validation.json").read_text())
+        self.assertEqual(report["kind"], "gallery-preparation")
+        self.assertEqual(report["results"][0]["status"], "prepared")
+        self.assertEqual(report["results"][0]["tables"], entry["inputs"]["tables"])
+        gallery_release.verify_candidate(output, tree=TREE)
+        self.assertTrue((output / "handoff/manifest.json").is_file())
 
     def test_listing_retries_transient_errors_but_never_missing_or_forbidden_data(self):
         import httpx

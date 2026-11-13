@@ -106,38 +106,33 @@ from their original item row.
 
 ## Deployment
 
-1. An in-repository PR runs **Benchmark table reproduction**. Changed builders
-   read their declared upstream sources and byte-compare every generated table
-   against one pinned commit of canonical HF `main`. Missing references, missing
-   or extra tables, and mismatches fail. Withheld benchmarks retain their
-   existing skip policy. There is no automatic baseline creation or canonical
-   HF upload. Fork PRs never execute repository code on the runners.
-2. After the benchmark report succeeds, **Prepare gallery** checks its per-table
-   SHA-256/size receipts. Four isolated worker processes reuse matching verified
-   bundles or generate gallery, saturation, marginals, timeline inputs, and
-   Rasch output for each benchmark. One parent combines all eight catalogs.
-   Preparation emits stage timings and a cache-hit summary. It does not write HF.
-3. The same run uploads a `gallery-candidate-<attempt>` artifact containing only
-   archives not yet accepted on HF, plus a small `gallery-manifest-<attempt>`
-   artifact with the manifest and validation receipt, retained for 30 days.
-   A reusable Vercel workflow restores verified archives from the shared runner
-   cache first, downloading the candidate artifact only for unpublished cache
-   misses. Accepted misses come from the pinned HF gallery commit. It deploys a
-   PR preview and creates or reuses a seven-day review link. **Gallery ready**
-   succeeds only after validation and any requested preparation/preview succeed.
-   A failed-preview-only retry reuses the successful preparation attempt's
-   manifest and candidate together, without repeating preparation.
-4. A relevant push to `main` runs **Deploy website to Vercel**. It finds a
-   successful preparation run for the merged PR and requires an exact Git-tree
-   match, which supports merge and squash commits. It verifies the validation
-   receipt, whole-archive hashes, indexed file hashes, and source catalogs;
-   restores static files; builds Next.js; publishes accepted bundles only to
-   the gallery HF repository; and deploys the prebuilt application.
+1. **Prepare gallery and deploy website** runs for relevant repository PRs and
+   pushes to `main`. It pins canonical HF `main` to one immutable revision and
+   reads its formatted tables. Fork PRs never execute repository code on the
+   self-hosted runners.
+2. **Prepare gallery** uses four isolated workers to reuse matching verified
+   bundles or generate gallery records, saturation, marginals, timeline inputs,
+   and Rasch output. The parent combines the catalogs and records source-table
+   hashes, the HF revision, and preparation run in `validation.json` with
+   `kind: gallery-preparation`. Preparation emits timings and cache statistics.
+3. The run uploads a `gallery-candidate-<attempt>` artifact containing archives
+   absent from the accepted HF gallery, and a `gallery-manifest-<attempt>`
+   artifact containing the manifest and provenance record, retained for 30 days.
+   Deployment restores verified archives from the runner cache, GitHub artifacts,
+   or the pinned HF gallery. PRs receive a preview and review link.
+   **Gallery ready** requires successful preparation and deployment when needed.
+4. On `main`, the same workflow prepares a gallery for the merged tree and then
+   calls **Deploy website to Vercel**. Deployment verifies source provenance,
+   archive and file hashes, and source catalogs, builds Next.js, publishes the
+   gallery release, and deploys production. A deployment-only retry can reuse
+   the successful preparation attempt.
 
+**Benchmark table reproduction** runs only by manual dispatch. It rebuilds
+benchmarks from archived or upstream raw sources and byte-compares the resulting
+tables against HF. Its report is independent of the gallery pipeline. Previously
+published galleries carrying reproduction receipts remain supported.
 Preparation and deployment inspect full Git diffs, including changes beyond
-GitHub's 300-file filter limit. This change does not alter the benchmark
-validator's existing push triggers or folder selection. Tightening those
-triggers and eliminating duplicate validation reports is a separate follow-up.
+GitHub's 300-file filter limit.
 
 The per-benchmark cache key includes table paths and SHA-256 hashes, metadata,
 renderer/analysis code, numerical-library versions, fit options, relevant
@@ -148,7 +143,7 @@ its table bytes must equal the current release's input hashes. Shared renderer
 or numerical-library upgrades deliberately invalidate all affected bundles.
 
 HF `measurement-db-gallery/v2/benchmarks/` holds immutable benchmark archives;
-`v2/catalog/` holds catalogs; `v2/receipts/` holds validation reports; and
+`v2/catalog/` holds catalogs; `v2/receipts/` holds source provenance and legacy validation reports; and
 `v2/releases/` holds release manifests. `v2/latest.json` advances only after
 all objects are uploaded. Existing legacy gallery files are preserved. Uploads
 use a parent-commit guard and refuse to publish if GitHub `main` has moved.
@@ -199,13 +194,14 @@ See `website/MEILISEARCH.md` to enable it after activating the subscription.
 
 For initial bootstrap, expired PR artifacts, or an intentional HF data refresh:
 
-1. Run **Benchmark table reproduction** on the intended repository branch with
-   `prepare_gallery=true`. The benchmark input is the existing validation scope;
-   leave it empty for full validation. Preparation always produces a complete
-   visible gallery, reusing matching accepted bundles when available.
-2. Run **Deploy website to Vercel** on that same tree with `candidate_run_id`
-   set to the successful preparation run ID. Feature branches create previews;
-   `main` publishes the gallery release and deploys production.
+1. Run **Prepare gallery and deploy website** on the intended repository branch.
+   Preparation reads a pinned HF revision and produces the complete visible
+   gallery, reusing matching bundles. The workflow then deploys automatically.
+   Feature branches create previews, and `main` publishes the gallery release
+   and deploys production.
+2. Run **Benchmark table reproduction** separately when checking whether
+   benchmark builders reproduce the published tables. It is manual-only and
+   its results are independent of gallery preparation and deployment.
 
 An ordinary redeploy can leave `candidate_run_id` empty. If the base branch
 changed since PR preparation, update the PR and rerun its checks before merging.

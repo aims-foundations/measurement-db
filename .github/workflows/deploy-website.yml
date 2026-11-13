@@ -1,8 +1,6 @@
 name: Deploy website to Vercel
 
 on:
-  push:
-    branches: [main]
   workflow_call:
     inputs:
       candidate_run_id:
@@ -47,9 +45,10 @@ jobs:
         env:
           BEFORE: ${{ github.event.pull_request.base.sha || github.event.before }}
           AFTER: ${{ github.event.pull_request.head.sha || github.sha }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
         run: |
           website_changed=false
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
+          if [ -n "$CANDIDATE_RUN_ID" ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
             website_changed=true
           else
             if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
@@ -58,7 +57,7 @@ jobs:
             changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
               benchmarks/ website/ schema.md scripts/render_website/ \
               scripts/analyze_measurements/ scripts/ci/ .github/workflows/deploy-website.yml \
-              .github/workflows/benchmark-reproduction.yml)
+              .github/workflows/prepare-gallery.yml)
             if [ -n "$changed_paths" ]; then website_changed=true; fi
           fi
           echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"

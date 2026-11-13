@@ -1,0 +1,167 @@
+name: Prepare gallery and deploy website
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: gallery-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check for benchmark or website changes
+        id: check
+        env:
+          BEFORE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          AFTER: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          website_changed=false
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
+            website_changed=true
+          else
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              BEFORE=$(git merge-base "$BEFORE" "$AFTER")
+            fi
+            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
+              benchmarks/ website/ schema.md scripts/render_website/ \
+              scripts/analyze_measurements/ scripts/ci/ .github/workflows/deploy-website.yml \
+              .github/workflows/prepare-gallery.yml)
+            if [ -n "$changed_paths" ]; then website_changed=true; fi
+          fi
+          echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"
+
+  prepare-gallery:
+    name: Prepare gallery
+    needs: changes
+    if: >-
+      needs.changes.outputs.deploy == 'true' &&
+      github.repository == 'aims-foundations/measurement-db' &&
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'))
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 720
+    env:
+      GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
+      GALLERY_SCRATCH_DIR: ${{ vars.GALLERY_SCRATCH_DIR }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      PYTHONUNBUFFERED: '1'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMEXPR_NUM_THREADS: '2'
+      ARROW_IO_THREADS: '4'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Configure gallery scratch storage
+        id: storage
+        run: |
+          root="${GALLERY_SCRATCH_DIR:-$RUNNER_TEMP}"
+          directory="$root/gallery-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$directory/tmp"
+          echo "directory=$directory" >> "$GITHUB_OUTPUT"
+          echo "GALLERY_JOB_DIR=$directory" >> "$GITHUB_ENV"
+          echo "TMPDIR=$directory/tmp" >> "$GITHUB_ENV"
+          if [ -n "$GALLERY_SCRATCH_DIR" ]; then
+            # Share immutable Hub downloads across this host's runner pool and
+            # keep large downloads off the runner checkout filesystem.
+            mkdir -p "$root/huggingface/hub" "$root/huggingface/xet" "$root/pip"
+            echo "HF_HUB_CACHE=$root/huggingface/hub" >> "$GITHUB_ENV"
+            echo "HF_XET_CACHE=$root/huggingface/xet" >> "$GITHUB_ENV"
+            echo "PIP_CACHE_DIR=$root/pip" >> "$GITHUB_ENV"
+          fi
+          df -h "$directory"
+      - uses: actions/setup-python@v5
+        with:
+          # Keep the preparation cache identity identical across runner caches.
+          python-version: '3.11.17'
+          cache: pip
+          cache-dependency-path: scripts/ci/gallery-requirements.txt
+      - name: Install isolated preparation dependencies
+        run: |
+          python -m venv --clear "$GALLERY_JOB_DIR/venv"
+          echo "$GALLERY_JOB_DIR/venv/bin" >> "$GITHUB_PATH"
+          "$GALLERY_JOB_DIR/venv/bin/pip" install -r scripts/ci/gallery-requirements.txt 'pytest>=8,<10'
+          "$GALLERY_JOB_DIR/venv/bin/pip" install 'torch==2.10.0' --index-url https://download.pytorch.org/whl/cpu
+      - name: Test gallery parity, cache reuse, and artifact integrity
+        run: python -m pytest -q tests/test_gallery_*.py
+      - name: Pin the published source tables to one HF commit
+        run: |
+          python - <<'PYTHON'
+          import os
+          from huggingface_hub import HfApi
+          from scripts.ci.gallery_artifacts import SOURCE_REPO
+          revision = HfApi().dataset_info(SOURCE_REPO).sha
+          with open(os.environ["GITHUB_ENV"], "a") as output:
+              output.write(f"HF_REVISION={revision}\n")
+          print(f"Gallery source: {SOURCE_REPO}@{revision}")
+          PYTHON
+      - name: Prepare benchmark bundles with four workers and stage timings
+        run: >-
+          python -m scripts.ci.gallery_prepare
+          --out "$GALLERY_JOB_DIR/candidate"
+          --workers 4
+      - name: Upload prepared benchmark archives and source provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-candidate-${{ github.run_attempt }}
+          path: ${{ steps.storage.outputs.directory }}/candidate/handoff/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload the small candidate manifest for merge lookup
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-manifest-${{ github.run_attempt }}
+          path: |
+            ${{ steps.storage.outputs.directory }}/candidate/manifest.json
+            ${{ steps.storage.outputs.directory }}/candidate/validation.json
+          retention-days: 30
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy prepared website
+    needs: prepare-gallery
+    uses: ./.github/workflows/deploy-website.yml
+    with:
+      candidate_run_id: ${{ format('{0}', github.run_id) }}
+    secrets: inherit
+
+  ready:
+    name: Gallery ready
+    needs: [changes, prepare-gallery, deploy]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require preparation and deployment for website changes
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          REQUIRED: ${{ needs.changes.outputs.deploy }}
+          PREPARED: ${{ needs.prepare-gallery.result }}
+          DEPLOYED: ${{ needs.deploy.result }}
+        run: |
+          test "$CHANGES" = success
+          if [ "$REQUIRED" = true ]; then
+            test "$PREPARED" = success
+            test "$DEPLOYED" = success
+          fi

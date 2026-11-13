@@ -52,6 +52,16 @@ class GalleryHandoffTests(unittest.TestCase):
             self.assertEqual(release.download(target, "123"), self.manifest)
         return json.loads((target / "handoff-timing.json").read_text())
 
+    def test_prepared_gallery_downloads_without_a_reproduction_report(self):
+        report_path = self.candidate / "validation.json"
+        report = json.loads(report_path.read_text())
+        report["kind"] = "gallery-preparation"
+        report["results"][0]["status"] = "prepared"
+        artifacts.write_json(report_path, report)
+        self.manifest["validation"]["report_sha256"] = artifacts.file_digest(report_path)
+        artifacts.write_json(self.candidate / "manifest.json", self.manifest)
+        self.assertTrue(self.download()["github_candidate_downloaded"])
+
     def test_warm_handoff_never_downloads_large_github_artifact(self):
         for entry in self.entries:
             cache.store(self.candidate / entry["path"], entry)
