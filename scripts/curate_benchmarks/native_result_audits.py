@@ -26806,6 +26806,7 @@ def _os_harm(directory, tables, metadata):
 
 
 def _workarena(directory, tables, metadata):
+    from .trace_source_audit import recover_browsergym
     import csv
     from collections import defaultdict
     from functools import lru_cache
@@ -26833,7 +26834,7 @@ def _workarena(directory, tables, metadata):
         return json.loads((raw / name).read_text())
 
     for trace_row in tables['traces'].itertuples():
-        trace = json.loads(trace_row.trace)
+        trace = json.loads(recover_browsergym(trace_row.trace))
         _check(set(trace), {'source_file', 'record', 'annotation_file', 'annotation_row', 'annotation'}, 'WorkArena complete trace fields')
         index = trace['annotation_row']
         _check(type(index) is int and index in annotations and index not in seen, True, 'WorkArena unique original annotation row')
@@ -27096,6 +27097,7 @@ def _wikihow_agent(directory, tables, metadata):
 
 
 def _visualwebarena(directory, tables, metadata):
+    from .trace_source_audit import recover_browsergym
     import csv, hashlib, mimetypes, re
     from urllib.parse import urlsplit
     from zipfile import ZipFile
@@ -27116,7 +27118,7 @@ def _visualwebarena(directory, tables, metadata):
     items=tables['items'].set_index('item_id').to_dict('index')
     assets=tables['assets'].set_index('asset_id').to_dict('index')
     for row in tables['traces'].itertuples():
-        trace=json.loads(row.trace)
+        trace=json.loads(recover_browsergym(row.trace))
         _check(set(trace),{'source_file','record','grading_protocol','annotation_file','annotation_row','annotation'},'VisualWebArena explicit original trace fields')
         key=trace['source_file'],trace['grading_protocol'],trace['annotation_row']
         _check(key not in trace_index,True,'VisualWebArena each original judgment exactly once')

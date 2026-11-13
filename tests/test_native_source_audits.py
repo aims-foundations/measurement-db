@@ -8061,6 +8061,7 @@ class PxploreNativeAuditTests(unittest.TestCase):
 
 class WorkArenaAuditTests(unittest.TestCase):
     def setUp(self):
+        (ROOT / 'artifacts').mkdir(exist_ok=True)
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
         self.addCleanup(temporary.cleanup)
         self.addCleanup(_tables.reload)
@@ -8115,6 +8116,7 @@ class WorkArenaAuditTests(unittest.TestCase):
         self.assertEqual(self.frames['responses'].trial.max(), 2)
 
     def test_corrupt_grades_and_associations_are_detected(self):
+        from scripts.curate_benchmarks.trace_source_audit import recover_browsergym
         changes = ['score', 'equal_sum_swap', 'subject', 'item', 'trial', 'drop', 'duplicate',
             'model', 'configuration', 'harness', 'instruction', 'seed', 'raw_item_id', 'criterion', 'verifier',
             'source_file', 'annotation_row', 'annotation', 'native_configuration', 'trace_clipping', 'missing_trace', 'scale']
@@ -8142,7 +8144,7 @@ class WorkArenaAuditTests(unittest.TestCase):
                 elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
                 elif change == 'scale': frames['benchmarks'].loc[0,'response_scale'] = json.dumps(dict(kind='interval',min=0,max=1))
                 else:
-                    trace = json.loads(traces.loc[0,'trace'])
+                    trace = json.loads(recover_browsergym(traces.loc[0,'trace']))
                     if change == 'source_file': trace['source_file'] = 'wrong.json'
                     elif change == 'annotation_row': trace['annotation_row'] = 0
                     elif change == 'annotation': trace['annotation']['annotator_name'] = 'Guessed annotator'
@@ -8497,6 +8499,7 @@ class WikiHowAgentAuditTests(unittest.TestCase):
 
 class VisualWebArenaAuditTests(unittest.TestCase):
     def setUp(self):
+        (ROOT / 'artifacts').mkdir(exist_ok=True)
         temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts');self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
         self.directory=Path(temporary.name)/'visualwebarena';self.directory.mkdir()
         self.metadata=yaml.safe_load(((ROOT/'benchmarks/visualwebarena')/'metadata.yaml').read_text());(self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
@@ -8534,6 +8537,7 @@ class VisualWebArenaAuditTests(unittest.TestCase):
         self.assertTrue(self.frames['traces'].trace.str.len().gt(100000).all())
 
     def test_corrupt_conversions_and_crossed_grading_are_detected(self):
+        from scripts.curate_benchmarks.trace_source_audit import recover_browsergym
         changes=['equal_sum_swap','wrong_subject','wrong_item','drop_judgment','clipped_record','source_file','annotation_row',
             'image_bytes','image_order','replace_instruction','verifier','protocol','subject_configuration','trial']
         for change in changes:
@@ -8554,7 +8558,7 @@ class VisualWebArenaAuditTests(unittest.TestCase):
                 elif change=='subject_configuration':frames['subjects'].loc[0,'subject_features_extra']='source_configuration={}'
                 elif change=='trial':responses.loc[0,'trial']=0
                 else:
-                    v=json.loads(traces.loc[0,'trace'])
+                    v=json.loads(recover_browsergym(traces.loc[0,'trace']))
                     if change=='clipped_record':v['record']['steps']=[]
                     elif change=='source_file':v['source_file']='invented.json'
                     elif change=='annotation_row':v['annotation_row']=999

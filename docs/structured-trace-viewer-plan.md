@@ -702,7 +702,7 @@ publication and explicit gallery runs still prepare the published catalog.
 | mini-swe-agent | ProgramBench | Released |
 | Chat messages and tool calls | tau-bench, AgentDojo | First migration batch |
 | OpenHands events | TheAgentCompany | 3,057 traces validated; staged preview |
-| BrowserGym steps | WorkArena, VisualWebArena | Planned |
+| BrowserGym steps | WorkArena, VisualWebArena | Pilot implemented; validation recorded in the PR |
 | Custom and multi-agent records | OS-Harm, NYU CTF, others | Separate adapters after source review |
 | Text, submissions and pairwise sides | Survey each source shape before choosing pilots | Planned |
 
@@ -759,3 +759,19 @@ independent recovery checks, all converted documents passed schema validation,
 and the four measurement files and seven observation identity columns stayed
 unchanged. A source-only census found 76,372 distinct saved provider responses;
 all appear in the event-action coverage, with 112 copied action records deduplicated.
+
+### BrowserGym pilot
+
+WorkArena and VisualWebArena share `browsergym@1` through their builder hooks.
+Each saved snapshot becomes an observation event, followed by its recorded
+last-action error when present, then the current reasoning/action output.
+Terminal snapshots with no agent output remain observation-only. Accessibility
+trees, DOM geometry, recorded image paths and complete input histories remain
+in the recoverable native record. No tool IDs, missing images or timestamps are
+invented. Token and cost fields retain their recorded per-step scope; zero cost
+with nonzero tokens is kept natively without claiming the call was free.
+
+The full builder tests retain repeated human ratings, independent automatic
+grades, disagreement cases, and exact original image assets. Native audits accept
+both legacy envelopes and structured traces while rejecting changed source
+fields, grades, associations and assets.

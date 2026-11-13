@@ -12,12 +12,14 @@ def _get(value, path):
     return value
 
 
-def recover_source(value):
+def checked_source(value):
     native = value['native']
     original = native['source']
     source = json.loads(original) if native['source_encoding'] == 'json' else original
-    for step in value['steps']:
-        for field in step.get('native', {}).get('source_fields', []):
+    records = [(value, native.get('source_fields', []))]
+    records += [(step, step.get('native', {}).get('source_fields', [])) for step in value['steps']]
+    for step, fields in records:
+        for field in fields:
             actual = _get(step, field['target'])
             if field.get('encoding') == 'json':
                 actual = json.loads(actual)
@@ -25,7 +27,11 @@ def recover_source(value):
                 raise ValueError('Unknown source-field encoding')
             if actual != _get(source, field['source']):
                 raise ValueError('Displayed trace field differs from its native source')
-    return deepcopy(original)
+    return deepcopy(original), source
+
+
+def recover_source(value):
+    return checked_source(value)[0]
 
 
 def recover_theagentcompany(value):
@@ -37,8 +43,7 @@ def recover_theagentcompany(value):
             return original
     if not isinstance(value, dict) or value.get('schema') != 'trace/1':
         return original
-    original = recover_source(value)
-    source = json.loads(original) if value['native']['source_encoding'] == 'json' else original
+    original, source = checked_source(value)
     if value['converter'] == 'text@1':
         if not isinstance(source, str) or len(value['steps']) != 1 or value['steps'][0]['type'] != 'llm':
             raise ValueError('TheAgentCompany text transcript was split into invented turns')
@@ -89,4 +94,27 @@ def recover_theagentcompany(value):
             raise ValueError('OpenHands recorded model-response coverage differs from the source')
     else:
         raise ValueError('Unknown TheAgentCompany trace converter')
+    return original
+
+
+def recover_browsergym(value):
+    original = value
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, dict) or value.get('schema') != 'trace/1':
+        return original
+    if value['converter'] != 'browsergym@1':
+        raise ValueError('Expected a BrowserGym trace')
+    original, source = checked_source(value)
+    expected = []
+    for number, step in enumerate(source['record']['steps']):
+        expected.append((number, 'observation', 'event'))
+        if step.get('last_action_error'):
+            expected.append((number, 'last_action_error', 'event'))
+        if step.get('action') is not None or step.get('reasoning') is not None:
+            expected.append((number, 'agent', 'llm'))
+    actual = [(s['native']['browsergym']['step'], s['native']['browsergym']['kind'], s['type'])
+              for s in value['steps']]
+    if actual != expected:
+        raise ValueError('BrowserGym observations, errors or agent outputs were omitted or reordered')
     return original
