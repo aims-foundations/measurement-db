@@ -1,12 +1,6 @@
 name: Benchmark table reproduction
 
 on:
-  # Inspect the full Git diff in the changes job. GitHub's paths filters inspect
-  # only the first 300 changed files and can miss benchmarks in large PRs.
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches: ['**']
   workflow_dispatch:
     inputs:
       benchmark:
