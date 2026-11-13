@@ -1,0 +1,132 @@
+{
+  "pilot_format_version": 1,
+  "study_id": "tool_architecture",
+  "paper_url": "https://arxiv.org/abs/2608.11386",
+  "repository_url": "https://github.com/XZ-X/tool-arch-study",
+  "repository_revision": "fd3fbbe111f19afe156942338db2f79dfec4185d",
+  "identity_scope": "Study-local identifiers; canonical benchmark/item/subject/response IDs have not been assigned.",
+  "experiments": [
+    {
+      "experiment_id": "tool_architecture:main_live",
+      "benchmark_ref": "SWE-bench Live: released 65-task study cohort",
+      "expected_tasks": 65,
+      "repeats_per_arm_model_task": 10,
+      "model_panel": [
+        "kimi-k2.5",
+        "qwen3-coder-30b",
+        "sonnet4.5"
+      ],
+      "design": "Six interfaces evaluated with three actor models on the same tasks.",
+      "source_results": "data/processed/table2/inputs.json and data/processed/figure4/inputs.json"
+    }
+  ],
+  "arms": [
+    {
+      "arm_id": "bashonly",
+      "display_name": "BashOnly",
+      "relative_to": null,
+      "changes": []
+    },
+    {
+      "arm_id": "atomic-common",
+      "display_name": "Atomic",
+      "relative_to": "bashonly",
+      "changes": [
+        {
+          "target": "tool_surface",
+          "operation": "add",
+          "value": [
+            "search",
+            "view",
+            "replace",
+            "insert",
+            "create"
+          ]
+        }
+      ]
+    },
+    {
+      "arm_id": "bash-search",
+      "display_name": "NLSearch",
+      "relative_to": "bashonly",
+      "changes": [
+        {
+          "target": "tool_surface",
+          "operation": "add",
+          "value": "natural-language context query"
+        },
+        {
+          "target": "agent_topology",
+          "operation": "add",
+          "value": "search subagent behind the context query"
+        }
+      ]
+    },
+    {
+      "arm_id": "bash-hypo",
+      "display_name": "HypoTrack",
+      "relative_to": "bashonly",
+      "changes": [
+        {
+          "target": "memory_and_tool_surface",
+          "operation": "add",
+          "value": "within-task structured hypothesis records and prompt instructions"
+        }
+      ]
+    },
+    {
+      "arm_id": "bash-scratchpad",
+      "display_name": "ScratchPad",
+      "relative_to": "bashonly",
+      "changes": [
+        {
+          "target": "memory_and_tool_surface",
+          "operation": "add",
+          "value": "within-task notes tool and prompt instructions"
+        }
+      ]
+    },
+    {
+      "arm_id": "py-interface",
+      "display_name": "Python",
+      "relative_to": "bashonly",
+      "changes": [
+        {
+          "target": "action_interface",
+          "operation": "replace",
+          "value": "executable Python blocks"
+        },
+        {
+          "target": "controller",
+          "operation": "replace",
+          "value": "adapted simple-agent loop"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "548 Figure 4 statuses are null; preserve them rather than silently replacing recorded grades.",
+    "All-attempt success and evaluated-only resolve rate are different estimands. The pilot contrasts use the former.",
+    "Python changes the interface and agent loop together; this is a bundled intervention.",
+    "NLSearch introduces a search subagent; it is not simply a different name for a search API.",
+    "Repository release revision is pinned, but historical run harness versions are unknown in processed results.",
+    "Only the main 65-task cohort is analyzed; additional task sets and consistency cohorts are outside this pilot.",
+    "All 11,700 main trace filenames are checked; the full content of every trace is not audited.",
+    "Full canonical task/grader import remains separate work."
+  ],
+  "analysis": {
+    "contrasts": "Five interfaces versus BashOnly within each actor model.",
+    "contrast_origin": "pilot analyst-defined",
+    "matching": "Average ten repetitions within each task and arm; pair task means.",
+    "primary_success_policy": "Table 2 all-attempt policy: resolved True=1; False or unknown=0.",
+    "preserved_observed_grade": "Figure 4 resolved True=1; False=0; null remains null.",
+    "metrics": [
+      "success_all_attempts",
+      "input_tokens",
+      "output_tokens",
+      "steps"
+    ],
+    "source_repeat": "Zero-based source index, retained without assuming paired randomness.",
+    "additional_outputs": "Recompute consistency at k=5,7,9 from per-task resolved counts."
+  }
+}

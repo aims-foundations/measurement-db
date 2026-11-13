@@ -1,0 +1,106 @@
+{
+  "pilot_format_version": 1,
+  "study_id": "onlycodes",
+  "paper_url": "https://arxiv.org/abs/2607.10569",
+  "repository_url": "https://github.com/hyang0129/onlycodes",
+  "repository_revision": "7548222e5f33b4e760b3cbeb193e5403f8e2e6cc",
+  "identity_scope": "Study-local identifiers; canonical benchmark/item/subject/response IDs have not been assigned.",
+  "experiments": [
+    {
+      "experiment_id": "onlycodes:swebench",
+      "benchmark_ref": "SWE-bench Mini: verified-mini and datasci-mini subsets",
+      "expected_tasks": 100,
+      "repeats_per_arm_model_task": 3,
+      "model_panel": [
+        "claude-sonnet-4-6",
+        "gpt-5.5"
+      ],
+      "design": "Three arms crossed with two complete model-harness systems; same task cohorts across arms.",
+      "source_results": "paper/data/raw/all_results.csv"
+    },
+    {
+      "experiment_id": "onlycodes:artifact",
+      "benchmark_ref": "Onlycodes artifact suite",
+      "expected_tasks": 93,
+      "repeats_per_arm_model_task": 3,
+      "model_panel": [
+        "claude-sonnet-4-6",
+        "gpt-5.5"
+      ],
+      "design": "Three arms crossed with two complete model-harness systems; same task cohorts across arms.",
+      "source_results": "paper/data/raw/all_results.csv"
+    }
+  ],
+  "arms": [
+    {
+      "arm_id": "baseline",
+      "source_labels": [
+        "baseline",
+        "tool_rich"
+      ],
+      "description": "Native tool surface for each agent; baseline role is local to a comparison.",
+      "changes": []
+    },
+    {
+      "arm_id": "bash_only",
+      "source_labels": [
+        "bash_only"
+      ],
+      "relative_to": "baseline",
+      "changes": [
+        {
+          "target": "tool_surface",
+          "operation": "restrict",
+          "value": "Shell plus read-only browsing; native structured patching disabled as specified by the harness."
+        }
+      ],
+      "enforcement": {
+        "claude": "tool configuration",
+        "codex": "Includes a prompt directive for apply_patch; not a hard removal."
+      }
+    },
+    {
+      "arm_id": "code_only",
+      "source_labels": [
+        "onlycode",
+        "code_only"
+      ],
+      "relative_to": "baseline",
+      "changes": [
+        {
+          "target": "tool_surface",
+          "operation": "replace",
+          "value": "execute_code MCP interface with Python/bash execution"
+        }
+      ],
+      "enforcement": {
+        "claude": "tool configuration",
+        "codex": "Includes a prompt directive for apply_patch; not a hard removal."
+      }
+    }
+  ],
+  "limitations": [
+    "Agent identity combines model and harness; the cross-agent difference does not isolate model effects.",
+    "Claude artifact runs include versions 2.1.132 and 2.1.139; keep separate configuration IDs. Versions match across arms within each task/source-repeat block.",
+    "32 Claude artifact tasks have more than one harness version across repetitions. Task contrasts summarize the released mixture of versions.",
+    "Source-adjusted cost is a published accounting transformation, not raw billing.",
+    "No canonical item import: full stimuli, grading implementations, and historical execution environment still require a curation audit."
+  ],
+  "analysis": {
+    "contrasts": [
+      "bash_only - baseline",
+      "code_only - baseline",
+      "code_only - bash_only"
+    ],
+    "contrast_origin": "pilot analyst-defined",
+    "matching": "Average source repeats within each task and arm, then difference the task means.",
+    "metrics": [
+      "PASS=1 / FAIL=0",
+      "source cost_usd_adjusted",
+      "input_tokens",
+      "output_tokens"
+    ],
+    "source_repeat": "Preserve seed and run; seed labels do not establish shared random streams.",
+    "missing_metric_policy": "One failed run lacks tokens and cost. Keep its success grade; exclude its task from affected metric comparisons requiring every repeat in both arms. Report excluded-task counts."
+  }
+}

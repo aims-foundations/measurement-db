@@ -1,0 +1,16 @@
+{
+  "schema_version": "intervention-pilot-v2",
+  "identity_status": "Provisional pilot catalog identifiers; not reconciled with the production catalog.",
+  "benchmarks": [
+    {"benchmark_id": "swebench", "name": "SWE-bench", "protocol_ref": "onlycodes:paper/sections/03_method.tex", "scope": "Onlycodes verified-mini and datasci-mini cohorts; full benchmark bank not imported", "source_revision": "7548222e5f33b4e760b3cbeb193e5403f8e2e6cc"},
+    {"benchmark_id": "onlycodes_artifact", "name": "Onlycodes artifact suite", "protocol_ref": "onlycodes:paper/sections/03_method.tex#artifact-suite", "scope": "Released 93-task artifact cohort", "source_revision": "7548222e5f33b4e760b3cbeb193e5403f8e2e6cc"},
+    {"benchmark_id": "swebench_live", "name": "SWE-bench Live", "protocol_ref": "tool-arch-study:reproduce-paper-results.md", "scope": "Main 65-task Tool-interface cohort; full benchmark bank not imported", "source_revision": "fd3fbbe111f19afe156942338db2f79dfec4185d"},
+    {"benchmark_id": "agentarch_time_off", "name": "AgentArch requesting time off", "protocol_ref": "AgentArch:agent_arch/configs/use_case_configs/requesting_time_off.yaml", "scope": "60 released task cases; original evaluations not imported", "source_revision": "dfdd9cd69642f74d7f2c72738c96faff7b70e59f"},
+    {"benchmark_id": "agentarch_customer_routing", "name": "AgentArch customer request routing", "protocol_ref": "AgentArch:agent_arch/configs/use_case_configs/customer_request_routing.yaml", "scope": "50 released task cases; original evaluations not imported", "source_revision": "dfdd9cd69642f74d7f2c72738c96faff7b70e59f"}
+  ],
+  "experiments": [
+    {"experiment_id": "onlycodes:main", "study_id": "onlycodes", "name": "Onlycodes released three-arm evaluation", "status": "observed", "analysis_scopes": {"onlycodes:swebench": "swebench", "onlycodes:artifact": "onlycodes_artifact"}},
+    {"experiment_id": "tool_architecture:main_live", "study_id": "tool_architecture", "name": "Tool-interface main ten-repeat evaluation", "status": "observed", "analysis_scopes": {"tool_architecture:main_live": "swebench_live"}},
+    {"experiment_id": "agentarch:main", "study_id": "agentarch", "name": "AgentArch reported enterprise evaluation", "status": "design_only_results_not_located", "analysis_scopes": {"agentarch:requesting_time_off": "agentarch_time_off", "agentarch:customer_request_routing": "agentarch_customer_routing"}}
+  ]
+}

@@ -1,0 +1,215 @@
+{
+  "pilot_format_version": 1,
+  "study_id": "agentarch",
+  "paper_url": "https://arxiv.org/abs/2509.10769",
+  "repository_url": "https://github.com/ServiceNow/AgentArch",
+  "repository_revision": "dfdd9cd69642f74d7f2c72738c96faff7b70e59f",
+  "identity_scope": "Study-local identifiers; canonical benchmark/item/subject/response IDs have not been assigned.",
+  "experiments": [
+    {
+      "experiment_id": "agentarch:requesting_time_off",
+      "benchmark_ref": "AgentArch requesting_time_off",
+      "result_status": "original item-level runs not located in inspected release",
+      "declared_configurations": 18,
+      "declared_repeats": 8
+    },
+    {
+      "experiment_id": "agentarch:customer_request_routing",
+      "benchmark_ref": "AgentArch customer_request_routing",
+      "result_status": "original item-level runs not located in inspected release",
+      "declared_configurations": 18,
+      "declared_repeats": 8
+    }
+  ],
+  "arms": [],
+  "limitations": [
+    "README illustrates a results/ folder, but it is absent from the pinned repository tree. No GitHub release or tag supplies outputs. This is not proof that the authors have never released results elsewhere.",
+    "Use design-only records for the architecture pilot; do not create observations from paper percentages or from the supplied mocked tool inputs.",
+    "The 18 configurations form a constrained design, not the full 3 x 2 x 2 x 2 Cartesian product.",
+    "Original task-level outcomes would be needed for the paired-response analysis."
+  ],
+  "axes": {
+    "orchestration": [
+      "single_agent",
+      "direct",
+      "indirect"
+    ],
+    "agent_style": [
+      "function_calling",
+      "ReAct"
+    ],
+    "memory": [
+      "transparent",
+      "compact"
+    ],
+    "thinking_tools": [
+      false,
+      true
+    ]
+  },
+  "constraints": [
+    {
+      "if": {
+        "agent_style": "ReAct",
+        "memory": "compact"
+      },
+      "status": "unsupported",
+      "evidence": "entrypoint.sh explicitly skips this combination."
+    }
+  ],
+  "configurations": [
+    {
+      "configuration_label": "single_agent:function_calling:transparent:thinking=False",
+      "orchestration": "single_agent",
+      "agent_style": "function_calling",
+      "memory": "transparent",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "single_agent:function_calling:transparent:thinking=True",
+      "orchestration": "single_agent",
+      "agent_style": "function_calling",
+      "memory": "transparent",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "single_agent:function_calling:compact:thinking=False",
+      "orchestration": "single_agent",
+      "agent_style": "function_calling",
+      "memory": "compact",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "single_agent:function_calling:compact:thinking=True",
+      "orchestration": "single_agent",
+      "agent_style": "function_calling",
+      "memory": "compact",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "single_agent:ReAct:transparent:thinking=False",
+      "orchestration": "single_agent",
+      "agent_style": "ReAct",
+      "memory": "transparent",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "single_agent:ReAct:transparent:thinking=True",
+      "orchestration": "single_agent",
+      "agent_style": "ReAct",
+      "memory": "transparent",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "direct:function_calling:transparent:thinking=False",
+      "orchestration": "direct",
+      "agent_style": "function_calling",
+      "memory": "transparent",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "direct:function_calling:transparent:thinking=True",
+      "orchestration": "direct",
+      "agent_style": "function_calling",
+      "memory": "transparent",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "direct:function_calling:compact:thinking=False",
+      "orchestration": "direct",
+      "agent_style": "function_calling",
+      "memory": "compact",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "direct:function_calling:compact:thinking=True",
+      "orchestration": "direct",
+      "agent_style": "function_calling",
+      "memory": "compact",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "direct:ReAct:transparent:thinking=False",
+      "orchestration": "direct",
+      "agent_style": "ReAct",
+      "memory": "transparent",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "direct:ReAct:transparent:thinking=True",
+      "orchestration": "direct",
+      "agent_style": "ReAct",
+      "memory": "transparent",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "indirect:function_calling:transparent:thinking=False",
+      "orchestration": "indirect",
+      "agent_style": "function_calling",
+      "memory": "transparent",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "indirect:function_calling:transparent:thinking=True",
+      "orchestration": "indirect",
+      "agent_style": "function_calling",
+      "memory": "transparent",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "indirect:function_calling:compact:thinking=False",
+      "orchestration": "indirect",
+      "agent_style": "function_calling",
+      "memory": "compact",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "indirect:function_calling:compact:thinking=True",
+      "orchestration": "indirect",
+      "agent_style": "function_calling",
+      "memory": "compact",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "indirect:ReAct:transparent:thinking=False",
+      "orchestration": "indirect",
+      "agent_style": "ReAct",
+      "memory": "transparent",
+      "thinking_tools": false,
+      "status": "supported_design_not_observed_run"
+    },
+    {
+      "configuration_label": "indirect:ReAct:transparent:thinking=True",
+      "orchestration": "indirect",
+      "agent_style": "ReAct",
+      "memory": "transparent",
+      "thinking_tools": true,
+      "status": "supported_design_not_observed_run"
+    }
+  ],
+  "source_audit": {
+    "checked_on": "2026-10-16",
+    "repository_files": 28,
+    "github_releases": 0,
+    "github_tags": 0,
+    "task_inputs_and_mocked_tools": "present",
+    "original_item_level_results": "not located",
+    "result_rows_imported": 0
+  }
+}
