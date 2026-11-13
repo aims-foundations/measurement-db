@@ -108,3 +108,17 @@ def test_long_unicode_trace_round_trips_for_both_grades(tmp_path, monkeypatch):
         ['--source', str(source), '--output', str(baseline)])
     for name in ['benchmarks', 'items', 'subjects', 'responses']:
         assert (output / (name + '.parquet')).read_bytes() == (baseline / (name + '.parquet')).read_bytes()
+
+    # The independent audit also permits an archive with no recorded histories.
+    with tarfile.open(raw_archive, 'w:gz') as archive:
+        for name, contents in members.items():
+            if '/runs/' in name:
+                record = json.loads(contents)
+                record['messages'] = None
+                contents = json.dumps(record).encode()
+            member = tarfile.TarInfo(name)
+            member.size = len(contents)
+            archive.addfile(member, io.BytesIO(contents))
+    absent = dict(tables)
+    absent.pop('traces')
+    assert _agentdojo(bench, absent)['source_traces'] == 0

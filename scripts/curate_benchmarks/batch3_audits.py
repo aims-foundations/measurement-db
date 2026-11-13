@@ -251,7 +251,7 @@ def _agentdojo(directory, tables):
     # formats; trace/1's independent projection audit restores nulls and blocks.
     from measurement_db.scripts.curate_benchmarks.chat_trace_audit import recover_messages
     tables = dict(tables)
-    tables['traces'] = tables['traces'].copy()
+    tables['traces'] = tables.get('traces', pd.DataFrame(columns=['response_id', 'item_id', 'trace'])).copy()
     content = tables['items'].set_index('item_id').content.to_dict()
     normalized = []
     for row in tables['traces'].itertuples():
