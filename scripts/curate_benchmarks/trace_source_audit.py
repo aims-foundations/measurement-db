@@ -131,6 +131,14 @@ def recover_text(value):
         return original
     if value.get('converter') != 'text@1':
         raise ValueError('Expected a text trace')
+    if value['native'].get('source_encoding') == 'literal_text':
+        import hashlib
+        if len(value['steps']) != 1 or value['steps'][0].get('type') != 'llm':
+            raise ValueError('A text record must remain one complete output')
+        content = value['steps'][0].get('content')
+        if not isinstance(content, str) or hashlib.sha256(content.encode('utf-8')).hexdigest() != value['native']['source_sha256']:
+            raise ValueError('Recorded text does not match its original source hash')
+        return content
     original, source = checked_source(value)
     if not isinstance(source, str) or len(value['steps']) != 1:
         raise ValueError('A text record must remain one complete recorded string')

@@ -785,3 +785,7 @@ invented. The existing selection of answer versus parsed answer, first usable
 grade link, proof-criterion expansion and input images stays unchanged.
 Full builder fixtures verify exact measurement and asset files; the native
 characterization audit recovers the original answer from either trace format.
+
+Plain-text traces retain their complete source once in `steps[0].content`,
+with a UTF-8 SHA-256 in native provenance. Independent recovery verifies that
+hash, so the format preserves the original text without duplicating its body.
