@@ -56,6 +56,17 @@ def test_provider_copies_demonstrations_and_component_agents_remain_distinct():
     assert not any('usage' in s or 'cost' in s or 'start' in s for s in turns)
 
 
+def test_recorded_unparsed_tool_arguments_remain_literal_even_when_invalid_json():
+    native = source()
+    call = native['released_traces'][1]['source_record']['executors'][0][1]['tool_call']
+    call['args'] = '{broken recorded arguments'
+    del call['parsed_args']
+    value = convert(native).value; validate(value)
+    assert recover_nyu_ctf(value) == native
+    turn = next(s for s in value['steps'] if s['type'] == 'llm' and s.get('agent') == 'executors[0]')
+    assert turn['toolCalls'][0]['arguments'] == call['args']
+
+
 def test_summary_only_null_assessment_does_not_invent_an_attempt():
     native = source(); native['released_traces'] = []
     result = convert(native); validate(result.value)
@@ -64,7 +75,7 @@ def test_summary_only_null_assessment_does_not_invent_an_attempt():
     assert not result.counts['llm']
 
 
-@pytest.mark.parametrize('change', ['clip', 'drop', 'order', 'demo', 'knowledge', 'agent', 'metrics', 'invented_id'])
+@pytest.mark.parametrize('change', ['clip', 'drop', 'order', 'demo', 'knowledge', 'agent', 'metrics', 'invented_id', 'hidden_turn'])
 def test_independent_audit_rejects_source_and_attribution_corruption(change):
     value = convert(source()).value
     turns = [s for s in value['steps'] if s['type'] == 'llm']
@@ -75,7 +86,8 @@ def test_independent_audit_rejects_source_and_attribution_corruption(change):
     elif change == 'knowledge': next(s for s in value['steps'] if s.get('name') == 'retrieved_context')['type'] = 'llm'
     elif change == 'agent': turns[2]['agent'] = 'planner'
     elif change == 'metrics': turns[0]['cost'] = 100
-    else: turns[2]['toolCalls'][0]['id'] = 'invented'
+    elif change == 'invented_id': turns[2]['toolCalls'][0]['id'] = 'invented'
+    else: turns[0]['type'] = 'event'
     with pytest.raises(ValueError): recover_nyu_ctf(value)
 
 

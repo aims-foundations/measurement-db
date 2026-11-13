@@ -214,6 +214,7 @@ def recover_nyu_ctf(value):
         raise ValueError('Expected released NYU CTF log formats')
     original, source = checked_source(value)
     expected = [('assessment', None, None, None)]
+    expected_turns, actual_turns = [], []
     for log_number, entry in enumerate(source['released_traces']):
         record = entry['source_record']
         expected.append(('file', log_number, None, None))
@@ -227,7 +228,13 @@ def recover_nyu_ctf(value):
         for component, messages in blocks:
             if component not in {'messages', 'history'} and messages:
                 expected.append(('component', log_number, component, None))
-            for index, message in enumerate(messages):
+            parsed = [m[1] if isinstance(m, list) else m for m in messages]
+            typed = component == 'messages' and any(isinstance(m.get('extra'), dict) for m in parsed)
+            for index, message in enumerate(parsed):
+                role = message.get('role', '').removeprefix('MessageRole.').lower()
+                provider_backed = not typed or message.get('extra', {}).get('response', {}).get('data') is not None
+                if role == 'assistant' and not message.get('is_demo') and provider_backed:
+                    expected_turns.append((log_number, component, index))
                 expected.append(('message', log_number, component, index))
                 if component == 'history' and message.get('role') == 'assistant' and not message.get('is_demo') and message.get('action') is not None:
                     expected.append(('action', log_number, component, index))
@@ -237,6 +244,7 @@ def recover_nyu_ctf(value):
         kind, number, component, index = (origin.get(k) for k in ['kind', 'log', 'component', 'index'])
         actual.append((kind, number, component, index))
         if step['type'] == 'llm':
+            actual_turns.append((number, component, index))
             if any(k in step for k in ['start', 'end', 'cost', 'usage']):
                 raise ValueError('Aggregate or auxiliary metrics became per-turn measurements')
             record = source['released_traces'][number]['source_record']
@@ -257,6 +265,8 @@ def recover_nyu_ctf(value):
                     raise ValueError('Component call IDs were invented')
         if component and component not in {'messages', 'history'} and kind == 'message' and step.get('agent') != component:
             raise ValueError('Distinct component histories lost their agent attribution')
+    if actual_turns != expected_turns:
+        raise ValueError('Recorded model turns were lost or duplicated')
     if actual != expected:
         raise ValueError('Released logs, component boundaries or messages were lost, duplicated or reordered')
     return original

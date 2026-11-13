@@ -29,7 +29,7 @@ def convert(source):
                 for ordinal, call in enumerate(calls):
                     prefix = calls_path if calls_path else path + ['tool_calls', ordinal, 'function']
                     out.project(step, ['toolCalls', ordinal, 'name'], prefix + ['name'])
-                    out.project(step, ['toolCalls', ordinal, 'arguments'], prefix + ['parsed_args' if calls_path else 'arguments'], json_text=True)
+                    out.project(step, ['toolCalls', ordinal, 'arguments'], prefix + [('parsed_args' if 'parsed_args' in call else 'args') if calls_path else 'arguments'], json_text=True)
                     if not calls_path and call.get('id') is not None:
                         out.project(step, ['toolCalls', ordinal, 'id'], path + ['tool_calls', ordinal, 'id'])
         if message.get('agent') is not None:
