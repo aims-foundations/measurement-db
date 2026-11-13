@@ -798,3 +798,15 @@ recorded judge completion and source positions stay recoverable. Recorded
 judge text and annotator identity appear in evaluation provenance. Judge
 tokens, elapsed time and price are not attributed to candidate generation.
 Missing judgments remain absent, and no opponent response rows are invented.
+
+
+### OS-Harm custom-format pilot
+
+OS-Harm implements `convert_trace()` through `os_harm@1`. Each released desktop
+state precedes the recorded solver reply and parsed action strings. Actions
+remain harness events, including terminal markers, without invented call IDs.
+The final screenshot caption is an auxiliary event and the recorded judgment
+reasoning is evaluation provenance. Captioner/grader usage and timestamps stay
+native rather than becoming solver metrics. Safety and task-completion grades,
+their separate response links, and all original measurement files are unchanged.
+An independent audit checks source recovery and ordered displayed-field coverage.

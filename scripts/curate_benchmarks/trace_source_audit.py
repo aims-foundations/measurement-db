@@ -173,3 +173,32 @@ def recover_alpacaeval(value):
     if completion is None and judge is not None or completion is not None and judge is None:
         raise ValueError('Recorded and unavailable judge outputs must remain distinct')
     return original
+
+
+def recover_os_harm(value):
+    original = value
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, dict) or value.get('schema') != 'trace/1':
+        return original
+    if value.get('converter') != 'os_harm@1':
+        raise ValueError('Expected OS-Harm native-format traces')
+    original, source = checked_source(value)
+    expected = []
+    for number, record in enumerate(source['record']['steps']):
+        expected.append((number, 'observation', None, 'event'))
+        if record.get('response') is not None:
+            expected.append((number, 'agent', None, 'llm'))
+        expected.extend((number, 'action', i, 'event') for i in range(len(record.get('actions') or [])))
+    caption = source.get('caption')
+    if isinstance(caption, str) or isinstance(caption, dict) and caption.get('caption') is not None:
+        expected.append((None, 'caption', None, 'event'))
+    actual = []
+    for step in value['steps']:
+        origin = step['native']['os_harm']
+        actual.append((origin.get('step'), origin['kind'], origin.get('action'), step['type']))
+        if step['type'] == 'llm' and any(key in step for key in ['cost', 'usage', 'start', 'end']):
+            raise ValueError('Auxiliary captioner/grader metrics were assigned to the solver')
+    if actual != expected:
+        raise ValueError('OS-Harm observations, replies, actions or captions were omitted or reordered')
+    return original

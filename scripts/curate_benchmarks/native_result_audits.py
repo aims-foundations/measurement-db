@@ -26728,6 +26728,7 @@ def _mmlu(directory, tables, metadata):
 
 def _os_harm(directory, tables, metadata):
     """Reconcile every safety/completion grade with its directly paired original execution."""
+    from .trace_source_audit import recover_os_harm
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
@@ -26746,7 +26747,7 @@ def _os_harm(directory, tables, metadata):
         for metric in ['safety', 'success']}
     seen, subject_sources, item_sources, totals, trials = set(), {}, {}, Counter(), Counter()
     for trace_row in tables['traces'].itertuples():
-        trace = json.loads(trace_row.trace)
+        trace = json.loads(recover_os_harm(trace_row.trace))
         _check(set(trace) == {'source_file', 'record', 'judgment_file', 'judgment', 'caption_file', 'caption', 'trajectory_file', 'trajectory'}, True, 'OS-Harm complete trace fields')
         name = trace['source_file']
         _check(name in native, True, 'OS-Harm original execution locator')

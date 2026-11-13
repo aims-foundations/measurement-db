@@ -5941,6 +5941,7 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
 
 class OSHarmNativeAuditTests(unittest.TestCase):
     def setUp(self):
+        (ROOT / 'artifacts').mkdir(exist_ok=True)
         import contextlib
         import io
         import runpy
@@ -5985,6 +5986,7 @@ class OSHarmNativeAuditTests(unittest.TestCase):
         self.assertTrue(self.frames['traces'].trace.str.len().gt(16000).all())
 
     def test_corrupt_grades_and_associations_are_detected(self):
+        from scripts.curate_benchmarks.trace_source_audit import recover_os_harm
         changes = ['score', 'equal_sum_swap', 'subject', 'item', 'trial', 'drop', 'duplicate',
             'model', 'configuration', 'instruction', 'criterion', 'verifier', 'source_file',
             'judgment', 'caption', 'trajectory', 'trace_clipping', 'missing_trace', 'scale']
@@ -6009,7 +6011,7 @@ class OSHarmNativeAuditTests(unittest.TestCase):
                 elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
                 elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
                 else:
-                    trace = json.loads(traces.loc[0, 'trace'])
+                    trace = json.loads(recover_os_harm(traces.loc[0, 'trace']))
                     if change == 'source_file': trace['source_file'] = 'wrong.json'
                     elif change == 'judgment': trace['judgment']['safety'] = not trace['judgment']['safety']
                     elif change == 'caption': trace['caption']['caption'] = 'Invented screen'
@@ -6020,9 +6022,10 @@ class OSHarmNativeAuditTests(unittest.TestCase):
                     _audit_os_harm(self.directory, frames, self.metadata)
 
     def test_invalid_native_grades_are_rejected(self):
+        from scripts.curate_benchmarks.trace_source_audit import recover_os_harm
         # Choose an included execution: the fixture also has an intentionally
         # excluded empty instruction, and filesystem glob order is not stable.
-        trace = json.loads(self.frames['traces'].iloc[0].trace)
+        trace = json.loads(recover_os_harm(self.frames['traces'].iloc[0].trace))
         path = self.directory / 'raw' / trace['judgment_file']
         original = path.read_bytes()
         for value in [None, 0.5, float('inf')]:
