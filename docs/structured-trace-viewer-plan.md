@@ -775,3 +775,13 @@ The full builder tests retain repeated human ratings, independent automatic
 grades, disagreement cases, and exact original image assets. Native audits accept
 both legacy envelopes and structured traces while rejecting changed source
 fields, grades, associations and assets.
+
+### Text pilot
+
+MathArena implements the same abstract hook through `text@1`: one complete
+recorded answer becomes one model-output step. JSON-looking mathematical strings
+remain literal text. No turns, timestamps, test results or judge records are
+invented. The existing selection of answer versus parsed answer, first usable
+grade link, proof-criterion expansion and input images stays unchanged.
+Full builder fixtures verify exact measurement and asset files; the native
+characterization audit recovers the original answer from either trace format.

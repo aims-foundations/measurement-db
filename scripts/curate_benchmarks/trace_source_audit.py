@@ -118,3 +118,22 @@ def recover_browsergym(value):
     if actual != expected:
         raise ValueError('BrowserGym observations, errors or agent outputs were omitted or reordered')
     return original
+
+
+def recover_text(value):
+    original = value
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            return original
+    if not isinstance(value, dict) or value.get('schema') != 'trace/1':
+        return original
+    if value.get('converter') != 'text@1':
+        raise ValueError('Expected a text trace')
+    original, source = checked_source(value)
+    if not isinstance(source, str) or len(value['steps']) != 1:
+        raise ValueError('A text record must remain one complete recorded string')
+    if value['steps'][0].get('type') != 'llm' or value['steps'][0].get('content') != source:
+        raise ValueError('The complete original answer is not preserved')
+    return original
