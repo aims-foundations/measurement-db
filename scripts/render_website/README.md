@@ -110,7 +110,7 @@ from their original item row.
    pushes to `main`. It pins canonical HF `main` to one immutable revision and
    reads its formatted tables. Fork PRs never execute repository code on the
    self-hosted runners.
-2. **Prepare gallery** uses four isolated workers to reuse matching verified
+2. **Prepare gallery** uses two isolated workers to reuse matching verified
    bundles or generate gallery records, saturation, marginals, timeline inputs,
    and Rasch output. The parent combines the catalogs and records source-table
    hashes, the HF revision, and preparation run in `validation.json` with
