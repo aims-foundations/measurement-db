@@ -51,6 +51,14 @@ def test_task_deduplication_preserves_original_blocks_and_other_user_messages():
     assert recover_messages(value, item_content='Task') == source
 
 
+def test_api_user_role_does_not_invent_task_or_simulator_attribution():
+    messages = [dict(role='user', content='Now proceed with the plan.')]
+    value, _ = chat.convert(messages, context=SimpleNamespace(item_content='Benchmark task'))
+    assert value['steps'][0]['label'] == 'user'
+    assert 'participant' not in value['steps'][0]
+    audit_messages(value, messages)
+
+
 def test_ambiguous_or_absent_tool_calls_are_reported_without_invented_links():
     call = {'id': None, 'function': 'lookup', 'args': {}}
     value, counts = chat.convert([{'role': 'assistant', 'tool_calls': [call, call]},
@@ -144,7 +152,8 @@ def test_hal_wrappers_simulator_and_recorded_usage_are_not_extra_agent_turns():
     assert value['native']['source'] == source
     assert recover_taubench(value) == source
     assert value['steps'][-1]['type'] == 'message'
-    assert value['steps'][-1]['participant'] == 'simulated_user'
+    assert value['steps'][-1]['label'] == 'user'
+    assert 'participant' not in value['steps'][-1]
     assert value['steps'][-1]['content'] == 'STOP'
     assert [s['usage']['prompt'] for s in value['steps'] if s['type'] == 'llm'] == [20, 20]
     assert value['timing'] == 'recorded'
@@ -191,7 +200,8 @@ def test_hal_outer_wrapper_preserves_policy_role_and_deduplicates_provider_call(
     provider['inputs']['messages'][0]['role'] = 'user'
     source['logs'].insert(0, provider)
     value = TauBench.__new__(TauBench).convert_trace(source, context=None).value
-    assert value['run']['apiCalls'] == 2
+    assert value['native']['hal_recorded_reply_count'] == 2
+    assert 'apiCalls' not in value.get('run', {})
     assert recover_taubench(value) == source
 
 
@@ -204,6 +214,19 @@ def test_hal_source_audit_rejects_changed_output_or_missing_call(mutation):
     else:
         value['native']['hal_message_sources'][0]['replies'].pop()
     with pytest.raises(ValueError): recover_taubench(value)
+
+
+def test_distinct_response_ids_with_identical_replies_are_not_merged():
+    source = hal_source()
+    repeated = deepcopy(source['logs'][1])
+    repeated['output']['id'] = 'distinct-recorded-call'
+    source['logs'].append(repeated)
+    value = TauBench.__new__(TauBench).convert_trace(source, context=None).value
+    assert value['native']['hal_recorded_reply_count'] == 3
+    assert len(value['native']['hal_message_sources']) == 2
+    assert all(len({r['message'] for r in group['replies']}) == len(group['replies'])
+               for group in value['native']['hal_message_sources'])
+    assert recover_taubench(value) == source
 
 
 def test_hal_conflicting_histories_remain_separate_recorded_contexts():
@@ -219,9 +242,11 @@ def test_hal_conflicting_histories_remain_separate_recorded_contexts():
 
 def test_sierra_native_envelope_and_ungraded_hal_error_remain_distinct():
     builder = TauBench.__new__(TauBench)
-    source = {'result': {'traj': [{'role': 'assistant', 'content': 'Answer'}], 'reward': 0}, 'configuration': {}, 'logs': []}
+    source = {'result': {'traj': [{'role': 'user', 'content': 'Customer request'},
+                               {'role': 'assistant', 'content': 'Answer'}], 'reward': 0}, 'configuration': {}, 'logs': []}
     value = builder.convert_trace(source, context=None).value
     audit_messages(value, source['result']['traj'])
+    assert value['steps'][0]['participant'] == 'simulated_user'
     assert value['native']['source']['result'] == {'reward': 0}
     error = {'result': 'Recorded API failure', 'configuration': {'agent_args': {'model_name': 'model'}}, 'logs': []}
     value = builder.convert_trace(error, context=None).value

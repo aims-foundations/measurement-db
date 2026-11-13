@@ -693,6 +693,9 @@ prototype is not production code. Ask the plan's author for them.
 Work continues on `feat/trace-converter-families`, based on
 `codex/independent-gallery-workflow`. Reproduction is manually triggered;
 gallery preparation and preview deployment run independently.
+Builder-only PRs do not prepare the full published gallery: their converted data
+is reviewed through a targeted migration preview. Main pushes after benchmark
+publication and explicit gallery runs still prepare the published catalog.
 
 | Family | Representative builders | State |
 |---|---|---|
@@ -715,8 +718,11 @@ Incompatible planner, executor or retry histories remain separate labeled
 contexts. Complete parallel-call proposals survive harness pruning. An ID-less
 result may use the executed call explicitly recorded in the harness history;
 empty IDs do not become invented identifiers. Indistinguishable repeated calls
-are preserved in source order and reported in the conversion counters. Simulator
-messages are labeled separately from the measured agent.
+are preserved in source order and reported in the conversion counters. Sierra's
+known simulator messages are labeled separately. HAL API user roles remain
+unattributed, since they may contain harness instructions as well as customer text.
+The saved-reply count stays in native provenance; it is not presented as a
+complete API-call total. Separate context snapshots can repeat historical turns.
 
 For each family, first migrate representatives, then check full message/envelope
 recovery, source order, call associations, schema validation, observation identity,

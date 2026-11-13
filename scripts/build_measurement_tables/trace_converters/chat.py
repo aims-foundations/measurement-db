@@ -207,8 +207,11 @@ def convert(messages, *, context=None, user_participant=None, native=None, run=N
                     project(["error"], ["error"])
             counts["tool"] += 1
         elif role in {"system", "developer", "user"}:
-            label = "system" if role in {"system", "developer"} else "user" if user_participant or not first_user else "task"
+            label = "system" if role in {"system", "developer"} else "user"
             step = {"type": "message", "label": label, "content": content("content")}
+            if (role == 'user' and first_user and not user_participant and context is not None
+                    and step['content'] == context.item_content):
+                step['label'] = 'task'
             if role == "user" and user_participant:
                 step["participant"] = user_participant
             if role == "user":

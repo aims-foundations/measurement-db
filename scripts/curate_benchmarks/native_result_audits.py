@@ -21107,7 +21107,7 @@ def _taubench(directory, tables, metadata):
             trace=json.loads(traces[row.response_id])
             if isinstance(trace, dict) and trace.get('schema') == 'trace/1':
                 from measurement_db.scripts.curate_benchmarks.chat_trace_audit import recover_taubench
-                trace = recover_taubench(trace)
+                trace = recover_taubench(trace, item_content=items[row.item_id]['content'])
             check(trace,dict(source_file=source_file,source_row=position,task_id=task_id,configuration=config,
                 run_config=original['config'] if collection=='hal' else None,result=native,logs=logs[task_id],
                 task_definition_source=provenance),'complete original result and associated logs')

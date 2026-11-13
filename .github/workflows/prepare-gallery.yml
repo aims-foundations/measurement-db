@@ -39,10 +39,18 @@ jobs:
             if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
               BEFORE=$(git merge-base "$BEFORE" "$AFTER")
             fi
-            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
-              benchmarks/ website/ schema.md scripts/render_website/ \
+            gallery_paths=(website/ schema.md scripts/render_website/ \
               scripts/analyze_measurements/ scripts/ci/ .github/workflows/deploy-website.yml \
-              .github/workflows/prepare-gallery.yml)
+            )
+            # Builder edits do not change the published HF tables used by a PR
+            # website. Migration data is reviewed through an explicit staged
+            # preview. Main releases still refresh after benchmark publication.
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              gallery_paths+=(':(glob)benchmarks/**/metadata.yaml')
+            else
+              gallery_paths+=(benchmarks/ .github/workflows/prepare-gallery.yml)
+            fi
+            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- "${gallery_paths[@]}")
             if [ -n "$changed_paths" ]; then website_changed=true; fi
           fi
           echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"

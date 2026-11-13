@@ -51,12 +51,12 @@ def audit_messages(value, messages, *, item_content=None):
                 raise ValueError('Chat system policy was mapped to the wrong label')
 
 
-def recover_taubench(value):
+def recover_taubench(value, *, item_content=None):
     """Recover the original envelope and verify every HAL source reference."""
     source = deepcopy(value['native']['source'])
     if 'hal_message_sources' not in value['native']:
-        source['result']['traj'] = recover_messages(value)
-        audit_messages(value, source['result']['traj'])
+        source['result']['traj'] = recover_messages(value, item_content=item_content)
+        audit_messages(value, source['result']['traj'], item_content=item_content)
         return source
     messages, represented = [], set()
     groups = value['native']['hal_message_sources']
@@ -73,11 +73,15 @@ def recover_taubench(value):
             if target.get('name') and target['name'] != call['function']['name']:
                 raise ValueError('HAL tool reference points at another recorded function')
             target['tool_call'] = deepcopy(call)
+        positions = set()
         for reference in group['replies']:
             original = source['logs'][reference['log']]
             position = reference['message']
             if position != len(original['inputs']['messages']):
                 raise ValueError('HAL reply has an incorrect source position')
+            if position in positions:
+                raise ValueError('Distinct HAL replies were collapsed onto one step')
+            positions.add(position)
             output = original['output']
             identity = output.get('id') or ('log', reference['log'])
             if identity in represented:
@@ -114,7 +118,7 @@ def recover_taubench(value):
         choices = output.get('choices') or []
         if model in models and choices and isinstance(choices[0].get('message'), dict):
             expected.add(output.get('id') or ('log', index))
-    if expected != represented or value.get('run', {}).get('apiCalls') != len(expected):
+    if expected != represented or value['native'].get('hal_recorded_reply_count') != len(expected):
         raise ValueError('HAL recorded provider-call coverage differs from its source')
-    audit_messages(value, messages)
+    audit_messages(value, messages, item_content=item_content)
     return source

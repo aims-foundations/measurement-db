@@ -90,6 +90,12 @@ class TauBench(StructuredTraceBuild):
                        and compatible(row[2], messages[len(row[1]['inputs']['messages'])])]
             if not members:
                 raise ValueError('A HAL call cannot be associated with its own saved context')
+            # Different response IDs are distinct calls even when their inputs
+            # and replies are identical. Never collapse them onto one step.
+            by_position = {len(chosen[1]['inputs']['messages']): chosen}
+            for member in members:
+                by_position.setdefault(len(member[1]['inputs']['messages']), member)
+            members = list(by_position.values())
             # Some clients emit empty IDs, while the harness keeps only the
             # executed call in the next input history. That recorded history
             # supplies the association even if the full proposal had many calls.
@@ -163,15 +169,21 @@ class TauBench(StructuredTraceBuild):
         native = {'source': deepcopy(source)}
         result = source['result']
         run = {'exception': result} if isinstance(result, str) else {}
+        participant = None
         if isinstance(result, dict) and 'traj' in result:
             messages = result['traj']
             del native['source']['result']['traj']
+            participant = 'simulated_user'
         else:
             messages, evidence = self._hal_messages(source)
             native['hal_message_sources'] = evidence
-            run['apiCalls'] = sum(len(group['replies']) for group in evidence)
+            # Saved replies establish a lower bound, not a complete API-call
+            # total: failed or unlogged requests may have no response record.
+            native['hal_recorded_reply_count'] = sum(len(group['replies']) for group in evidence)
         model = source['configuration'].get('agent_args', {}).get('model_name') or source['configuration'].get('model')
-        value, counts = chat.convert(messages, context=context, user_participant='simulated_user',
+        # HAL planner/executor histories also use the API user role for
+        # harness instructions. Do not attribute those messages to a customer.
+        value, counts = chat.convert(messages, context=context, user_participant=participant,
                                      native=native, run=run, model=model)
         return ConvertedTrace(value, counts)
 
