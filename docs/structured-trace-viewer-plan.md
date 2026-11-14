@@ -701,8 +701,8 @@ publication and explicit gallery runs still prepare the published catalog.
 |---|---|---|
 | mini-swe-agent | ProgramBench | Released |
 | Chat messages and tool calls | tau-bench, AgentDojo | First migration batch |
-| OpenHands events | TheAgentCompany | Next family |
-| BrowserGym steps | WorkArena, VisualWebArena | Planned |
+| OpenHands events | TheAgentCompany | 3,057 traces validated; staged preview |
+| BrowserGym steps | WorkArena, VisualWebArena | Pilot implemented; validation recorded in the PR |
 | Custom and multi-agent records | OS-Harm, NYU CTF, others | Separate adapters after source review |
 | Text, submissions and pairwise sides | Survey each source shape before choosing pilots | Planned |
 
@@ -737,3 +737,97 @@ separate from a fresh upstream rebuild: the latter remains available as a manual
 release check before canonical publication. Preview data and galleries use
 isolated HF branches and immutable revisions; they do not update the canonical
 dataset or the accepted production gallery.
+
+### OpenHands pilot
+
+TheAgentCompany implements `StructuredTraceBuild.convert_trace()` using `openhands@1`.
+Recorded provider response IDs deduplicate parallel action records; tool outputs
+link through the native event `cause` and recorded call ID. Untimed event records
+retain their original timestamps without assuming a timezone. Provider Unix
+timestamps give partial timing where recorded. Recall, condensation and orphan
+harness errors remain explicit events.
+
+The release also contains OWL role-play records and MUSE text transcripts.
+The builder maps recorded role-play pairs and nested tool results separately;
+plain transcripts remain one complete text step with no guessed turn boundaries.
+Source-field references support independent display validation, and the complete
+native input remains recoverable byte-for-byte for the existing source audit.
+
+The pinned pilot has 2,707 OpenHands event streams, 175 OWL role-play traces, and
+175 MUSE text transcripts. All original inputs and displayed fields passed
+independent recovery checks, all converted documents passed schema validation,
+and the four measurement files and seven observation identity columns stayed
+unchanged. A source-only census found 76,372 distinct saved provider responses;
+all appear in the event-action coverage, with 112 copied action records deduplicated.
+
+### BrowserGym pilot
+
+WorkArena and VisualWebArena share `browsergym@1` through their builder hooks.
+Each saved snapshot becomes an observation event, followed by its recorded
+last-action error when present, then the current reasoning/action output.
+Terminal snapshots with no agent output remain observation-only. Accessibility
+trees, DOM geometry, recorded image paths and complete input histories remain
+in the recoverable native record. No tool IDs, missing images or timestamps are
+invented. Token and cost fields retain their recorded per-step scope; zero cost
+with nonzero tokens is kept natively without claiming the call was free.
+
+The full builder tests retain repeated human ratings, independent automatic
+grades, disagreement cases, and exact original image assets. Native audits accept
+both legacy envelopes and structured traces while rejecting changed source
+fields, grades, associations and assets.
+
+### Text pilot
+
+MathArena implements the same abstract hook through `text@1`: one complete
+recorded answer becomes one model-output step. JSON-looking mathematical strings
+remain literal text. No turns, timestamps, test results or judge records are
+invented. The existing selection of answer versus parsed answer, first usable
+grade link, proof-criterion expansion and input images stays unchanged.
+Full builder fixtures verify exact measurement and asset files; the native
+characterization audit recovers the original answer from either trace format.
+
+Plain-text traces retain their complete source once in `steps[0].content`,
+with a UTF-8 SHA-256 in native provenance. Independent recovery verifies that
+hash, so the format preserves the original text without duplicating its body.
+
+### Pairwise pilot
+
+AlpacaEval implements the hook through `pairwise@1`, displaying only the
+evaluated model output. The fixed reference side, original soft preference,
+recorded judge completion and source positions stay recoverable. Recorded
+judge text and annotator identity appear in evaluation provenance. Judge
+tokens, elapsed time and price are not attributed to candidate generation.
+Missing judgments remain absent, and no opponent response rows are invented.
+
+
+### OS-Harm custom-format pilot
+
+OS-Harm implements `convert_trace()` through `os_harm@1`. Each released desktop
+state precedes the recorded solver reply and parsed action strings. Actions
+remain harness events, including terminal markers, without invented call IDs.
+The final screenshot caption is an auxiliary event and the recorded judgment
+reasoning is evaluation provenance. Captioner/grader usage and timestamps stay
+native rather than becoming solver metrics. Safety and task-completion grades,
+their separate response links, and all original measurement files are unchanged.
+An independent audit checks source recovery and ordered displayed-field coverage.
+
+
+### NYU CTF multi-agent pilot
+
+NYU CTF implements `nyu_ctf@1` through its builder hook. Every published
+assessment retains the exact summary and all released log files. An assessment
+without logs stays summary-only, and several files do not become inferred
+individual trials. File boundaries and separate autoprompter, planner and
+executor histories remain explicit; their block order makes no claim of global
+chronology. Component tool calls have no invented IDs. Retrieved knowledge is
+context, not a model turn.
+
+The baseline XML logger records raw, replay and parsed copies. Where typed
+responses are present, only records carrying a provider response become model
+turns; null-response demonstrations stay context. Enigma uses history once,
+retaining demonstrations as context and trajectory details natively rather
+than rendering duplicate generations. Aggregate costs, auxiliary statistics
+and ambiguous timestamps are retained without per-turn attribution. The
+independent source audit checks complete recovery, ordered message/file
+coverage and agent attribution. Native fixtures preserve pass@k assessments,
+null grades, challenge associations, symlinks and exact input asset bytes.
