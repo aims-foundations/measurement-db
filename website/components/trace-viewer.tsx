@@ -639,15 +639,33 @@ export function TraceViewer({
   trace,
   subject,
   onBack,
+  paging,
 }: {
   trace: Trace;
   /** The matrix row this run belongs to. */
   subject?: string | null;
   /** Scrolls back to where the run was picked from. */
   onBack?: () => void;
+  /** Whole-trace counts accompany a bounded window of display steps. */
+  paging?: {
+    offset: number;
+    total: number;
+    turnOffset: number;
+    modelTurns: number;
+    toolResults: number;
+    model?: string;
+    hasReasoning: boolean;
+    navigation: React.ReactNode;
+    details?: React.ReactNode;
+    stepDetails?: (step: number) => React.ReactNode;
+    query: string;
+    focus?: number;
+    onFocus: (step: number) => void;
+  };
 }) {
   const [input, setInput] = useState("");
-  const [query, setQuery] = useState("");
+  const [localQuery, setQuery] = useState("");
+  const query = paging?.query ?? localQuery;
   const [hitPos, setHitPos] = useState(-1);
   const [focus, setFocus] = useState<number | null>(null);
   const [showReasoning, setShowReasoning] = useState(false);
@@ -657,6 +675,16 @@ export function TraceViewer({
   const toolbar = useRef<HTMLDivElement>(null);
   const timeline = useRef<HTMLDivElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (paging?.focus == null) return;
+    const element = timeline.current?.querySelector<HTMLElement>(
+      `[data-step="${paging.focus}"]`,
+    );
+    if (element) {
+      element.style.scrollMarginTop = `${(toolbar.current?.offsetHeight ?? 0) + HEADER_ROOM}px`;
+      element.scrollIntoView({ block: "start" });
+    }
+  }, [paging?.focus, paging?.offset]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -708,13 +736,14 @@ export function TraceViewer({
 
   const llm = steps.filter((s): s is LlmStep => s.type === "llm");
   const toolCount = steps.filter((s) => s.type === "tool").length;
-  const model = llm.find((s) => s.model)?.model;
-  const hasReasoning = llm.some((s) => s.reasoning);
+  const model = paging?.model ?? llm.find((s) => s.model)?.model;
+  const hasReasoning = paging?.hasReasoning ?? llm.some((s) => s.reasoning);
   const run = trace.run ?? {};
   const ev = trace.evaluation;
 
   function jump(i: number) {
     setFocus(i);
+    paging?.onFocus(i);
     const el = timeline.current?.querySelector<HTMLElement>(
       `[data-step="${i}"]`,
     );
@@ -730,7 +759,7 @@ export function TraceViewer({
     jump(hits[pos]);
   }
 
-  let turn = 0;
+  let turn = paging?.turnOffset ?? 0;
   const flagged = (Object.keys(KIND) as Kind[]).filter(
     (k) => KIND[k].flagged && kinds.includes(k),
   );
@@ -799,11 +828,17 @@ export function TraceViewer({
             label="cost"
             value={run.cost != null ? money(run.cost) : "not recorded"}
           />
-          <Chip label="model turns" value={int(llm.length)} />
+          <Chip
+            label="model turns"
+            value={int(paging?.modelTurns ?? llm.length)}
+          />
           {run.apiCalls != null && run.apiCalls !== llm.length ? (
             <Chip label="API calls" value={int(run.apiCalls)} />
           ) : null}
-          <Chip label="tool calls" value={int(toolCount)} />
+          <Chip
+            label="tool calls"
+            value={int(paging?.toolResults ?? toolCount)}
+          />
           <Chip label="prompt tokens" value={int(run.promptTokens)} />
           <Chip label="output tokens" value={int(run.completionTokens)} />
           {timed ? (
@@ -819,47 +854,53 @@ export function TraceViewer({
         style={{ top: fullScreen ? 0 : PAGE_TOP }}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="search"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                const q = input.trim().toLowerCase();
-                if (q !== query) setQuery(q);
-                else nextHit(e.shiftKey ? -1 : 1);
-              }
-            }}
-            placeholder="Search this trace (commands, outputs, messages)…"
-            aria-label="Search this trace"
-            className="min-w-44 flex-1 rounded border border-[var(--line)] px-2.5 py-1 text-[0.8125rem]"
-          />
-          <span
-            className="min-w-16 text-[0.6875rem] text-[var(--muted)]"
-            aria-live="polite"
-          >
-            {query
-              ? hitPos >= 0
-                ? `${hitPos + 1} / ${hits.length} steps`
-                : `${hits.length} step${hits.length === 1 ? "" : "s"}`
-              : ""}
-          </span>
-          {[
-            ["↑", -1, "Previous match"],
-            ["↓", 1, "Next match"],
-          ].map(([label, dir, name]) => (
-            <button
-              key={name as string}
-              type="button"
-              aria-label={name as string}
-              disabled={!hits.length}
-              onClick={() => nextHit(dir as number)}
-              className="rounded border border-[var(--line)] bg-white px-2 py-0.5 text-[0.75rem] disabled:opacity-40"
-            >
-              {label}
-            </button>
-          ))}
+          {paging ? (
+            paging.navigation
+          ) : (
+            <>
+              <input
+                type="search"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const q = input.trim().toLowerCase();
+                    if (q !== query) setQuery(q);
+                    else nextHit(e.shiftKey ? -1 : 1);
+                  }
+                }}
+                placeholder="Search this trace (commands, outputs, messages)…"
+                aria-label="Search this trace"
+                className="min-w-44 flex-1 rounded border border-[var(--line)] px-2.5 py-1 text-[0.8125rem]"
+              />
+              <span
+                className="min-w-16 text-[0.6875rem] text-[var(--muted)]"
+                aria-live="polite"
+              >
+                {query
+                  ? hitPos >= 0
+                    ? `${hitPos + 1} / ${hits.length} steps`
+                    : `${hits.length} step${hits.length === 1 ? "" : "s"}`
+                  : ""}
+              </span>
+              {[
+                ["↑", -1, "Previous match"],
+                ["↓", 1, "Next match"],
+              ].map(([label, dir, name]) => (
+                <button
+                  key={name as string}
+                  type="button"
+                  aria-label={name as string}
+                  disabled={!hits.length}
+                  onClick={() => nextHit(dir as number)}
+                  className="rounded border border-[var(--line)] bg-white px-2 py-0.5 text-[0.75rem] disabled:opacity-40"
+                >
+                  {label}
+                </button>
+              ))}
+            </>
+          )}
           {hasReasoning ? (
             <label className="flex cursor-pointer items-center gap-1 text-[0.6875rem] text-[var(--muted)]">
               <input
@@ -895,9 +936,9 @@ export function TraceViewer({
               key={i}
               type="button"
               tabIndex={-1}
-              aria-label={`Step ${i}: ${KIND[k].label}`}
-              title={`#${i} ${KIND[k].label}`}
-              onClick={() => jump(i)}
+              aria-label={`Step ${i + (paging?.offset ?? 0)}: ${KIND[k].label}`}
+              title={`#${i + (paging?.offset ?? 0)} ${KIND[k].label}`}
+              onClick={() => jump(i + (paging?.offset ?? 0))}
               className="relative min-w-px flex-1 hover:brightness-75"
               style={{
                 background: KIND[k].flagged ? KIND[k].color : STRIP_NEUTRAL,
@@ -906,7 +947,7 @@ export function TraceViewer({
               {hitSet.has(i) ? (
                 <span className="absolute inset-x-0 -top-px h-2 min-w-[3px] bg-[var(--ink)]" />
               ) : null}
-              {focus === i ? (
+              {(paging?.focus ?? focus) === i + (paging?.offset ?? 0) ? (
                 <span className="absolute inset-x-0 bottom-0 h-1 min-w-[3px] bg-[var(--lagunita)]" />
               ) : null}
             </button>
@@ -928,7 +969,10 @@ export function TraceViewer({
               style={{ background: STRIP_NEUTRAL }}
             />
             {flagged.length ? "other steps" : "steps"} ·{" "}
-            {steps.length.toLocaleString()} in all
+            {(paging?.total ?? steps.length).toLocaleString()} in all
+            {paging && steps.length < paging.total
+              ? ` · showing #${paging.offset}–${paging.offset + steps.length - 1}`
+              : ""}
           </span>
         </div>
       </div>
@@ -954,32 +998,33 @@ export function TraceViewer({
                 ? "ml-7 bg-[var(--fog-light)]"
                 : "bg-white";
           return (
-            <Fragment key={i}>
+            <Fragment key={i + (paging?.offset ?? 0)}>
               {newAgent || (agent && i === 0) ? (
                 <h3 className="mt-2 text-[0.6875rem] uppercase tracking-wide text-[var(--muted)]">
                   {agent}
                 </h3>
               ) : null}
               <div
-                data-step={i}
-                className={`rounded border border-[var(--line)] px-3 py-2.5 ${border} ${tint} ${focus === i ? "outline outline-2 outline-[var(--lagunita)]" : ""}`}
+                data-step={i + (paging?.offset ?? 0)}
+                className={`rounded border border-[var(--line)] px-3 py-2.5 ${border} ${tint} ${(paging?.focus ?? focus) === i + (paging?.offset ?? 0) ? "outline outline-2 outline-[var(--lagunita)]" : ""}`}
                 style={
                   step.type === "tool"
                     ? undefined
                     : { borderLeftColor: KIND[k].color }
                 }
               >
+                {paging?.stepDetails?.(i + (paging?.offset ?? 0))}
                 {step.type === "message" ? (
                   <Message
                     step={step}
-                    index={i}
+                    index={i + (paging?.offset ?? 0)}
                     query={query}
                     expandAll={expandAll}
                   />
                 ) : step.type === "llm" ? (
                   <Llm
                     step={step}
-                    index={i}
+                    index={i + (paging?.offset ?? 0)}
                     turn={++turn}
                     query={query}
                     expandAll={expandAll}
@@ -989,7 +1034,7 @@ export function TraceViewer({
                 ) : step.type === "tool" ? (
                   <Tool
                     step={step}
-                    index={i}
+                    index={i + (paging?.offset ?? 0)}
                     query={query}
                     expandAll={expandAll}
                     timed={timed}
@@ -999,7 +1044,10 @@ export function TraceViewer({
                   />
                 ) : (
                   <>
-                    <StepHead title={`Event · ${step.name}`} index={i} />
+                    <StepHead
+                      title={`Event · ${step.name}`}
+                      index={i + (paging?.offset ?? 0)}
+                    />
                     {step.content ? (
                       <Block
                         text={step.content}
@@ -1017,6 +1065,7 @@ export function TraceViewer({
       </div>
       <div className="rounded-b bg-white px-4 pb-4">
         <Result trace={trace} />
+        {paging?.details}
       </div>
     </>
   );

@@ -789,3 +789,45 @@ characterization audit recovers the original answer from either trace format.
 Plain-text traces retain their complete source once in `steps[0].content`,
 with a UTF-8 SHA-256 in native provenance. Independent recovery verifies that
 hash, so the format preserves the original text without duplicating its body.
+
+### Pairwise pilot
+
+AlpacaEval implements the hook through `pairwise@1`, displaying only the
+evaluated model output. The fixed reference side, original soft preference,
+recorded judge completion and source positions stay recoverable. Recorded
+judge text and annotator identity appear in evaluation provenance. Judge
+tokens, elapsed time and price are not attributed to candidate generation.
+Missing judgments remain absent, and no opponent response rows are invented.
+
+
+### OS-Harm custom-format pilot
+
+OS-Harm implements `convert_trace()` through `os_harm@1`. Each released desktop
+state precedes the recorded solver reply and parsed action strings. Actions
+remain harness events, including terminal markers, without invented call IDs.
+The final screenshot caption is an auxiliary event and the recorded judgment
+reasoning is evaluation provenance. Captioner/grader usage and timestamps stay
+native rather than becoming solver metrics. Safety and task-completion grades,
+their separate response links, and all original measurement files are unchanged.
+An independent audit checks source recovery and ordered displayed-field coverage.
+
+
+### NYU CTF multi-agent pilot
+
+NYU CTF implements `nyu_ctf@1` through its builder hook. Every published
+assessment retains the exact summary and all released log files. An assessment
+without logs stays summary-only, and several files do not become inferred
+individual trials. File boundaries and separate autoprompter, planner and
+executor histories remain explicit; their block order makes no claim of global
+chronology. Component tool calls have no invented IDs. Retrieved knowledge is
+context, not a model turn.
+
+The baseline XML logger records raw, replay and parsed copies. Where typed
+responses are present, only records carrying a provider response become model
+turns; null-response demonstrations stay context. Enigma uses history once,
+retaining demonstrations as context and trajectory details natively rather
+than rendering duplicate generations. Aggregate costs, auxiliary statistics
+and ambiguous timestamps are retained without per-turn attribution. The
+independent source audit checks complete recovery, ordered message/file
+coverage and agent attribution. Native fixtures preserve pass@k assessments,
+null grades, challenge associations, symlinks and exact input asset bytes.
