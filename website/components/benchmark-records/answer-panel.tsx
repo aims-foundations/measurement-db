@@ -10,6 +10,7 @@ import { OriginalTrace } from "./original-trace";
 import { SourceText } from "./rich-text";
 import { StructuredContent } from "../structured-content";
 import { SourceError } from "./source-error";
+import { PagedTraceViewer } from "./paged-trace-viewer";
 
 export function AnswerPanel({
   source,
@@ -32,6 +33,22 @@ export function AnswerPanel({
     answer.status === "ready" && answer.value?.kind === "legacy"
       ? answer.value.value
       : null;
+  if (answer.status === "ready" && answer.value?.kind === "paged")
+    return (
+      <section className="min-w-0" aria-label={`Run from ${name}`}>
+        <PagedTraceViewer
+          key={
+            observation.response_id +
+            answer.value.value.header.source_trace_sha256
+          }
+          source={source}
+          trace={answer.value.value}
+          subject={name}
+          onBack={onBack}
+        />
+        <OriginalTrace source={source} id={observation.response_id} />
+      </section>
+    );
   if (answer.status === "ready" && answer.value?.kind === "structured")
     return (
       <section className="min-w-0" aria-label={`Run from ${name}`}>

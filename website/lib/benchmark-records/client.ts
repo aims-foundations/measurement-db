@@ -9,6 +9,16 @@ import type {
 import { readParquetRecord } from "./parquet";
 import { readJson } from "./json";
 import { prepareTraceRecord, type TraceDisplay } from "./trace";
+import { withBase } from "../base-path";
+import {
+  readTracePreview,
+  readTracePage,
+  readTraceField,
+  searchTrace,
+  matchingTracePreview,
+  type BoundedTrace,
+  type TraceField,
+} from "./trace-preview";
 
 type Fetch = typeof fetch;
 type PageIndex = Record<string, number>;
@@ -173,6 +183,19 @@ export class RecordSource {
   /** Parse and cap trace/1 in the source worker; get("traces") still returns the exact row. */
   async trace(id: string, signal: AbortSignal): Promise<TraceDisplay | null> {
     const descriptor = this.manifest.tables.traces;
+    const preview = matchingTracePreview(
+      descriptor?.parquet?.download,
+      this.manifest.tracePreview,
+    );
+    if (preview) {
+      const value = await readTracePreview(
+        preview,
+        id,
+        signal,
+        this.traceTransport(),
+      );
+      return value ? { kind: "paged", value } : null;
+    }
     if (descriptor?.parquet)
       return readParquetRecord<TraceDisplay>(
         this.base,
@@ -189,6 +212,43 @@ export class RecordSource {
         },
       );
     return prepareTraceRecord(await this.get("traces", id, signal));
+  }
+
+  private traceTransport() {
+    return {
+      base: withBase(
+        `/api/trace-preview/${this.manifest.benchmark.benchmark_id}`,
+      ),
+      request: this.request,
+    };
+  }
+
+  tracePage(trace: BoundedTrace, page: number, signal: AbortSignal) {
+    return readTracePage(
+      trace.preview,
+      trace.header,
+      page,
+      signal,
+      this.traceTransport(),
+    );
+  }
+
+  traceField(
+    trace: BoundedTrace,
+    field: TraceField,
+    part: number,
+    signal: AbortSignal,
+  ) {
+    return readTraceField(trace, field, part, signal, this.traceTransport());
+  }
+
+  searchTrace(
+    trace: BoundedTrace,
+    query: string,
+    signal: AbortSignal,
+    progress?: (done: number, total: number) => void,
+  ) {
+    return searchTrace(trace, query, signal, this.traceTransport(), progress);
   }
 
   async asset(

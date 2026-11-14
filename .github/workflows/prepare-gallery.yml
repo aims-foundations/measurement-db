@@ -39,16 +39,14 @@ jobs:
             if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
               BEFORE=$(git merge-base "$BEFORE" "$AFTER")
             fi
-            gallery_paths=(website/ schema.md scripts/render_website/ \
-              scripts/analyze_measurements/ scripts/ci/ .github/workflows/deploy-website.yml \
-            )
-            # Builder edits do not change the published HF tables used by a PR
-            # website. Migration data is reviewed through an explicit staged
-            # preview. Main releases still refresh after benchmark publication.
+            gallery_paths=(schema.md scripts/render_website/ scripts/analyze_measurements/ scripts/ci/)
+            # UI changes and standalone trace previews reuse published gallery
+            # bundles. PR preparation runs only for gallery data inputs;
+            # migration previews use an explicit pinned artifact revision.
             if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-              gallery_paths+=(':(glob)benchmarks/**/metadata.yaml')
+              gallery_paths+=(website/content/curated/ ':(glob)benchmarks/**/metadata.yaml')
             else
-              gallery_paths+=(benchmarks/ .github/workflows/prepare-gallery.yml)
+              gallery_paths+=(website/ benchmarks/ .github/workflows/prepare-gallery.yml .github/workflows/deploy-website.yml)
             fi
             changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- "${gallery_paths[@]}")
             if [ -n "$changed_paths" ]; then website_changed=true; fi

@@ -4196,6 +4196,7 @@ class NYUCTFAuditTests(unittest.TestCase):
         import tarfile
         from scripts.build_measurement_tables import reload
 
+        (ROOT / "artifacts").mkdir(exist_ok=True)
         reload()
         self.addCleanup(reload)
         self.temporary = tempfile.TemporaryDirectory(dir=ROOT / "artifacts")
@@ -4279,6 +4280,7 @@ class NYUCTFAuditTests(unittest.TestCase):
 
     def test_grade_protocol_trace_and_input_corruption_are_rejected(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _nyu_ctf
+        from measurement_db.scripts.curate_benchmarks.trace_source_audit import recover_nyu_ctf
         for change in ["grade", "fill_null", "subject", "item", "trial", "protocol", "content", "flag", "verifier",
                        "asset_bytes", "asset_link", "configuration", "clip", "drop_trace", "missing"]:
             with self.subTest(change=change):
@@ -4316,8 +4318,8 @@ class NYUCTFAuditTests(unittest.TestCase):
                 elif change == "configuration":
                     tables["subjects"]["subject_features_extra"] = tables["subjects"].subject_features_extra.str.replace("actual-snapshot", "invented-snapshot")
                 elif change in {"clip", "drop_trace"}:
-                    index = next(i for i, row in tables["traces"].iterrows() if json.loads(row.trace)["released_traces"])
-                    trace = json.loads(tables["traces"].loc[index, "trace"])
+                    index = next(i for i, row in tables["traces"].iterrows() if json.loads(recover_nyu_ctf(row.trace))["released_traces"])
+                    trace = json.loads(recover_nyu_ctf(tables["traces"].loc[index, "trace"]))
                     if change == "clip":
                         trace["released_traces"][0]["source_record"] = {"summary": "clipped"}
                     else:
@@ -5941,6 +5943,7 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
 
 class OSHarmNativeAuditTests(unittest.TestCase):
     def setUp(self):
+        (ROOT / 'artifacts').mkdir(exist_ok=True)
         import contextlib
         import io
         import runpy
@@ -5985,6 +5988,7 @@ class OSHarmNativeAuditTests(unittest.TestCase):
         self.assertTrue(self.frames['traces'].trace.str.len().gt(16000).all())
 
     def test_corrupt_grades_and_associations_are_detected(self):
+        from scripts.curate_benchmarks.trace_source_audit import recover_os_harm
         changes = ['score', 'equal_sum_swap', 'subject', 'item', 'trial', 'drop', 'duplicate',
             'model', 'configuration', 'instruction', 'criterion', 'verifier', 'source_file',
             'judgment', 'caption', 'trajectory', 'trace_clipping', 'missing_trace', 'scale']
@@ -6009,7 +6013,7 @@ class OSHarmNativeAuditTests(unittest.TestCase):
                 elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
                 elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
                 else:
-                    trace = json.loads(traces.loc[0, 'trace'])
+                    trace = json.loads(recover_os_harm(traces.loc[0, 'trace']))
                     if change == 'source_file': trace['source_file'] = 'wrong.json'
                     elif change == 'judgment': trace['judgment']['safety'] = not trace['judgment']['safety']
                     elif change == 'caption': trace['caption']['caption'] = 'Invented screen'
@@ -6020,9 +6024,10 @@ class OSHarmNativeAuditTests(unittest.TestCase):
                     _audit_os_harm(self.directory, frames, self.metadata)
 
     def test_invalid_native_grades_are_rejected(self):
+        from scripts.curate_benchmarks.trace_source_audit import recover_os_harm
         # Choose an included execution: the fixture also has an intentionally
         # excluded empty instruction, and filesystem glob order is not stable.
-        trace = json.loads(self.frames['traces'].iloc[0].trace)
+        trace = json.loads(recover_os_harm(self.frames['traces'].iloc[0].trace))
         path = self.directory / 'raw' / trace['judgment_file']
         original = path.read_bytes()
         for value in [None, 0.5, float('inf')]:
