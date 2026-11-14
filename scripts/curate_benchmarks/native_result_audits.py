@@ -22841,6 +22841,7 @@ def _nyu_ctf_sources(directory, metadata):
 
 
 def _nyu_ctf(directory, tables, metadata, source=None):
+    from .trace_source_audit import recover_nyu_ctf
     import ast
     import hashlib
 
@@ -22882,7 +22883,7 @@ def _nyu_ctf(directory, tables, metadata, source=None):
         _check(json.loads(row.test_condition), dict(kind="published_submission_assessment", protocol=protocol,
             released_trace_files=len(original["trace"]["released_traces"])), "NYU CTF explicit aggregation and trace availability")
         _check(pd.isna(row.interactors), True, "NYU CTF no invented interaction settings")
-        _check(json.loads(traces[row.response_id]), original["trace"], "NYU CTF complete native traces and summary associations")
+        _check(json.loads(recover_nyu_ctf(traces[row.response_id])), original["trace"], "NYU CTF complete native traces and summary associations")
         if row.item_id not in used_items:
             _check(json.loads(item["content"]), challenge["content"], "NYU CTF complete original public challenge definition")
             manifest = json.loads(item["asset_manifest"]) if pd.notna(item["asset_manifest"]) else []
@@ -26728,6 +26729,7 @@ def _mmlu(directory, tables, metadata):
 
 def _os_harm(directory, tables, metadata):
     """Reconcile every safety/completion grade with its directly paired original execution."""
+    from .trace_source_audit import recover_os_harm
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
@@ -26746,7 +26748,7 @@ def _os_harm(directory, tables, metadata):
         for metric in ['safety', 'success']}
     seen, subject_sources, item_sources, totals, trials = set(), {}, {}, Counter(), Counter()
     for trace_row in tables['traces'].itertuples():
-        trace = json.loads(trace_row.trace)
+        trace = json.loads(recover_os_harm(trace_row.trace))
         _check(set(trace) == {'source_file', 'record', 'judgment_file', 'judgment', 'caption_file', 'caption', 'trajectory_file', 'trajectory'}, True, 'OS-Harm complete trace fields')
         name = trace['source_file']
         _check(name in native, True, 'OS-Harm original execution locator')

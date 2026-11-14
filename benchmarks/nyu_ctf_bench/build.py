@@ -10,10 +10,15 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, ExactMatcher
+from measurement_db.scripts.build_measurement_tables.trace_converters import nyu_ctf
 
 
-class NYUCTFBench(BenchmarkBuild):
+class NYUCTFBench(StructuredTraceBuild):
+    def convert_trace(self, source, *, context):
+        value, counts = nyu_ctf.convert(source)
+        return ConvertedTrace(value, counts)
+
     def download(self):
         return self.fetch_sources("tasks", "results", "forensings")
 

@@ -173,3 +173,100 @@ def recover_alpacaeval(value):
     if completion is None and judge is not None or completion is not None and judge is None:
         raise ValueError('Recorded and unavailable judge outputs must remain distinct')
     return original
+
+
+def recover_os_harm(value):
+    original = value
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, dict) or value.get('schema') != 'trace/1':
+        return original
+    if value.get('converter') != 'os_harm@1':
+        raise ValueError('Expected OS-Harm native-format traces')
+    original, source = checked_source(value)
+    expected = []
+    for number, record in enumerate(source['record']['steps']):
+        expected.append((number, 'observation', None, 'event'))
+        if record.get('response') is not None:
+            expected.append((number, 'agent', None, 'llm'))
+        expected.extend((number, 'action', i, 'event') for i in range(len(record.get('actions') or [])))
+    caption = source.get('caption')
+    if isinstance(caption, str) or isinstance(caption, dict) and caption.get('caption') is not None:
+        expected.append((None, 'caption', None, 'event'))
+    actual = []
+    for step in value['steps']:
+        origin = step['native']['os_harm']
+        actual.append((origin.get('step'), origin['kind'], origin.get('action'), step['type']))
+        if step['type'] == 'llm' and any(key in step for key in ['cost', 'usage', 'start', 'end']):
+            raise ValueError('Auxiliary captioner/grader metrics were assigned to the solver')
+    if actual != expected:
+        raise ValueError('OS-Harm observations, replies, actions or captions were omitted or reordered')
+    return original
+
+
+def recover_nyu_ctf(value):
+    original = value
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, dict) or value.get('schema') != 'trace/1':
+        return original
+    if value.get('converter') != 'nyu_ctf@1':
+        raise ValueError('Expected released NYU CTF log formats')
+    original, source = checked_source(value)
+    expected = [('assessment', None, None, None)]
+    expected_turns, actual_turns = [], []
+    for log_number, entry in enumerate(source['released_traces']):
+        record = entry['source_record']
+        expected.append(('file', log_number, None, None))
+        if 'messages' in record:
+            blocks = [('messages', record['messages'])]
+        elif 'history' in record:
+            blocks = [('history', record['history'])]
+        else:
+            blocks = [(key, record.get(key) or []) for key in ['autoprompter', 'planner']]
+            blocks += [(f'executors[{i}]', block) for i, block in enumerate(record.get('executors') or [])]
+        for component, messages in blocks:
+            if component not in {'messages', 'history'} and messages:
+                expected.append(('component', log_number, component, None))
+            parsed = [m[1] if isinstance(m, list) else m for m in messages]
+            typed = component == 'messages' and any(isinstance(m.get('extra'), dict) for m in parsed)
+            for index, message in enumerate(parsed):
+                role = message.get('role', '').removeprefix('MessageRole.').lower()
+                provider_backed = not typed or message.get('extra', {}).get('response', {}).get('data') is not None
+                if role == 'assistant' and not message.get('is_demo') and provider_backed:
+                    expected_turns.append((log_number, component, index))
+                expected.append(('message', log_number, component, index))
+                if component == 'history' and message.get('role') == 'assistant' and not message.get('is_demo') and message.get('action') is not None:
+                    expected.append(('action', log_number, component, index))
+    actual = []
+    for step in value['steps']:
+        origin = step['native']['nyu_ctf']
+        kind, number, component, index = (origin.get(k) for k in ['kind', 'log', 'component', 'index'])
+        actual.append((kind, number, component, index))
+        if step['type'] == 'llm':
+            actual_turns.append((number, component, index))
+            if any(k in step for k in ['start', 'end', 'cost', 'usage']):
+                raise ValueError('Aggregate or auxiliary metrics became per-turn measurements')
+            record = source['released_traces'][number]['source_record']
+            if component == 'messages':
+                messages = [m[1] if isinstance(m, list) else m for m in record['messages']]
+                message = messages[index]
+                if message.get('role') != 'assistant' or any(isinstance(m.get('extra'), dict) for m in messages) and message.get('extra', {}).get('response', {}).get('data') is None:
+                    raise ValueError('A demonstration or replay copy became a model turn')
+            elif component == 'history':
+                message = record['history'][index]
+                if message.get('is_demo') or message['role'] != 'assistant':
+                    raise ValueError('An Enigma demonstration became a model turn')
+            else:
+                block = record['executors'][int(component[10:-1])] if component.startswith('executors[') else record[component]
+                if block[index]['role'].removeprefix('MessageRole.').lower() != 'assistant':
+                    raise ValueError('Non-assistant component context became a model turn')
+                if any('id' in call for call in step.get('toolCalls', [])):
+                    raise ValueError('Component call IDs were invented')
+        if component and component not in {'messages', 'history'} and kind == 'message' and step.get('agent') != component:
+            raise ValueError('Distinct component histories lost their agent attribution')
+    if actual_turns != expected_turns:
+        raise ValueError('Recorded model turns were lost or duplicated')
+    if actual != expected:
+        raise ValueError('Released logs, component boundaries or messages were lost, duplicated or reordered')
+    return original
