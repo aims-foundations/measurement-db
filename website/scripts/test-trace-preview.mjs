@@ -122,3 +122,39 @@ assert.equal(requests.length, boundedBefore);
 console.log(
   "Python/TypeScript trace transport: bounded first load, complete fields/search, cancellation, stale pins and corruption checks passed.",
 );
+
+// Keep every benchmark in the bounded-preview rollout covered by a published
+// display cache. A renderer-only change must not leave these on source reads.
+const published = JSON.parse(
+  await fs.readFile(
+    new URL("../content/generated/trace-previews.json", import.meta.url),
+    "utf8",
+  ),
+);
+for (const slug of ["workarena", "visualwebarena", "theagentcompany"]) {
+  const cache = published[slug];
+  assert.ok(cache, `Missing published bounded trace cache for ${slug}`);
+  assert.ok(
+    matchingTracePreview(cache.source, cache),
+    `Stale display cache for ${slug}`,
+  );
+  assert.match(
+    cache.source,
+    new RegExp(
+      `/resolve/[a-f0-9]{40}/${slug}/formatted_tables/traces\\.parquet$`,
+    ),
+  );
+  assert.match(cache.revision, /^[a-f0-9]{40}$/);
+  assert.ok(cache.rows > 0);
+  assert.equal(cache.indexes.length, 256);
+  for (const [pack, offset, compressed, expanded, hash] of cache.indexes) {
+    assert.ok(
+      offset >= 0 && compressed > 0 && offset + compressed <= cache.packs[pack],
+    );
+    assert.ok(compressed <= cache.page_bytes && expanded <= cache.page_bytes);
+    assert.match(hash, /^[a-f0-9]{64}$/);
+  }
+}
+console.log(
+  "Published bounded-preview coverage and immutable artifact ranges passed for BrowserGym and TheAgentCompany.",
+);

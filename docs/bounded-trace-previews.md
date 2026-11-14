@@ -59,3 +59,11 @@ wire fixture is consumed by `website/scripts/test-trace-preview.mjs`, covering
 bounded first loads, full-text search beyond display prefixes, cancellation and
 source isolation. The trace-preview route has independent allowlist/range tests.
 Existing gallery/client tests cover benchmarks without a prepared display cache.
+
+## Preview rollout coverage
+
+The PR preview publishes bounded caches for WorkArena, VisualWebArena and
+TheAgentCompany. TheAgentCompany's cache covers all released OpenHands, OWL
+role-play and MUSE transcript records. The wire test also checks that all three
+benchmarks retain published display-cache entries; cached source downloads alone
+cannot satisfy this rollout check.
