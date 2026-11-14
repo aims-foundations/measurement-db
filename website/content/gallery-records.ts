@@ -1,5 +1,10 @@
 import catalog from "./generated/gallery-records.json";
 import previewJson from "./generated/record-previews.json";
+import tracePreviewJson from "./generated/trace-previews.json";
+import {
+  matchingTracePreview,
+  type TracePreview,
+} from "@/lib/benchmark-records/trace-preview";
 import type { GalleryEntry } from "@/lib/benchmark-records/types";
 import {
   matchingPreviews,
@@ -11,6 +16,10 @@ const previews = previewJson as unknown as Record<
   string,
   Record<string, RecordPreview>
 >;
+const tracePreviews = tracePreviewJson as unknown as Record<
+  string,
+  TracePreview
+>;
 export const galleryRecords: Record<string, GalleryEntry> = Object.fromEntries(
   Object.entries(catalog as Record<string, GalleryEntry>).map(
     ([slug, entry]) => [
@@ -21,6 +30,10 @@ export const galleryRecords: Record<string, GalleryEntry> = Object.fromEntries(
           ...entry.manifest,
           // A cache for another source revision must never supply this record.
           previews: matchingPreviews(entry.manifest.tables, previews[slug]),
+          tracePreview: matchingTracePreview(
+            entry.manifest.tables.traces?.parquet?.download,
+            tracePreviews[slug],
+          ),
         },
       },
     ],

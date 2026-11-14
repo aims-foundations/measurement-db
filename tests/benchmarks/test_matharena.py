@@ -321,8 +321,9 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                    subject["display_name"], features(subject["subject_features_extra"])["model_config"],
                    response["trial"])
             groups[key].append(response)
+        from scripts.curate_benchmarks.trace_source_audit import recover_text
         traces = {
-            tuple(row[:5]): row[5]
+            tuple(row[:5]): recover_text(row[5])
             for row in self.tables["traces"][[*PRIMARY_KEY, "trace"]].itertuples(
                 index=False, name=None
             )

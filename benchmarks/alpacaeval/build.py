@@ -9,10 +9,15 @@ from urllib.parse import quote
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, Judge
+from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, Judge
+from measurement_db.scripts.build_measurement_tables.trace_converters import pairwise
 
 
-class AlpacaEval(BenchmarkBuild):
+class AlpacaEval(StructuredTraceBuild):
+    def convert_trace(self, source, *, context):
+        value, counts = pairwise.convert(source, reference=self.build_parameters['target']['reference'])
+        return ConvertedTrace(value, counts)
+
     def download(self):
         return self.fetch_sources("release", "data_license")
 

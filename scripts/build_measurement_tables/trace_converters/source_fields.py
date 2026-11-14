@@ -20,6 +20,7 @@ class SourceTrace:
         self.source = json.loads(source) if json_encoded else source
         self.native = {'source': deepcopy(source), 'source_encoding': 'json' if json_encoded else 'native'}
         self.converter, self.steps = converter, []
+        self.sections = {}
 
     def project(self, step, target, path, *, json_text=False):
         value = get(self.source, path)
@@ -42,5 +43,22 @@ class SourceTrace:
         self.steps.append(step)
         return step
 
+    def project_section(self, name, target, path, *, json_text=False):
+        if name not in {'run', 'evaluation'}:
+            raise ValueError('Unsupported trace section')
+        section = self.sections.setdefault(name, {})
+        keys = [target] if isinstance(target, str) else target
+        parent = section
+        for key in keys[:-1]:
+            parent = parent.setdefault(key, {})
+        value = self.project(section, keys, path, json_text=json_text)
+        references = section.pop('native')['source_fields']
+        for reference in references:
+            reference['target'] = [name, *reference['target']]
+        self.native.setdefault('source_fields', []).extend(references)
+        return value
+
     def value(self, **kwargs):
-        return trace(self.converter, self.steps, native=self.native, **kwargs)
+        if self.sections.keys() & kwargs.keys():
+            raise ValueError('A trace section cannot replace projected source fields')
+        return trace(self.converter, self.steps, native=self.native, **self.sections, **kwargs)
