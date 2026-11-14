@@ -352,8 +352,9 @@ def verify_batch2(directory, tables_directory=None):
             assert verifier["source_revision"] == "98b68ef82a47690c316f42fddb05baafaab56851"
             assert verifier["kind"] == "provider_result_mapping"
         traces = cells.merge(pd.read_parquet(tables_directory / "traces.parquet"), on="response_id", validate="one_to_one")
+        from .trace_source_audit import recover_theagentcompany
         actual_traces = Counter((r.display_name, r.harness, r.raw_item_id, None if pd.isna(r.response) else r.response,
-                                 hashlib.sha256(r.trace.encode()).hexdigest()) for r in traces.itertuples())
+                                 hashlib.sha256(recover_theagentcompany(r.trace).encode()).hexdigest()) for r in traces.itertuples())
         _equal(actual_traces, native_traces, "TheAgentCompany complete native trajectories")
         return {"source_responses": sum(expected.values()), "source_items": len(task_names),
                 "source_traces": sum(native_traces.values()), "source_trace_files": trace_files,

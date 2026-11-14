@@ -9,15 +9,20 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.build_base import ConvertedTrace, ExactMatcher, StructuredTraceBuild
+from measurement_db.scripts.build_measurement_tables.trace_converters import chat
 from measurement_db.scripts.curate_benchmarks.agentdojo_tasks import (
     identify_model_and_defense, load_task_prompts,
 )
 
 
-class AgentDojo(BenchmarkBuild):
+class AgentDojo(StructuredTraceBuild):
     def download(self):
         return self.fetch_sources("release")
+
+    def convert_trace(self, source, *, context):
+        value, counts = chat.convert(source, context=context)
+        return ConvertedTrace(value, counts)
 
     def build_tables(self) -> dict[str, pd.DataFrame]:
         # 1. Load run records; parse the released Python task literals without executing them.
@@ -96,7 +101,7 @@ class AgentDojo(BenchmarkBuild):
 
         # 4. Preserve complete message histories, including recorded attempts without a grade.
         traces = observations.loc[observations.messages.map(lambda value: isinstance(value, list) and bool(value))].copy()
-        traces["trace"] = traces.messages.map(lambda value: json.dumps(value, ensure_ascii=False))
+        traces["trace"] = traces.messages
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
             "items": items[["item_key", "raw_item_id", "content", "grading_criterion", "verifier", "features"]],

@@ -2998,6 +2998,7 @@ def _alpaca_source_records(directory, metadata):
 def _alpacaeval(directory, tables, metadata, source_records=None):
     """Check every native comparison, its fixed opponent, grade and full judge record."""
     import math
+    from .trace_source_audit import recover_alpacaeval
     from urllib.parse import unquote
 
     native, reference, copies = (
@@ -3036,7 +3037,7 @@ def _alpacaeval(directory, tables, metadata, source_records=None):
     traces = tables["traces"].set_index("response_id").trace.to_dict()
     seen, used_items, counts = Counter(), set(), Counter()
     for response in tables["responses"].itertuples():
-        trace = json.loads(traces[response.response_id])
+        trace = json.loads(recover_alpacaeval(traces[response.response_id]))
         key = trace["source_file"], trace["source_row"]
         original = native[key]
         _check(trace, {"source_file": key[0], "source_row": key[1], "native_record": original},
@@ -21105,6 +21106,9 @@ def _taubench(directory, tables, metadata):
             check(json.loads(row.test_condition),dict(source_file=source_file,source_row=position,original_trial=trial,
                 task_definition_source=provenance,evaluation_integrity=integrity),'complete source and integrity provenance')
             trace=json.loads(traces[row.response_id])
+            if isinstance(trace, dict) and trace.get('schema') == 'trace/1':
+                from measurement_db.scripts.curate_benchmarks.chat_trace_audit import recover_taubench
+                trace = recover_taubench(trace, item_content=items[row.item_id]['content'])
             check(trace,dict(source_file=source_file,source_row=position,task_id=task_id,configuration=config,
                 run_config=original['config'] if collection=='hal' else None,result=native,logs=logs[task_id],
                 task_definition_source=provenance),'complete original result and associated logs')
@@ -22837,6 +22841,7 @@ def _nyu_ctf_sources(directory, metadata):
 
 
 def _nyu_ctf(directory, tables, metadata, source=None):
+    from .trace_source_audit import recover_nyu_ctf
     import ast
     import hashlib
 
@@ -22878,7 +22883,7 @@ def _nyu_ctf(directory, tables, metadata, source=None):
         _check(json.loads(row.test_condition), dict(kind="published_submission_assessment", protocol=protocol,
             released_trace_files=len(original["trace"]["released_traces"])), "NYU CTF explicit aggregation and trace availability")
         _check(pd.isna(row.interactors), True, "NYU CTF no invented interaction settings")
-        _check(json.loads(traces[row.response_id]), original["trace"], "NYU CTF complete native traces and summary associations")
+        _check(json.loads(recover_nyu_ctf(traces[row.response_id])), original["trace"], "NYU CTF complete native traces and summary associations")
         if row.item_id not in used_items:
             _check(json.loads(item["content"]), challenge["content"], "NYU CTF complete original public challenge definition")
             manifest = json.loads(item["asset_manifest"]) if pd.notna(item["asset_manifest"]) else []
@@ -26724,6 +26729,7 @@ def _mmlu(directory, tables, metadata):
 
 def _os_harm(directory, tables, metadata):
     """Reconcile every safety/completion grade with its directly paired original execution."""
+    from .trace_source_audit import recover_os_harm
     from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
     from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
     from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
@@ -26742,7 +26748,7 @@ def _os_harm(directory, tables, metadata):
         for metric in ['safety', 'success']}
     seen, subject_sources, item_sources, totals, trials = set(), {}, {}, Counter(), Counter()
     for trace_row in tables['traces'].itertuples():
-        trace = json.loads(trace_row.trace)
+        trace = json.loads(recover_os_harm(trace_row.trace))
         _check(set(trace) == {'source_file', 'record', 'judgment_file', 'judgment', 'caption_file', 'caption', 'trajectory_file', 'trajectory'}, True, 'OS-Harm complete trace fields')
         name = trace['source_file']
         _check(name in native, True, 'OS-Harm original execution locator')
@@ -26803,6 +26809,7 @@ def _os_harm(directory, tables, metadata):
 
 
 def _workarena(directory, tables, metadata):
+    from .trace_source_audit import recover_browsergym
     import csv
     from collections import defaultdict
     from functools import lru_cache
@@ -26830,7 +26837,7 @@ def _workarena(directory, tables, metadata):
         return json.loads((raw / name).read_text())
 
     for trace_row in tables['traces'].itertuples():
-        trace = json.loads(trace_row.trace)
+        trace = json.loads(recover_browsergym(trace_row.trace))
         _check(set(trace), {'source_file', 'record', 'annotation_file', 'annotation_row', 'annotation'}, 'WorkArena complete trace fields')
         index = trace['annotation_row']
         _check(type(index) is int and index in annotations and index not in seen, True, 'WorkArena unique original annotation row')
@@ -27093,6 +27100,7 @@ def _wikihow_agent(directory, tables, metadata):
 
 
 def _visualwebarena(directory, tables, metadata):
+    from .trace_source_audit import recover_browsergym
     import csv, hashlib, mimetypes, re
     from urllib.parse import urlsplit
     from zipfile import ZipFile
@@ -27113,7 +27121,7 @@ def _visualwebarena(directory, tables, metadata):
     items=tables['items'].set_index('item_id').to_dict('index')
     assets=tables['assets'].set_index('asset_id').to_dict('index')
     for row in tables['traces'].itertuples():
-        trace=json.loads(row.trace)
+        trace=json.loads(recover_browsergym(row.trace))
         _check(set(trace),{'source_file','record','grading_protocol','annotation_file','annotation_row','annotation'},'VisualWebArena explicit original trace fields')
         key=trace['source_file'],trace['grading_protocol'],trace['annotation_row']
         _check(key not in trace_index,True,'VisualWebArena each original judgment exactly once')

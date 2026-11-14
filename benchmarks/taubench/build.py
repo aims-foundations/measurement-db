@@ -1,6 +1,7 @@
 """Tabulate original tau-bench attempts and attributed HAL run exports."""
 
 import base64
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
@@ -13,12 +14,178 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.build_base import ConvertedTrace, ExactMatcher, StructuredTraceBuild
+from measurement_db.scripts.build_measurement_tables.trace_converters import chat
 
 
-class TauBench(BenchmarkBuild):
+class TauBench(StructuredTraceBuild):
     def download(self):
         return self.fetch_sources('*')
+
+    @staticmethod
+    def _hal_messages(source):
+        """Group saved HAL calls only when their recorded contexts agree.
+
+        Provider wrappers are deduplicated by response ID. Distinct planner,
+        executor or retry contexts remain separate; no conversation is guessed.
+        The original logs and the source of every displayed reply stay in native.
+        """
+        def model(value):
+            return value.removeprefix('openai/') if isinstance(value, str) else value
+
+        def comparable(message):
+            value = {key: deepcopy(message[key]) for key in
+                     ['role', 'content', 'tool_calls', 'tool_call_id', 'name']
+                     if message.get(key) is not None}
+            content = value.get('content')
+            if isinstance(content, list):
+                parts = [block.get('text', block.get('content')) if isinstance(block, dict) else block
+                         for block in content]
+                if all(isinstance(part, str) for part in parts):
+                    value['content'] = '\n'.join(parts)
+            if not value.get('tool_calls'):
+                value.pop('tool_calls', None)
+            for call in value.get('tool_calls', []):
+                arguments = (call.get('function') or {}).get('arguments')
+                if isinstance(arguments, str):
+                    try:
+                        call['function']['arguments'] = json.loads(arguments)
+                    except json.JSONDecodeError:
+                        pass
+            return value
+
+        def compatible(reply, retained):
+            left, right = comparable(reply), comparable(retained)
+            proposed, used = left.pop('tool_calls', []), right.pop('tool_calls', [])
+            return left == right and (not proposed or not used or proposed[:len(used)] == used)
+
+        expected = model(source['configuration']['agent_args']['model_name'])
+        calls = {}
+        for index, log in enumerate(source['logs']):
+            inputs, output = log.get('inputs') or {}, log.get('output') or {}
+            if not isinstance(output, dict) or not isinstance(inputs.get('messages'), list):
+                continue
+            if expected not in {model(inputs.get('model')), model(output.get('model'))}:
+                continue
+            choices = output.get('choices') or []
+            reply = choices[0].get('message') if choices else None
+            if not isinstance(reply, dict):
+                continue
+            identity = output.get('id') or ('log', index)
+            previous = calls.get(identity)
+            # Outer records retain the harness policy roles; provider clients
+            # sometimes rewrite those roles for reasoning-model APIs.
+            if previous is None or ('/op/litellm.completion:' in log.get('op_name', '')
+                                    and '/op/litellm.completion:' not in previous[1].get('op_name', '')):
+                calls[identity] = (index, log, reply)
+        remaining = list(calls.values())
+        contexts = []
+        while remaining:
+            chosen = max(remaining, key=lambda row: (len(row[1]['inputs']['messages']), row[1].get('started_at') or ''))
+            messages = deepcopy(chosen[1]['inputs']['messages']) + [deepcopy(chosen[2])]
+            normalized = [comparable(m) for m in messages]
+            members = [row for row in remaining
+                       if [comparable(m) for m in row[1]['inputs']['messages']] ==
+                          normalized[:len(row[1]['inputs']['messages'])]
+                       and compatible(row[2], messages[len(row[1]['inputs']['messages'])])]
+            if not members:
+                raise ValueError('A HAL call cannot be associated with its own saved context')
+            # Different response IDs are distinct calls even when their inputs
+            # and replies are identical. Never collapse them onto one step.
+            by_position = {len(chosen[1]['inputs']['messages']): chosen}
+            for member in members:
+                by_position.setdefault(len(member[1]['inputs']['messages']), member)
+            members = list(by_position.values())
+            # Some clients emit empty IDs, while the harness keeps only the
+            # executed call in the next input history. That recorded history
+            # supplies the association even if the full proposal had many calls.
+            pending, tool_sources = [], []
+            for position, message in enumerate(messages):
+                if message.get('role') == 'assistant':
+                    pending.extend((position, i, call) for i, call in enumerate(message.get('tool_calls') or []))
+                if message.get('role') == 'tool':
+                    matches = [(i, call) for i, call in enumerate(pending)
+                               if (not message.get('tool_call_id') or call[2].get('id') == message['tool_call_id'])
+                               and (not message.get('name') or call[2].get('function', {}).get('name') == message['name'])]
+                    if len(matches) == 1:
+                        origin, ordinal, call = pending.pop(matches[0][0])
+                        if not message.get('tool_call_id') and 'tool_call' not in message:
+                            message['tool_call'] = deepcopy(call)
+                            tool_sources.append(dict(message=position, assistant=origin, call=ordinal))
+            evidence = []
+            for index, log, reply in members:
+                position = len(log['inputs']['messages'])
+                # Retain harness-parsed calls when the provider returned text;
+                # retain every proposed call when the harness executed a prefix.
+                target = messages[position]
+                target.update({key: deepcopy(value) for key, value in reply.items()
+                               if value is not None and not (key == 'tool_calls' and not value)})
+                for key in ['model', 'usage']:
+                    if log['output'].get(key) is not None:
+                        target[key] = deepcopy(log['output'][key])
+                for key in ['started_at', 'ended_at']:
+                    if log.get(key) is not None:
+                        target[key] = log[key]
+                evidence.append(dict(message=position, log=index))
+            contexts.append(dict(messages=messages, history_log=chosen[0], replies=evidence, tool_sources=tool_sources,
+                                 started_at=chosen[1].get('started_at') or ''))
+            assigned = {row[0] for row in members}
+            remaining = [row for row in remaining if row[0] not in assigned]
+        contexts.sort(key=lambda row: row['started_at'])
+        flattened, evidence = [], []
+        for number, context in enumerate(contexts, 1):
+            messages = context.pop('messages')
+            context.pop('started_at')
+            context['offset'] = len(flattened)
+            if len(contexts) > 1:
+                for message in messages:
+                    message['agent'] = f'HAL context {number}'
+            flattened.extend(messages)
+            evidence.append(context)
+        # Preserve a terminating simulator reply only when its recorded input
+        # explicitly quotes the final agent reply.
+        if flattened and isinstance(flattened[-1].get('content'), str) and flattened[-1]['content']:
+            tails = []
+            for index, log in enumerate(source['logs']):
+                inputs, output = log.get('inputs') or {}, log.get('output') or {}
+                history = inputs.get('messages') or []
+                if not isinstance(output, dict) or model(inputs.get('model')) == expected or not history:
+                    continue
+                choices = output.get('choices') or []
+                reply = choices[0].get('message') if choices else None
+                if (isinstance(reply, dict) and history[-1].get('role') == 'user'
+                        and history[-1].get('content') == flattened[-1]['content']):
+                    tails.append((log.get('started_at') or '', index, reply))
+            if tails:
+                _, index, reply = max(tails)
+                message = dict(role='user', content=reply.get('content'))
+                if flattened[-1].get('agent'):
+                    message['agent'] = flattened[-1]['agent']
+                flattened.append(message)
+                evidence[-1]['simulator_log'] = index
+        return flattened, evidence
+
+    def convert_trace(self, source, *, context):
+        native = {'source': deepcopy(source)}
+        result = source['result']
+        run = {'exception': result} if isinstance(result, str) else {}
+        participant = None
+        if isinstance(result, dict) and 'traj' in result:
+            messages = result['traj']
+            del native['source']['result']['traj']
+            participant = 'simulated_user'
+        else:
+            messages, evidence = self._hal_messages(source)
+            native['hal_message_sources'] = evidence
+            # Saved replies establish a lower bound, not a complete API-call
+            # total: failed or unlogged requests may have no response record.
+            native['hal_recorded_reply_count'] = sum(len(group['replies']) for group in evidence)
+        model = source['configuration'].get('agent_args', {}).get('model_name') or source['configuration'].get('model')
+        # HAL planner/executor histories also use the API user role for
+        # harness instructions. Do not attribute those messages to a customer.
+        value, counts = chat.convert(messages, context=context, user_participant=participant,
+                                     native=native, run=run, model=model)
+        return ConvertedTrace(value, counts)
 
     def build_tables(self):
         parameters, labels = self.build_parameters, self.build_parameters['labels']
@@ -124,11 +291,11 @@ class TauBench(BenchmarkBuild):
 
         # 6. Retain every original result and every associated native logging record.
         traces = attempts[['response_key']].copy()
-        traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,
+        traces['trace'] = [dict(source_file=row.source_file, source_row=row.source_row,
             task_id=row.task_id, configuration=row.configuration,
             run_config=row.run_config if isinstance(row.run_config, dict) else None,
-            result=row.native_record, logs=row.logs, task_definition_source=row.task_definition_source),
-            ensure_ascii=False, allow_nan=False) for row in attempts.itertuples()]
+            result=row.native_record, logs=row.logs, task_definition_source=row.task_definition_source)
+            for row in attempts.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
             'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'trial', 'response', 'test_condition']],
