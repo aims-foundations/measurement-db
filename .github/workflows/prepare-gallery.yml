@@ -122,11 +122,11 @@ jobs:
               output.write(f"HF_REVISION={revision}\n")
           print(f"Gallery source: {SOURCE_REPO}@{revision}")
           PYTHON
-      - name: Prepare benchmark bundles with four workers and stage timings
+      - name: Prepare benchmark bundles with bounded scratch usage
         run: >-
           python -m scripts.ci.gallery_prepare
           --out "$GALLERY_JOB_DIR/candidate"
-          --workers 4
+          --workers 2
       - name: Upload prepared benchmark archives and source provenance
         uses: actions/upload-artifact@v4
         with:
@@ -144,6 +144,13 @@ jobs:
             ${{ steps.storage.outputs.directory }}/candidate/validation.json
           retention-days: 30
           if-no-files-found: error
+
+      - name: Remove this run's temporary files and environment
+        if: always()
+        run: |
+          if [ -n "${GALLERY_JOB_DIR:-}" ]; then
+            rm -rf -- "$GALLERY_JOB_DIR"
+          fi
 
   deploy:
     name: Deploy prepared website
