@@ -1,5 +1,6 @@
 /** The canonical table fields used by the viewer. Extra source fields stay intact. */
 import type { RecordPreview } from "./record-preview";
+import type { TracePreview } from "./trace-preview";
 export type SourceRecord = Record<string, unknown>;
 
 export type Subject = SourceRecord & {
@@ -66,6 +67,7 @@ export type BenchmarkMetadata = SourceRecord & {
 };
 
 export type Manifest = {
+  tracePreview?: TracePreview;
   previews?: Partial<Record<TableName, RecordPreview>>;
   compressed?: boolean;
   pack?: { index: string };

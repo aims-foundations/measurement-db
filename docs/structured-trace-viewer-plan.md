@@ -810,3 +810,24 @@ reasoning is evaluation provenance. Captioner/grader usage and timestamps stay
 native rather than becoming solver metrics. Safety and task-completion grades,
 their separate response links, and all original measurement files are unchanged.
 An independent audit checks source recovery and ordered displayed-field coverage.
+
+
+### NYU CTF multi-agent pilot
+
+NYU CTF implements `nyu_ctf@1` through its builder hook. Every published
+assessment retains the exact summary and all released log files. An assessment
+without logs stays summary-only, and several files do not become inferred
+individual trials. File boundaries and separate autoprompter, planner and
+executor histories remain explicit; their block order makes no claim of global
+chronology. Component tool calls have no invented IDs. Retrieved knowledge is
+context, not a model turn.
+
+The baseline XML logger records raw, replay and parsed copies. Where typed
+responses are present, only records carrying a provider response become model
+turns; null-response demonstrations stay context. Enigma uses history once,
+retaining demonstrations as context and trajectory details natively rather
+than rendering duplicate generations. Aggregate costs, auxiliary statistics
+and ambiguous timestamps are retained without per-turn attribution. The
+independent source audit checks complete recovery, ordered message/file
+coverage and agent attribution. Native fixtures preserve pass@k assessments,
+null grades, challenge associations, symlinks and exact input asset bytes.

@@ -5,6 +5,7 @@ on:
     paths:
       - 'website/**'
       - 'scripts/render_website/**'
+      - 'scripts/trace_previews/**'
       - 'scripts/analyze_measurements/**'
       - 'tests/**'
       - 'schema.md'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'website/**'
       - 'scripts/render_website/**'
+      - 'scripts/trace_previews/**'
       - 'scripts/analyze_measurements/**'
       - 'tests/**'
       - 'schema.md'
@@ -71,6 +73,9 @@ jobs:
           node website/scripts/test-gallery-source.mjs "$RUNNER_TEMP/gallery-packed-fixture"
           node website/scripts/test-gallery-lookup.mjs
           node website/scripts/test-trace-display.mjs
+          python tests/make_trace_preview_fixture.py "$RUNNER_TEMP/trace-preview-fixture"
+          node website/scripts/test-trace-preview.mjs "$RUNNER_TEMP/trace-preview-fixture"
+          node website/scripts/test-trace-preview-route.mjs
           node website/scripts/test-gallery-source-route.mjs
           node website/scripts/test-vercel-fetch.mjs
       - run: pnpm --dir website network:test
