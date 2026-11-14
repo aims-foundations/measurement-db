@@ -8,16 +8,24 @@ import sys
 
 import pandas as pd
 import pytest
+
+from trace_builder_fixtures import legacy_traces
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT.parent))
-from scripts.build_measurement_tables.trace_converters import openhands
+from scripts.build_measurement_tables.trace_conversion import convert_trace
+from trace_builder_fixtures import build_trace
 from scripts.build_measurement_tables.trace_format import validate
 from scripts.curate_benchmarks.trace_source_audit import recover_theagentcompany
 
 Builder = runpy.run_path(str(ROOT / 'benchmarks/theagentcompany/build.py'))['TheAgentCompany']
+
+
+def convert(source, **options):
+    result = convert_trace(source, family="openhands", **options)
+    return result.value, result.counts
 
 
 def events():
@@ -41,7 +49,7 @@ def events():
 def test_parallel_actions_and_copied_responses_do_not_duplicate_model_turns():
     source = events(); original = deepcopy(source)
     raw = json.dumps(source, ensure_ascii=False, indent=2) + '\n'
-    value, counts = openhands.convert(raw)
+    value, counts = convert(raw)
     validate(value)
     assert source == original
     assert recover_theagentcompany(value) == raw
@@ -58,7 +66,7 @@ def test_parallel_actions_and_copied_responses_do_not_duplicate_model_turns():
 
 @pytest.mark.parametrize('change', ['content', 'arguments', 'association', 'drop', 'order'])
 def test_independent_audit_rejects_display_and_association_corruption(change):
-    value, _ = openhands.convert(json.dumps(events()))
+    value, _ = convert(json.dumps(events()))
     if change == 'content': value['steps'][1]['content'] = 'A different answer'
     elif change == 'arguments': value['steps'][2]['arguments'] = '{}'
     elif change == 'association': value['steps'][2]['callId'] = 'b'
@@ -70,9 +78,9 @@ def test_independent_audit_rejects_display_and_association_corruption(change):
 def test_conflicting_provider_response_and_dangling_tool_result_fail():
     source = events()
     source[3]['tool_call_metadata']['model_response']['choices'][0]['message']['content'] = 'conflicting'
-    with pytest.raises(ValueError, match='conflicting'): openhands.convert(source)
+    with pytest.raises(ValueError, match='conflicting'): convert(source)
     source = events(); source[2]['cause'] = 999
-    _, counts = openhands.convert(source)
+    _, counts = convert(source)
     assert counts['unmatched_tool_results'] == 1
 
 
@@ -82,7 +90,7 @@ def test_harness_controls_and_unassociated_errors_are_not_invented_model_calls()
               dict(id=2, source='environment', observation='recall', cause=1, content='Context', message='Context'),
               dict(id=3, source='agent', observation='error', content='Unknown function'),
               dict(id=4, source='agent', action='condensation', message='Dropped history')]
-    value, counts = openhands.convert(json.dumps(source))
+    value, counts = convert(json.dumps(source))
     validate(value)
     assert [s['type'] for s in value['steps']] == ['message'] + ['event']*4
     assert not counts['llm'] and not counts['unmatched_tool_results']
@@ -93,7 +101,7 @@ def test_native_action_without_provider_metadata_retains_execution_arguments():
     source = [dict(id=1, source='agent', action='run', message='Execute the command',
                    args={'command': 'ls', 'thought': 'Inspect files'}),
               dict(id=2, source='agent', observation='run', cause=1, content='Failed', extras={'exit_code': 2})]
-    value, counts = openhands.convert(source)
+    value, counts = convert(source)
     validate(value)
     assert counts['llm'] == counts['tool'] == 1
     assert 'callId' not in value['steps'][1]
@@ -102,19 +110,18 @@ def test_native_action_without_provider_metadata_retains_execution_arguments():
 
 
 def test_roleplay_and_text_transcript_variants_do_not_invent_identifiers_or_turns():
-    builder = Builder.__new__(Builder)
     source = json.dumps([{'user': 'Instruction', 'assistant': 'Solution', 'tool_calls': [
         {'func_name': 'execute_code', 'args': {'code': 'print(1)'}, 'result': '1'}]}])
-    value = builder.convert_trace(source, context=None).value
+    value = build_trace('theagentcompany', source).value
     validate(value)
     assert [s['type'] for s in value['steps']] == ['message', 'llm', 'tool']
     assert 'callId' not in value['steps'][-1]
     assert recover_theagentcompany(value) == source
     raw = '01. SYSTEM MESSAGE\nUnstructured native transcript\n' + '測定' * 20000
-    value = builder.convert_trace(raw, context=None).value
+    value = build_trace('theagentcompany', raw).value
     validate(value)
     assert len(value['steps']) == 1 and recover_theagentcompany(value) == raw
-    with pytest.raises(json.JSONDecodeError): builder.convert_trace('[broken JSON', context=None)
+    with pytest.raises(json.JSONDecodeError): build_trace('theagentcompany', '[broken JSON')
 
 
 def test_complete_builder_and_native_audit_preserve_nontrace_files_and_ungraded_attempt(tmp_path):
@@ -148,7 +155,7 @@ def test_complete_builder_and_native_audit_preserve_nontrace_files_and_ungraded_
     assert audit['source_traces'] == 2 and audit['source_ungraded_observations'] == 1
     assert pd.read_parquet(output / 'responses.parquet').response.isna().sum() == 1
     class Legacy(Builder):
-        _prepare_traces = BenchmarkBuild._prepare_traces
+        _prepare_traces = legacy_traces
         _write_trace_table = BenchmarkBuild._write_trace_table
     reload()
     baseline = tmp_path / 'legacy'

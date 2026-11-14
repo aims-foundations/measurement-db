@@ -10,14 +10,10 @@ from zipfile import ZipFile
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, ExactMatcher, Judge
-from measurement_db.scripts.build_measurement_tables.trace_converters import browsergym
+from measurement_db.build_base import ExactMatcher, Judge, StructuredTraceBuild, convert_trace
 
 
 class VisualWebArena(StructuredTraceBuild):
-    def convert_trace(self, source, *, context):
-        value, counts = browsergym.convert(source)
-        return ConvertedTrace(value, counts)
 
     def download(self):
         return self.fetch_sources('*')
@@ -98,6 +94,8 @@ class VisualWebArena(StructuredTraceBuild):
             annotation_file=layout['annotations'] if row.protocol == 'human' else None,
             annotation_row=int(row.annotation_row) if row.protocol == 'human' else None, annotation=row.annotation),
             ensure_ascii=True, allow_nan=False) for row in responses.itertuples()]
+        responses['trace'] = responses.trace.map(
+            lambda source: convert_trace(source, family='browsergym'))
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
             items=items[['item_key', 'raw_item_id', 'content', 'attachments', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response']],

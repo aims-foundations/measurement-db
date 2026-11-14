@@ -13,15 +13,10 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, ExactMatcher, Judge
-from measurement_db.scripts.build_measurement_tables.trace_converters import text
+from measurement_db.build_base import ExactMatcher, Judge, StructuredTraceBuild, convert_trace
 
 
 class MathArenaBuild(StructuredTraceBuild):
-
-    def convert_trace(self, source, *, context):
-        value, counts = text.convert(source)
-        return ConvertedTrace(value, counts)
 
     def download(self):
         return self.fetch_sources("*")
@@ -128,6 +123,7 @@ class MathArenaBuild(StructuredTraceBuild):
         has_answer = traces.answer.map(lambda value: isinstance(value, str) and bool(value.strip()))
         traces["trace"] = traces.answer.where(has_answer, traces.parsed_answer)
         traces = traces.loc[traces.trace.map(lambda value: isinstance(value, str) and bool(value.strip()))]
+        traces["trace"] = traces.trace.map(lambda source: convert_trace(source, family="text"))
         return {
             "subjects": subjects[["subject_key", "raw_label", "features"]],
             "items": items[["item_key", "raw_item_id", "content", "attachments", "grading_criterion", "verifier", "verifier_features", "features"]],

@@ -1,7 +1,7 @@
 # Plan: a standard trace format and a structured trace viewer
 
 Status: ProgramBench released; converter-family migrations in progress. PR #15 provides the deployed schema, converter helpers,
-mini-swe-agent converter and structured website viewer. PR #16 adds `StructuredTraceBuild`,
+mini-swe-agent converter and structured website viewer. PR #16 introduced `StructuredTraceBuild`, now used for inline trace validation,
 write-time validation and format-aware paging. PR #17 migrates ProgramBench; other builders
 retain legacy traces until they explicitly migrate. The survey and measurements below describe the
 original 2026-11-09 research spike; refresh them against pinned inputs for each migration.
@@ -10,7 +10,7 @@ The viewer and schema landed in [#15](https://github.com/aims-foundations/measur
 The builder contract follows in [#16](https://github.com/aims-foundations/measurement-db/pull/16)
 (`feat/structured-trace-build` → `main`). The ProgramBench pilot is
 [#17](https://github.com/aims-foundations/measurement-db/pull/17)
-(`feat/programbench-structured-traces` → `main`). The reader and abstract contract are merged;
+(`feat/programbench-structured-traces` → `main`). The reader and structured build validation are merged;
 the ProgramBench release is merged and deployed on main.
 
 ## 1. Goal
@@ -313,44 +313,52 @@ to about 56 KB.
 
 ### 7.1 Shared code
 
-- `build_base.py::StructuredTraceBuild` is the opt-in abstract builder contract. Each migrated
-  builder implements `convert_trace(source, *, context) -> ConvertedTrace`. `TraceContext` is
-  immutable and contains the final observation identity and item text; `ConvertedTrace` holds
-  the `trace/1` document and accounting counters. Benchmark-specific parsing stays in `build.py`.
-  Shared format converters are optional helpers called from this method.
-- The shared pipeline invokes conversion once for each available trace after response assembly.
-  Both `build_tables()` and `build_subject_item_response_rows()` use this path. Missing traces
-  remain absent; conversion does not create or modify response rows, grades or identities.
+- `build_base.py::StructuredTraceBuild` opts into structured trace validation. A migrated
+  builder prepares `ConvertedTrace` values inline, alongside its source-table construction;
+  no abstract conversion method is required. Each value contains the `trace/1` document and
+  accounting counters. Benchmark-specific preparation stays in `build.py`.
+- The shared pipeline validates and serializes each available converted trace after final
+  response identities have been assigned. Both `build_tables()` and
+  `build_subject_item_response_rows()` use this path. Missing traces remain absent;
+  conversion does not create or modify response rows, grades or identities.
 - `scripts/build_measurement_tables/trace_format.py`: step constructors, `native` collection
   (a helper that returns the source fields not consumed by the mapping), the task-omission rule,
   JSON Schema validation against `trace_schema.json` (`jsonschema` is already a dependency), and
   the accounting counters.
-- `scripts/build_measurement_tables/trace_converters/<name>.py`: converters for formats shared by
-  several benchmarks: `text` (plain answers), `chat` (group A), `mini_swe_agent`, `openhands`,
-  `browsergym`. Each has a version (`chat@1`) written into `converter`.
+- `scripts/build_measurement_tables/trace_conversion.py`: one shared file with
+  `convert_trace(source, family=..., **options)` and separate functions for `text`, `chat`,
+  `mini_swe_agent`, `openhands`, `browsergym`, `pairwise`, and `nyu_ctf`. Each retains its
+  version (`chat@1`) in `converter`. Unsupported families and options fail explicitly.
 - Benchmark-specific mapping stays in that benchmark's `build.py`, so a curator can read the
   whole mapping in the file they own.
 
 ### 7.2 In a builder
 
-A migrated builder inherits `StructuredTraceBuild`. Its existing `trace` input can contain
-native dictionaries, message lists or text; the shared pipeline handles serialization. The
-following simplified ProgramBench example illustrates the hook; its actual adapter also
-preserves provider metadata and complete test-result identities:
+A migrated builder inherits `StructuredTraceBuild` and calls the shared converter where it
+prepares traces. The converter accepts native dictionaries, message lists or text according
+to its selected family and returns `ConvertedTrace`; the pipeline handles validation and
+serialization. This simplified example omits ProgramBench's additional provider metadata
+and complete test-result identities, which remain inline in its own builder:
 
 ```python
-from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild
-from measurement_db.scripts.build_measurement_tables.trace_converters import mini_swe_agent
+from measurement_db.build_base import StructuredTraceBuild, convert_trace
 
 class ProgramBench(StructuredTraceBuild):
-    def convert_trace(self, source, *, context):
-        record = json.loads(source) if isinstance(source, str) else source
-        value, counts = mini_swe_agent.convert(
-            record["trajectory"], evaluation=record.get("evaluation"),
+    def build_tables(self):
+        # 1–4. Prepare subjects, items, responses and native records.
+        ...
+        # 5. Preserve benchmark-specific evidence and convert each trace.
+        traces["trace"] = [convert_trace(
+            record["trajectory"], family="mini_swe_agent",
+            evaluation=record.get("evaluation"),
             native={k: v for k, v in record.items() if k not in {"trajectory", "evaluation"}},
-        )
-        return ConvertedTrace(value, counts)
+        ) for record in native_records]
+        return dict(subjects=subjects, items=items, responses=responses, traces=traces)
 ```
+
+Chat builders pass `item_content` explicitly when using task-message deduplication.
+Custom formats may construct `ConvertedTrace(value, counts)` directly in the same section;
+they receive the same schema, accounting, source-audit and Parquet validation as shared families.
 
 Legacy `BenchmarkBuild` subclasses keep accepting only trace strings and retain their existing
 output. Inheriting `StructuredTraceBuild` is the migration opt-in; no per-benchmark metadata flag
@@ -464,7 +472,7 @@ to a shared converter, `trace_format.py` or the table writer therefore changes t
 every dependent benchmark without CI noticing. Plan:
 
 - `changed_benchmarks()` also selects every benchmark whose `build.py` imports a changed module
-  under `scripts/build_measurement_tables/trace_converters/` or `trace_format.py`. Changes to the
+  in `scripts/build_measurement_tables/trace_conversion.py` or `trace_format.py`. Changes to the
   writer select all benchmarks with traces.
 - Every converted benchmark is rebuilt and re-uploaded in its stage, and its revision in
   `gallery-sources.json` is updated, before the website relies on it.
@@ -638,8 +646,8 @@ usual PR flow; the website build steps are in `scripts/render_website/README.md`
 
 ## 14. ProgramBench builder migration
 
-ProgramBench opts into `StructuredTraceBuild`; its `convert_trace` hook is in
-`benchmarks/programbench/build.py`. The hook adapts the three mini-swe-agent
+ProgramBench opts into `StructuredTraceBuild`; inline conversion is in
+`benchmarks/programbench/build.py`. Its trace preparation adapts the three mini-swe-agent
 dialects, retains full branch/test names and repeated test results, and keeps
 provider timestamps, content-block signatures and tool-call metadata in
 `native`. An empty published verdict map stays distinct from an absent grade.
@@ -706,7 +714,7 @@ publication and explicit gallery runs still prepare the published catalog.
 | Custom and multi-agent records | OS-Harm, NYU CTF, others | Separate adapters after source review |
 | Text, submissions and pairwise sides | Survey each source shape before choosing pilots | Planned |
 
-The chat batch implements `chat@1` through each builder's `convert_trace()` hook.
+The chat batch calls `convert_trace(..., family="chat")` inline in each builder.
 Benchmark envelopes and HAL-specific extraction stay in the builders; the shared
 converter handles message roles, content blocks, reasoning, usage and tool calls.
 It retains unused fields and references to mapped values, allowing an independent
@@ -740,7 +748,7 @@ dataset or the accepted production gallery.
 
 ### OpenHands pilot
 
-TheAgentCompany implements `StructuredTraceBuild.convert_trace()` using `openhands@1`.
+TheAgentCompany calls `convert_trace(..., family="openhands")` inline in its builder.
 Recorded provider response IDs deduplicate parallel action records; tool outputs
 link through the native event `cause` and recorded call ID. Untimed event records
 retain their original timestamps without assuming a timezone. Provider Unix
@@ -802,7 +810,7 @@ Missing judgments remain absent, and no opponent response rows are invented.
 
 ### OS-Harm custom-format pilot
 
-OS-Harm implements `convert_trace()` through `os_harm@1`. Each released desktop
+OS-Harm constructs `ConvertedTrace` inline using `os_harm@1`. Each released desktop
 state precedes the recorded solver reply and parsed action strings. Actions
 remain harness events, including terminal markers, without invented call IDs.
 The final screenshot caption is an auxiliary event and the recorded judgment

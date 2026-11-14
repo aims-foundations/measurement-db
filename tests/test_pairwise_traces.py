@@ -7,15 +7,22 @@ import sys
 
 import pandas as pd
 import pytest
+
+from trace_builder_fixtures import legacy_traces
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT.parent))
-from scripts.build_measurement_tables.trace_converters import pairwise
+from scripts.build_measurement_tables.trace_conversion import convert_trace
 from scripts.build_measurement_tables.trace_format import validate
 from scripts.curate_benchmarks.trace_source_audit import recover_alpacaeval
 
 REFERENCE = 'gpt4_1106_preview'
+
+
+def convert(source, **options):
+    result = convert_trace(source, family="pairwise", **options)
+    return result.value, result.counts
 
 
 def record(side=2):
@@ -30,7 +37,7 @@ def record(side=2):
 @pytest.mark.parametrize('side', [1, 2])
 def test_evaluated_side_judge_output_and_native_counterpart_remain_distinct(side):
     source = record(side); raw = json.dumps(source, ensure_ascii=False, indent=2)
-    value, counts = pairwise.convert(raw, reference=REFERENCE)
+    value, counts = convert(raw, reference=REFERENCE)
     validate(value)
     assert recover_alpacaeval(value) == raw and counts['comparison_sides'] == 1
     assert len(value['steps']) == 1 and value['steps'][0]['model'] == 'evaluated-model'
@@ -41,7 +48,7 @@ def test_evaluated_side_judge_output_and_native_counterpart_remain_distinct(side
 
 @pytest.mark.parametrize('change', ['answer', 'judge', 'wrong_side', 'judge_cost', 'extra_side'])
 def test_independent_audit_rejects_crossed_sides_and_changed_judge_output(change):
-    value, _ = pairwise.convert(json.dumps(record()), reference=REFERENCE)
+    value, _ = convert(json.dumps(record()), reference=REFERENCE)
     if change == 'answer': value['steps'][0]['content'] = 'Clipped'
     elif change == 'judge': value['evaluation']['judge']['content'] = 'm'
     elif change == 'wrong_side':
@@ -55,7 +62,7 @@ def test_independent_audit_rejects_crossed_sides_and_changed_judge_output(change
 
 def test_unavailable_judgment_has_no_invented_vote_or_evaluation():
     source = record(); source['native_record'].update(preference=-1, raw_completion=None)
-    value, counts = pairwise.convert(source, reference=REFERENCE)
+    value, counts = convert(source, reference=REFERENCE)
     validate(value)
     assert recover_alpacaeval(value) == source and counts['judge_outputs'] == 0
     assert 'evaluation' not in value
@@ -94,7 +101,7 @@ def test_complete_alpaca_builder_preserves_soft_preferences_ungraded_rows_and_al
     assert sorted(tables['responses'].response.dropna()) == [.25, .5, .75]
     assert _alpacaeval(bench, tables, metadata, source_records=(source, bank, 0))['source_graded'] == 3
     class Legacy(Builder):
-        _prepare_traces = BenchmarkBuild._prepare_traces
+        _prepare_traces = legacy_traces
         _write_trace_table = BenchmarkBuild._write_trace_table
     api._tables.reload(); baseline = tmp_path / 'legacy'
     Legacy(str(bench / 'build.py')).main_from_args(['--source', str(raw), '--output', str(baseline)])

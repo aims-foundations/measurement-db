@@ -1,6 +1,15 @@
 """trace/1 converters: mapping, schema validity and the cost rule."""
+import pytest
+
 from scripts.build_measurement_tables import trace_format
-from scripts.build_measurement_tables.trace_converters import mini_swe_agent
+from scripts.build_measurement_tables.trace_conversion import convert_trace
+
+
+def test_dispatcher_rejects_unknown_families_and_options():
+    with pytest.raises(ValueError, match="Unsupported trace family"):
+        convert_trace("Original output", family="unknown")
+    with pytest.raises(TypeError, match="unexpected keyword"):
+        convert_trace("Original output", family="text", unknown_option=True)
 
 
 def chat_run(cost, instance_cost, prompt_tokens=120):
@@ -26,10 +35,10 @@ def chat_run(cost, instance_cost, prompt_tokens=120):
 
 
 def convert(run):
-    value, counts = mini_swe_agent.convert(run, {"test_results": [
+    result = convert_trace(run, family="mini_swe_agent", evaluation={"test_results": [
         {"name": "t1", "status": "passed"}, {"name": "t2", "status": "failure"}]})
-    trace_format.validate(value)
-    return value, counts
+    trace_format.validate(result.value)
+    return result.value, result.counts
 
 
 def test_chat_run_maps_steps_run_and_evaluation():
@@ -56,7 +65,7 @@ def test_zero_cost_with_tokens_is_not_recorded_but_kept_in_native():
 
 
 def test_cost_is_recorded_unless_zero_with_tokens():
-    recorded = mini_swe_agent._recorded_cost
+    from scripts.build_measurement_tables.trace_conversion import _mini_swe_agent_recorded_cost as recorded
     assert recorded(0.5, (10,))
     assert recorded(0, ())             # nothing says the call used tokens
     assert recorded(0, (None, 0))

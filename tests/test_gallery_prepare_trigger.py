@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.mark.parametrize('event,paths,expected', [
     ('pull_request', ['benchmarks/agentdojo/build.py',
-                      'scripts/build_measurement_tables/trace_converters/chat.py',
+                      'scripts/build_measurement_tables/trace_conversion.py',
                       'scripts/curate_benchmarks/chat_trace_audit.py',
                       '.github/workflows/metadata.yml', '.github/workflows/prepare-gallery.yml',
                       'docs/structured-trace-viewer-plan.md'], False),

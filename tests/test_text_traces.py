@@ -8,17 +8,19 @@ import sys
 import pandas as pd
 import pytest
 
+from trace_builder_fixtures import legacy_traces
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT.parent))
-from scripts.build_measurement_tables.trace_converters import text
+from scripts.build_measurement_tables.trace_conversion import convert_trace
 from scripts.build_measurement_tables.trace_format import validate
 from scripts.curate_benchmarks.trace_source_audit import recover_text
 
 
 @pytest.mark.parametrize('source', ['42', '[1, 2]', '{"answer": true}', '  complete proof Ω\n'*5000, ''])
 def test_literal_text_is_not_parsed_as_json_or_split_into_invented_turns(source):
-    value, counts = text.convert(source)
+    value, counts = convert(source)
     validate(value)
     assert counts == {'llm': 1, 'text_records': 1}
     assert value['steps'][0]['content'] == source
@@ -26,6 +28,11 @@ def test_literal_text_is_not_parsed_as_json_or_split_into_invented_turns(source)
     assert 'evaluation' not in value and 'run' not in value
     value['steps'][0]['content'] = 'Changed output'
     with pytest.raises(ValueError): recover_text(value)
+
+
+def convert(source, **options):
+    result = convert_trace(source, family="text", **options)
+    return result.value, result.counts
 
 
 def test_full_matharena_builder_retains_sparse_trace_links_grading_and_image_bytes(tmp_path):
@@ -59,7 +66,7 @@ def test_full_matharena_builder_retains_sparse_trace_links_grading_and_image_byt
     assert set(traces.response_id) < set(responses.response_id)
     assert {recover_text(value) for value in traces.trace} == {final['answer'], fallback['parsed_answer'], proof['answer']}
     class Legacy(Builder):
-        _prepare_traces = BenchmarkBuild._prepare_traces
+        _prepare_traces = legacy_traces
         _write_trace_table = BenchmarkBuild._write_trace_table
     api._tables.reload()
     baseline = tmp_path / 'legacy'

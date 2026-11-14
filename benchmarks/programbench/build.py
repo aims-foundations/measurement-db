@@ -11,8 +11,7 @@ import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, Judge, StructuredTraceBuild
-from measurement_db.scripts.build_measurement_tables.trace_converters import mini_swe_agent
+from measurement_db.build_base import Judge, StructuredTraceBuild, convert_trace
 
 
 class ProgramBench(StructuredTraceBuild):
@@ -86,34 +85,6 @@ class ProgramBench(StructuredTraceBuild):
             if fields:
                 metadata[str(index)] = fields
         return metadata
-
-    def convert_trace(self, source, *, context):
-        native = {key: source[key] for key in ('source_run', 'task_id', 'published_tests')
-                  if source[key] is not None}
-        evaluation = source['evaluation']
-        if evaluation is not None:
-            tests, fields = [], {}
-            for index, result in enumerate(evaluation.get('test_results') or []):
-                if not all(isinstance(result.get(key), str) for key in ('branch', 'name', 'status')):
-                    raise ValueError('Each native test result needs its branch, name and status')
-                tests.append(dict(name=result['branch'] + '/' + result['name'], status=result['status']))
-                # The branch remains explicit so a full name can be reversed
-                # even when the original test name itself contains slashes.
-                fields[str(index)] = {key: value for key, value in result.items() if key not in {'name', 'status'}}
-            evaluation = {**evaluation, 'test_results': tests}
-            if fields:
-                native['test_result_fields'] = fields
-        client = self._client_metadata(source['trajectory'].get('messages') or [])
-        if client:
-            native['client_metadata'] = client
-        value, counts = mini_swe_agent.convert(
-            source['trajectory'], evaluation=evaluation, native=native,
-        )
-        if source['published_tests'] is not None:
-            # An explicitly empty published map is a graded zero; absence is
-            # an ungraded attempt. The common helper omits empty dictionaries.
-            value.setdefault('native', {})['published_tests'] = source['published_tests']
-        return ConvertedTrace(value, counts)
 
     def build_tables(self) -> dict[str, pd.DataFrame]:
         parameters = self.build_parameters
@@ -196,12 +167,40 @@ class ProgramBench(StructuredTraceBuild):
             grader_version=row.grader_version, active_test_names=row.active_test_names), sort_keys=True))
             for row in items.itertuples()]
 
-        # 5. Pass native records to the shared trace/1 conversion boundary.
+        # 5. Convert complete trajectories, preserving benchmark-specific test and client evidence.
         traces = calls[['response_key']].copy()
-        traces['trace'] = [dict(source_run=row.source_run, task_id=row.task_id,
-            trajectory=row.trajectory, evaluation=row.evaluation if isinstance(row.evaluation, dict) else None,
-            published_tests=row.published_tests if isinstance(row.published_tests, dict) else None)
-            for row in calls.itertuples()]
+        converted = []
+        for row in calls.itertuples():
+            source = dict(source_run=row.source_run, task_id=row.task_id, trajectory=row.trajectory,
+                evaluation=row.evaluation if isinstance(row.evaluation, dict) else None,
+                published_tests=row.published_tests if isinstance(row.published_tests, dict) else None)
+            native = {key: source[key] for key in ('source_run', 'task_id', 'published_tests')
+                      if source[key] is not None}
+            evaluation = source['evaluation']
+            if evaluation is not None:
+                tests, fields = [], {}
+                for index, result in enumerate(evaluation.get('test_results') or []):
+                    if not all(isinstance(result.get(key), str) for key in ('branch', 'name', 'status')):
+                        raise ValueError('Each native test result needs its branch, name and status')
+                    tests.append(dict(name=result['branch'] + '/' + result['name'], status=result['status']))
+                    # The branch remains explicit so a full name can be reversed
+                    # even when the original test name itself contains slashes.
+                    fields[str(index)] = {key: value for key, value in result.items() if key not in {'name', 'status'}}
+                evaluation = {**evaluation, 'test_results': tests}
+                if fields:
+                    native['test_result_fields'] = fields
+            client = self._client_metadata(source['trajectory'].get('messages') or [])
+            if client:
+                native['client_metadata'] = client
+            result = convert_trace(
+                source['trajectory'], family='mini_swe_agent', evaluation=evaluation, native=native,
+            )
+            if source['published_tests'] is not None:
+                # An explicitly empty published map is a graded zero; absence is
+                # an ungraded attempt. The common helper omits empty dictionaries.
+                result.value.setdefault('native', {})['published_tests'] = source['published_tests']
+            converted.append(result)
+        traces['trace'] = converted
         calls['item_key'] = calls.response_key
         calls['test_condition'] = 'run=' + calls.source_run + ';grader=' + calls.grader_version
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],

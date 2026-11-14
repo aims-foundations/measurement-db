@@ -14,8 +14,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, ExactMatcher, StructuredTraceBuild
-from measurement_db.scripts.build_measurement_tables.trace_converters import chat
+from measurement_db.build_base import ExactMatcher, StructuredTraceBuild, convert_trace
 
 
 class TauBench(StructuredTraceBuild):
@@ -165,28 +164,6 @@ class TauBench(StructuredTraceBuild):
                 evidence[-1]['simulator_log'] = index
         return flattened, evidence
 
-    def convert_trace(self, source, *, context):
-        native = {'source': deepcopy(source)}
-        result = source['result']
-        run = {'exception': result} if isinstance(result, str) else {}
-        participant = None
-        if isinstance(result, dict) and 'traj' in result:
-            messages = result['traj']
-            del native['source']['result']['traj']
-            participant = 'simulated_user'
-        else:
-            messages, evidence = self._hal_messages(source)
-            native['hal_message_sources'] = evidence
-            # Saved replies establish a lower bound, not a complete API-call
-            # total: failed or unlogged requests may have no response record.
-            native['hal_recorded_reply_count'] = sum(len(group['replies']) for group in evidence)
-        model = source['configuration'].get('agent_args', {}).get('model_name') or source['configuration'].get('model')
-        # HAL planner/executor histories also use the API user role for
-        # harness instructions. Do not attribute those messages to a customer.
-        value, counts = chat.convert(messages, context=context, user_participant=participant,
-                                     native=native, run=run, model=model)
-        return ConvertedTrace(value, counts)
-
     def build_tables(self):
         parameters, labels = self.build_parameters, self.build_parameters['labels']
 
@@ -291,11 +268,35 @@ class TauBench(StructuredTraceBuild):
 
         # 6. Retain every original result and every associated native logging record.
         traces = attempts[['response_key']].copy()
-        traces['trace'] = [dict(source_file=row.source_file, source_row=row.source_row,
+        sources = [dict(source_file=row.source_file, source_row=row.source_row,
             task_id=row.task_id, configuration=row.configuration,
             run_config=row.run_config if isinstance(row.run_config, dict) else None,
             result=row.native_record, logs=row.logs, task_definition_source=row.task_definition_source)
             for row in attempts.itertuples()]
+        converted = []
+        item_content = traces.response_key.map(items.set_index('item_key').content)
+        for source, content in zip(sources, item_content):
+            native = {'source': deepcopy(source)}
+            result = source['result']
+            run = {'exception': result} if isinstance(result, str) else {}
+            participant = None
+            if isinstance(result, dict) and 'traj' in result:
+                messages = result['traj']
+                del native['source']['result']['traj']
+                participant = 'simulated_user'
+            else:
+                messages, evidence = self._hal_messages(source)
+                native['hal_message_sources'] = evidence
+                # Saved replies establish a lower bound, not a complete API-call
+                # total: failed or unlogged requests may have no response record.
+                native['hal_recorded_reply_count'] = sum(len(group['replies']) for group in evidence)
+            model = source['configuration'].get('agent_args', {}).get('model_name') or source['configuration'].get('model')
+            # HAL planner/executor histories also use the API user role for
+            # harness instructions. Do not attribute those messages to a customer.
+            converted.append(convert_trace(
+                messages, family='chat', item_content=content, user_participant=participant,
+                native=native, run=run, model=model))
+        traces['trace'] = converted
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],
             'items': items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
             'responses': attempts[['response_key', 'subject_key', 'item_key', 'trial', 'response', 'test_condition']],

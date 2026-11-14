@@ -21,20 +21,6 @@ SCHEMA_PATH = Path(__file__).resolve().parents[2] / "trace_schema.json"
 
 
 @dataclass(frozen=True)
-class TraceContext:
-    """Final observation identity and item text, supplied by the shared builder."""
-
-    benchmark_id: str
-    response_id: str
-    subject_id: str
-    item_id: str
-    trial: int
-    test_condition: str | None
-    interactors: str | None
-    item_content: str | None
-
-
-@dataclass(frozen=True)
 class ConvertedTrace:
     """One trace/1 document and the converter's nonnegative accounting counters.
 

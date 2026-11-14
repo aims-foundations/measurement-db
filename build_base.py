@@ -17,7 +17,7 @@ final subjects, items, and responses through
 writes the Parquet output. No second provenance manifest is generated.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import Counter
 from collections.abc import Mapping
 import copy
@@ -55,7 +55,8 @@ from scripts.build_measurement_tables import (  # noqa: E402
     source_snapshots as _source_snapshots,
     trace_format as _trace_format,
 )
-from scripts.build_measurement_tables.trace_format import ConvertedTrace, TraceContext
+from scripts.build_measurement_tables.trace_format import ConvertedTrace
+from scripts.build_measurement_tables.trace_conversion import SourceTrace, convert_trace
 
 # Intentional author-facing verifier specifications. Everything else imported
 # from the measurement-table package remains an implementation dependency.
@@ -1468,30 +1469,21 @@ class BenchmarkBuild(ABC):
 
 
 class StructuredTraceBuild(BenchmarkBuild):
-    """Opt into trace/1 by implementing one source-specific conversion hook.
+    """Validate trace/1 values prepared inline by a benchmark builder.
 
-    Both table builders and row builders pass native records through their
-    existing ``trace`` input. The shared pipeline calls ``convert_trace`` once
-    per available trace, after measurement identities are fixed. Missing traces
-    remain absent. Conversion must preserve its input and return only trace
-    content and accounting; it cannot replace response rows or their grades.
-
-    Explicit, reviewed allowances may be declared in the builder for known
-    source anomalies. Parse failures are always fatal.
+    Builders call convert_trace() or construct ConvertedTrace directly while
+    preparing their trace rows. This class checks the schema and accounting,
+    then serializes once final measurement identities have been assigned.
+    Missing traces stay absent. Reviewed source anomalies may have explicit
+    allowances; parse failures always fail the build.
     """
 
     TRACE_ALLOWANCES: Mapping[str, int] = {}
     _TRACE_DIAGNOSTICS = {"unrecognized", "unmatched_tool_results"}
 
-    @abstractmethod
-    def convert_trace(self, source: object, *, context: TraceContext) -> ConvertedTrace:
-        """Map one native record to trace/1; raise on an unparsable record."""
-        raise NotImplementedError
-
-    def _validate_trace_source(self, source: object | None) -> None:
-        # The source may be text, a message list, or a benchmark-native object.
-        # The concrete converter owns that input contract.
-        pass
+    def _validate_trace_source(self, source: ConvertedTrace | None) -> None:
+        if source is not None and not isinstance(source, ConvertedTrace):
+            raise BuildContractError(f"{self.slug}: structured trace must be a ConvertedTrace or None")
 
     def _prepare_traces(self, traces: pd.DataFrame) -> pd.DataFrame:
         allowances = self.TRACE_ALLOWANCES
@@ -1502,16 +1494,10 @@ class StructuredTraceBuild(BenchmarkBuild):
         converted = traces.copy()
         counters, steps = Counter(), Counter()
         for row in traces.itertuples():
-            context = TraceContext(
-                benchmark_id=row.benchmark_id, response_id=row.response_id,
-                subject_id=row.subject_id, item_id=row.item_id, trial=int(row.trial),
-                test_condition=row.test_condition, interactors=row.interactors,
-                item_content=_tables.get_item_registration(row.item_id)["content"],
-            )
             try:
-                result = self.convert_trace(row.trace, context=context)
+                result = row.trace
                 if not isinstance(result, ConvertedTrace):
-                    raise TypeError("convert_trace() must return ConvertedTrace")
+                    raise TypeError("structured trace must be a ConvertedTrace")
                 _trace_format.validate(result.value)
                 if (not isinstance(result.counts, Mapping)
                         or any(not isinstance(key, str) or isinstance(n, bool)
@@ -1537,7 +1523,7 @@ class StructuredTraceBuild(BenchmarkBuild):
                 message = getattr(exc, "message", None) or str(exc) or type(exc).__name__
                 detail = message.splitlines()[0][:240]
                 raise BuildContractError(
-                    f"{self.slug}: response {row.response_id}: trace conversion failed: {detail}"
+                    f"{self.slug}: response {row.response_id}: trace validation failed: {detail}"
                 ) from None
         self.trace_accounting = {"rows": len(traces), "steps": dict(steps), "counters": dict(counters)}
         for name in sorted(self._TRACE_DIAGNOSTICS):

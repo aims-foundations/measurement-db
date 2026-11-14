@@ -7,14 +7,10 @@ import sys
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, Judge
-from measurement_db.scripts.build_measurement_tables.trace_converters import browsergym
+from measurement_db.build_base import Judge, StructuredTraceBuild, convert_trace
 
 
 class WorkArena(StructuredTraceBuild):
-    def convert_trace(self, source, *, context):
-        value, counts = browsergym.convert(source)
-        return ConvertedTrace(value, counts)
 
     def download(self):
         return self.fetch_sources('*')
@@ -66,6 +62,8 @@ class WorkArena(StructuredTraceBuild):
         responses['trace'] = [json.dumps(dict(source_file=row.source_file, record=row.record,
             annotation_file=layout['annotations'], annotation_row=int(row.annotation_row), annotation=row.annotation),
             ensure_ascii=False, allow_nan=False) for row in responses.itertuples()]
+        responses['trace'] = responses.trace.map(
+            lambda source: convert_trace(source, family='browsergym'))
         return dict(subjects=subjects[['subject_key', 'raw_label', 'features']],
             items=items[['item_key', 'raw_item_id', 'content', 'features', 'grading_criterion', 'verifier']],
             responses=responses[['response_key', 'subject_key', 'item_key', 'response']],

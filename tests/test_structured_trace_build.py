@@ -1,7 +1,6 @@
-"""Structured trace hooks preserve measurements across both builder interfaces."""
+"""Inline structured traces preserve measurements across both builder interfaces."""
 
 import copy
-from dataclasses import FrozenInstanceError
 import gzip
 import json
 from pathlib import Path
@@ -13,7 +12,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from build_base import BenchmarkBuild, BuildContractError, ConvertedTrace, ExactMatcher, StructuredTraceBuild
+from build_base import BenchmarkBuild, BuildContractError, ConvertedTrace, ExactMatcher, StructuredTraceBuild, convert_trace
 from scripts.build_measurement_tables import reload
 from scripts.build_measurement_tables import trace_format
 from scripts.render_website.generate_benchmark_gallery import write_source_pages
@@ -23,6 +22,9 @@ CONTENT = "Original output\n" + "α" * 20001
 
 
 class LegacyRows(BenchmarkBuild):
+    def trace_source(self, source):
+        return source
+
     def build_subject_item_response_rows(self):
         subject = self.add_subject("fixture-model")
         item = self.add_item(raw_item_id="first", content="Solve it.",
@@ -30,12 +32,12 @@ class LegacyRows(BenchmarkBuild):
                              verifier=ExactMatcher(spec="Exact binary match"))
         for trial, (grade, source) in enumerate(zip([1., None, 0.], self.sources), 1):
             self.add_response(subject_id=subject, item_id=item, response=grade,
-                              trial=trial, trace=source, test_condition="original condition")
+                              trial=trial, trace=self.trace_source(source) if source is not None else None, test_condition="original condition")
 
 
 class StructuredRows(StructuredTraceBuild, LegacyRows):
-    def convert_trace(self, source, *, context):
-        self.contexts.append(context)
+    def trace_source(self, source):
+        self.conversions.append(source)
         content = source["content"] if isinstance(source, dict) else source
         native = trace_format.unused(source, {"content"}) if isinstance(source, dict) else None
         return ConvertedTrace(trace_format.trace("fixture@1", [{"type": "llm", "content": content}],
@@ -57,7 +59,7 @@ class StructuredTables(StructuredRows):
                 "test_condition": ["original condition"] * 3}),
             # Deliberately reverse order to exercise the observation-key join.
             "traces": pd.DataFrame({"response_key": [i for i in [2, 1, 0] if self.sources[i] is not None],
-                "trace": [self.sources[i] for i in [2, 1, 0] if self.sources[i] is not None]}),
+                "trace": [self.trace_source(self.sources[i]) for i in [2, 1, 0] if self.sources[i] is not None]}),
         }
 
 
@@ -78,23 +80,25 @@ def run_builder(workspace, kind, sources, name="tables"):
     bench, source, root = workspace
     reload()
     builder = kind(str(bench / "build.py"))
-    builder.sources, builder.contexts = sources, []
+    builder.sources, builder.conversions = sources, []
     output = root / name
     rows = builder.main_from_args(["--source", str(source), "--output", str(output)])
     return builder, output, rows
 
 
-def test_missing_converter_is_abstract_before_any_files_are_created(tmp_path):
-    class MissingConverter(StructuredTraceBuild):
-        def build_tables(self):
-            raise AssertionError("must not run")
-    with pytest.raises(TypeError, match="convert_trace"):
-        MissingConverter(str(tmp_path / "nonexistent/build.py"))
-    assert not (tmp_path / "nonexistent").exists()
+def test_structured_builder_accepts_inline_conversion_without_a_hook(workspace):
+    class Inline(StructuredTraceBuild, LegacyRows):
+        pass
+    result = convert_trace("Original answer", family="text")
+    builder, output, _ = run_builder(workspace, Inline, [result, None, None])
+    assert builder.trace_accounting["rows"] == 1
+    assert json.loads(pd.read_parquet(output / "traces.parquet").trace.iloc[0]) == result.value
+    with pytest.raises(BuildContractError, match="ConvertedTrace"):
+        run_builder(workspace, Inline, ["unconverted source", None, None], "invalid-inline")
 
 
 @pytest.mark.parametrize("kind", [StructuredRows, StructuredTables])
-def test_converter_runs_once_per_trace_with_fixed_context_and_no_measurement_changes(workspace, kind):
+def test_inline_conversion_runs_once_per_trace_without_measurement_changes(workspace, kind):
     _, legacy, _ = run_builder(workspace, LegacyRows, [CONTENT, "Ungraded output", None], "legacy")
     sources = [{"content": CONTENT, "original_extra": {"nested": [1, 2]}}, "Ungraded output", None]
     before = copy.deepcopy(sources)
@@ -111,12 +115,8 @@ def test_converter_runs_once_per_trace_with_fixed_context_and_no_measurement_cha
     values = [json.loads(value) for value in traces.column("trace").to_pylist()]
     assert values[0]["steps"][0]["content"] == CONTENT
     assert values[0]["native"] == {"original_extra": {"nested": [1, 2]}}
-    assert len(builder.contexts) == 2
-    assert [c.trial for c in builder.contexts] == [1, 2]
-    assert all(c.item_content == "Solve it." and c.test_condition == "original condition" for c in builder.contexts)
-    assert [c.response_id for c in builder.contexts] == traces.column("response_id").to_pylist()
-    with pytest.raises(FrozenInstanceError):
-        builder.contexts[0].item_content = "changed"
+    assert len(builder.conversions) == 2
+    assert all(value in sources for value in builder.conversions)
     assert builder.trace_accounting["rows"] == 2
     assert builder.trace_accounting["steps"] == {"llm": 2}
     assert [json.loads(value) for value in rows.trace.dropna()] == values
@@ -148,18 +148,18 @@ def test_absent_traces_stay_absent_and_accounting_resets_on_reuse(workspace, kin
     assert builder.trace_accounting == {"rows": 0, "steps": {}, "counters": {}}
 
 
-@pytest.mark.parametrize("failure", ["exception", "invalid_schema", "none", "nan", "bad_counter",
+@pytest.mark.parametrize("failure", ["exception", "invalid_schema", "raw", "nan", "bad_counter",
                                      "parse_failures", "unrecognized", "unmatched", "counter_mismatch"])
 def test_invalid_conversion_preserves_previous_outputs(workspace, failure):
     _, output, _ = run_builder(workspace, StructuredRows, ["original", None, None])
     previous = {p.name: p.read_bytes() for p in output.glob("*.parquet")}
 
     class Invalid(StructuredRows):
-        def convert_trace(self, source, *, context):
+        def trace_source(self, source):
             if failure == "exception":
                 raise ValueError("bad source record")
-            if failure == "none":
-                return None
+            if failure == "raw":
+                return source
             value = trace_format.trace("fixture@1", [{"type": "llm", "content": "output"}])
             counts = {}
             if failure == "invalid_schema":
@@ -178,7 +178,9 @@ def test_invalid_conversion_preserves_previous_outputs(workspace, failure):
                 counts["unmatched_tool_results"] = 1
             return ConvertedTrace(value, counts)
 
-    with pytest.raises(BuildContractError, match="trace"):
+    error = ValueError if failure == "exception" else BuildContractError
+    message = "bad source record" if failure == "exception" else "trace"
+    with pytest.raises(error, match=message):
         run_builder(workspace, Invalid, ["new", None, None], "invalid")
     assert {p.name: p.read_bytes() for p in output.glob("*.parquet")} == previous
     assert not list((workspace[2] / "invalid").glob("*.parquet"))
@@ -187,7 +189,7 @@ def test_invalid_conversion_preserves_previous_outputs(workspace, failure):
 def test_reviewed_allowances_are_explicit_and_unrecognized_events_are_counted(workspace):
     class Reviewed(StructuredRows):
         TRACE_ALLOWANCES = {"unrecognized": 1, "unmatched_tool_results": 1}
-        def convert_trace(self, source, *, context):
+        def trace_source(self, source):
             return ConvertedTrace(trace_format.trace("fixture@1", [
                 {"type": "event", "name": "unrecognized", "native": {"source": source}}]),
                 {"unmatched_tool_results": 1})
@@ -201,14 +203,13 @@ def test_existing_mini_swe_agent_converter_works_through_the_package_builder_api
     import importlib
     monkeypatch.syspath_prepend(str(ROOT.parent))
     api = importlib.import_module("measurement_db.build_base")
-    converter = importlib.import_module("measurement_db.scripts.build_measurement_tables.trace_converters.mini_swe_agent")
+    converter = api.convert_trace
 
     class Pilot(api.StructuredTraceBuild):
         build_subject_item_response_rows = LegacyRows.build_subject_item_response_rows
 
-        def convert_trace(self, source, *, context):
-            value, counts = converter.convert(source)
-            return api.ConvertedTrace(value, counts)
+        def trace_source(self, source):
+            return converter(source, family="mini_swe_agent")
 
     trajectory = {"messages": [
         {"role": "user", "content": "Solve it."},

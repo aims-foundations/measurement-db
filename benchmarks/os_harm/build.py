@@ -8,50 +8,10 @@ from collections import Counter
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, Judge
-from measurement_db.scripts.build_measurement_tables.trace_converters.source_fields import SourceTrace
+from measurement_db.build_base import ConvertedTrace, Judge, SourceTrace, StructuredTraceBuild
 
 
 class OSHarm(StructuredTraceBuild):
-    def convert_trace(self, source, *, context):
-        out = SourceTrace(source, 'os_harm@1', json_encoded=isinstance(source, str))
-        record = out.source['record']
-        counts = Counter(source_steps=len(record['steps']))
-        for number, native in enumerate(record['steps']):
-            prefix = ['record', 'steps', number]
-            observation = {'type': 'event', 'name': 'desktop_observation'}
-            key = 'a11y_tree' if native.get('a11y_tree') is not None else 'screenshot_file'
-            if native.get(key) is not None:
-                out.project(observation, 'content', prefix + [key], json_text=True)
-            out.add(observation, os_harm={'step': number, 'kind': 'observation'})
-            if native.get('response') is not None:
-                step = {'type': 'llm'}
-                out.project(step, 'content', prefix + ['response'], json_text=True)
-                if record.get('params', {}).get('model') is not None:
-                    out.project(step, 'model', ['record', 'params', 'model'])
-                out.add(step, os_harm={'step': number, 'kind': 'agent'})
-                counts['llm'] += 1
-            actions = native.get('actions') or []
-            if not isinstance(actions, list):
-                raise TypeError('OS-Harm actions must retain their recorded list')
-            # These are recorded harness action strings, including terminal
-            # markers. Do not invent structured function calls or call IDs.
-            for ordinal, action in enumerate(actions):
-                step = {'type': 'event', 'name': 'recorded_action'}
-                out.project(step, 'content', prefix + ['actions', ordinal], json_text=True)
-                out.add(step, os_harm={'step': number, 'kind': 'action', 'action': ordinal})
-                counts['recorded_actions'] += 1
-        caption = out.source.get('caption')
-        path = ['caption', 'caption'] if isinstance(caption, dict) and caption.get('caption') is not None else ['caption'] if isinstance(caption, str) else None
-        if path:
-            step = {'type': 'event', 'name': 'recorded_screenshot_caption'}
-            out.project(step, 'content', path, json_text=True)
-            out.add(step, os_harm={'kind': 'caption'})
-        if out.source.get('judgment', {}).get('reasoning') is not None:
-            out.project_section('evaluation', ['judge', 'content'], ['judgment', 'reasoning'], json_text=True)
-        # Captioner/grader responses are auxiliary models. Their usage and
-        # timestamps do not belong to the measured solver's model turns.
-        return ConvertedTrace(out.value(), counts)
 
     def download(self):
         return self.fetch_sources('*')
@@ -108,12 +68,50 @@ class OSHarm(StructuredTraceBuild):
         for row in attempts.itertuples():
             caption_path = Path(row.execution_path) / layout['caption']
             trajectory_path = Path(row.execution_path) / layout['trajectory']
-            traces.append(json.dumps(dict(source_file=row.source_file, record=row.record,
+            source = json.dumps(dict(source_file=row.source_file, record=row.record,
                 judgment_file=row.judgment_file, judgment=row.judgment,
                 caption_file=str(caption_path), caption=json.loads((self.raw_dir / caption_path).read_text()),
                 trajectory_file=str(trajectory_path), trajectory=[json.loads(line)
                     for line in (self.raw_dir / trajectory_path).read_text().splitlines() if line.strip()]),
-                ensure_ascii=False, allow_nan=False))
+                ensure_ascii=False, allow_nan=False)
+            out = SourceTrace(source, 'os_harm@1', json_encoded=isinstance(source, str))
+            record = out.source['record']
+            counts = Counter(source_steps=len(record['steps']))
+            for number, native in enumerate(record['steps']):
+                prefix = ['record', 'steps', number]
+                observation = {'type': 'event', 'name': 'desktop_observation'}
+                key = 'a11y_tree' if native.get('a11y_tree') is not None else 'screenshot_file'
+                if native.get(key) is not None:
+                    out.project(observation, 'content', prefix + [key], json_text=True)
+                out.add(observation, os_harm={'step': number, 'kind': 'observation'})
+                if native.get('response') is not None:
+                    step = {'type': 'llm'}
+                    out.project(step, 'content', prefix + ['response'], json_text=True)
+                    if record.get('params', {}).get('model') is not None:
+                        out.project(step, 'model', ['record', 'params', 'model'])
+                    out.add(step, os_harm={'step': number, 'kind': 'agent'})
+                    counts['llm'] += 1
+                actions = native.get('actions') or []
+                if not isinstance(actions, list):
+                    raise TypeError('OS-Harm actions must retain their recorded list')
+                # These are recorded harness action strings, including terminal
+                # markers. Do not invent structured function calls or call IDs.
+                for ordinal, action in enumerate(actions):
+                    step = {'type': 'event', 'name': 'recorded_action'}
+                    out.project(step, 'content', prefix + ['actions', ordinal], json_text=True)
+                    out.add(step, os_harm={'step': number, 'kind': 'action', 'action': ordinal})
+                    counts['recorded_actions'] += 1
+            caption = out.source.get('caption')
+            path = ['caption', 'caption'] if isinstance(caption, dict) and caption.get('caption') is not None else ['caption'] if isinstance(caption, str) else None
+            if path:
+                step = {'type': 'event', 'name': 'recorded_screenshot_caption'}
+                out.project(step, 'content', path, json_text=True)
+                out.add(step, os_harm={'kind': 'caption'})
+            if out.source.get('judgment', {}).get('reasoning') is not None:
+                out.project_section('evaluation', ['judge', 'content'], ['judgment', 'reasoning'], json_text=True)
+            # Captioner/grader responses are auxiliary models. Their usage and
+            # timestamps do not belong to the measured solver's model turns.
+            traces.append(ConvertedTrace(out.value(), counts))
         attempts['trace'] = traces
 
         # 5. Separate safety and task completion; neither assessment is substituted for the other.

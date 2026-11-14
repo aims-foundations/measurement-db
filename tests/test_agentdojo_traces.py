@@ -10,6 +10,7 @@ import tarfile
 import pandas as pd
 import yaml
 import pytest
+from trace_builder_fixtures import legacy_traces
 from scripts.curate_benchmarks.chat_trace_audit import audit_messages
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,14 +93,8 @@ def test_long_unicode_trace_round_trips_for_both_grades(tmp_path, monkeypatch):
     # The benchmark adapter must change only the trace payload and its marker.
     from measurement_db.build_base import BenchmarkBuild
     class Legacy(builder.AgentDojo):
-        _prepare_traces = BenchmarkBuild._prepare_traces
+        _prepare_traces = legacy_traces
         _write_trace_table = BenchmarkBuild._write_trace_table
-
-        def build_tables(self):
-            tables = super().build_tables()
-            tables['traces']['trace'] = tables['traces']['trace'].map(
-                lambda value: json.dumps(value, ensure_ascii=False))
-            return tables
 
     import measurement_db.build_base as api
     api._tables.reload()

@@ -10,14 +10,10 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import ConvertedTrace, StructuredTraceBuild, ExactMatcher
-from measurement_db.scripts.build_measurement_tables.trace_converters import nyu_ctf
+from measurement_db.build_base import ExactMatcher, StructuredTraceBuild, convert_trace
 
 
 class NYUCTFBench(StructuredTraceBuild):
-    def convert_trace(self, source, *, context):
-        value, counts = nyu_ctf.convert(source)
-        return ConvertedTrace(value, counts)
 
     def download(self):
         return self.fetch_sources("tasks", "results", "forensings")
@@ -157,6 +153,7 @@ class NYUCTFBench(StructuredTraceBuild):
         traces = responses[["response_key"]].copy()
         traces["trace"] = [json.dumps(dict(summary_member=row.source_member, summary=row.source_record, task_id=row.task_id,
             task_record=row.task_record, released_traces=row.released_traces), ensure_ascii=False, allow_nan=False) for row in observations.itertuples()]
+        traces["trace"] = traces.trace.map(lambda source: convert_trace(source, family="nyu_ctf"))
         return {"subjects": subjects[["subject_key", "raw_label", "features"]],
                 "items": items[["item_key", "raw_item_id", "content", "attachments", "features", "grading_criterion", "verifier"]],
                 "responses": responses, "traces": traces}

@@ -7,17 +7,19 @@ import sys
 
 import pytest
 
+from trace_builder_fixtures import legacy_traces
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT.parent))
 from scripts.build_measurement_tables.trace_format import validate
+from scripts.build_measurement_tables.trace_conversion import convert_trace
 from scripts.curate_benchmarks.trace_source_audit import recover_nyu_ctf
 
 
-Builder = runpy.run_path(str(ROOT/'benchmarks/nyu_ctf_bench/build.py'))['NYUCTFBench']
 
 
 def convert(source):
-    return Builder.__new__(Builder).convert_trace(source, context=None)
+    return convert_trace(source, family="nyu_ctf")
 
 
 def source():
@@ -108,7 +110,7 @@ def test_full_builder_preserves_measurements_aggregate_links_and_asset_bytes():
         import measurement_db.build_base as api
         cls = runpy.run_path(str(ROOT/'benchmarks/nyu_ctf_bench/build.py'))['NYUCTFBench']
         class Legacy(cls):
-            _prepare_traces = BenchmarkBuild._prepare_traces
+            _prepare_traces = legacy_traces
             _write_trace_table = BenchmarkBuild._write_trace_table
         api._tables.reload(); baseline = case.directory/'legacy'
         Legacy(str(case.directory/'build.py')).main_from_args(['--source',str(case.directory/'raw'),'--output',str(baseline)])

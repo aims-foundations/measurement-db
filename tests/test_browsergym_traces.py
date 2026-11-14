@@ -7,11 +7,18 @@ import sys
 
 import pytest
 
+from trace_builder_fixtures import legacy_traces
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.build_measurement_tables.trace_converters import browsergym
+from scripts.build_measurement_tables.trace_conversion import convert_trace
 from scripts.build_measurement_tables.trace_format import validate
 from scripts.curate_benchmarks.trace_source_audit import recover_browsergym
+
+
+def convert(source, **options):
+    result = convert_trace(source, family="browsergym", **options)
+    return result.value, result.counts
 
 
 def source():
@@ -33,7 +40,7 @@ def source():
 def test_snapshot_and_last_action_error_precede_the_current_agent_output():
     native = source(); before = deepcopy(native)
     raw = json.dumps(native, ensure_ascii=False, indent=2) + '\n'
-    value, counts = browsergym.convert(raw)
+    value, counts = convert(raw)
     validate(value)
     assert native == before and recover_browsergym(value) == raw
     assert [s['type'] for s in value['steps']] == ['event', 'llm', 'event', 'event', 'llm', 'event']
@@ -48,7 +55,7 @@ def test_snapshot_and_last_action_error_precede_the_current_agent_output():
 
 @pytest.mark.parametrize('change', ['action', 'reasoning', 'url', 'error', 'exception', 'drop', 'order'])
 def test_independent_audit_rejects_changed_or_missing_displayed_values(change):
-    value, _ = browsergym.convert(json.dumps(source()))
+    value, _ = convert(json.dumps(source()))
     if change == 'action': value['steps'][1]['content'] = 'Invented action'
     elif change == 'reasoning': value['steps'][1]['reasoning'] = 'Invented reasoning'
     elif change == 'url': value['steps'][0]['content'] = 'https://another.example'
@@ -71,7 +78,7 @@ def test_full_builder_keeps_measurements_assets_and_grading_channels_byte_identi
         import measurement_db.build_base as api
         original = case.directory.parent / 'tables'
         class Legacy(case.builder):
-            _prepare_traces = BenchmarkBuild._prepare_traces
+            _prepare_traces = legacy_traces
             _write_trace_table = BenchmarkBuild._write_trace_table
         api._tables.reload()
         baseline = case.directory.parent / 'legacy'
