@@ -26,7 +26,8 @@ from . import gallery_cache as cache
 
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = "aims-foundations/measurement-db"
-WORKFLOW = ".github/workflows/benchmark-reproduction.yml"
+WORKFLOW = ".github/workflows/prepare-gallery.yml"
+LEGACY_WORKFLOW = ".github/workflows/benchmark-reproduction.yml"
 
 
 class SafeRedirect(urllib.request.HTTPRedirectHandler):
@@ -56,12 +57,15 @@ def git(*args: str) -> str:
 
 def checked_run(run: dict, *, allow_current: bool = False) -> None:
     current = allow_current and str(run["id"]) == os.environ.get("GITHUB_RUN_ID")
-    if (run.get("path") != WORKFLOW or run.get("event") not in {"pull_request", "workflow_dispatch"}
+    main_push = (run.get("path") == WORKFLOW and run.get("event") == "push"
+                 and run.get("head_branch") == "main")
+    if (run.get("path") not in {WORKFLOW, LEGACY_WORKFLOW}
+            or (run.get("event") not in {"pull_request", "workflow_dispatch"} and not main_push)
             or run.get("repository", {}).get("full_name") != REPOSITORY
             or run.get("head_repository", {}).get("full_name") != REPOSITORY):
-        raise ValueError("Candidate must come from the repository's own validation workflow")
+        raise ValueError("Candidate must come from the repository's own gallery workflow")
     if not current and (run.get("status") != "completed" or run.get("conclusion") != "success"):
-        raise ValueError("Candidate validation workflow has not succeeded")
+        raise ValueError("Candidate preparation workflow has not succeeded")
 
 
 def find_artifact(run: dict, prefix: str) -> dict:
@@ -146,9 +150,11 @@ def candidate_runs(sha: str) -> list[dict]:
     runs = {}
     for head in sorted(heads):
         query = urllib.parse.urlencode({"head_sha": head, "status": "completed", "per_page": 100})
-        for run in github(f"actions/workflows/benchmark-reproduction.yml/runs?{query}")["workflow_runs"]:
-            if run["event"] in {"pull_request", "workflow_dispatch"} and run["conclusion"] == "success":
-                runs[run["id"]] = run
+        for workflow in (WORKFLOW, LEGACY_WORKFLOW):
+            name = Path(workflow).name
+            for run in github(f"actions/workflows/{name}/runs?{query}")["workflow_runs"]:
+                if run["conclusion"] == "success":
+                    runs[run["id"]] = run
     return sorted(runs.values(), key=lambda run: (run["id"], run["run_attempt"]), reverse=True)
 
 
@@ -165,15 +171,18 @@ def verify_candidate(candidate: Path, *, tree: str) -> dict:
 def verify_receipt(report_path: Path, manifest: dict) -> None:
     if artifacts.file_digest(report_path) != manifest["validation"]["report_sha256"]:
         raise ValueError("Validation receipt checksum mismatch")
-    receipts = artifacts.validate_report(json.loads(report_path.read_text()),
+    report = json.loads(report_path.read_text())
+    receipts = artifacts.validate_report(report,
         revision=manifest["source_revision"], sha=manifest["git_sha"],
         run_id=manifest["validation"]["run_id"], attempt=manifest["validation"]["run_attempt"])
+    if report.get("kind") == "gallery-preparation" and set(receipts) != set(manifest["benchmarks"]):
+        raise ValueError("Gallery provenance must cover every prepared benchmark")
     for slug, receipt in receipts.items():
         if slug in manifest["benchmarks"]:
             inputs = manifest["benchmarks"][slug]["inputs"]["tables"]
             expected = {name: {"size": row["size"], "sha256": row["sha256"]} for name, row in inputs.items()}
             if receipt != expected:
-                raise ValueError(f"{slug}: release differs from byte-validated tables")
+                raise ValueError(f"{slug}: release differs from recorded source tables")
 
 
 def download(candidate: Path, run_id: str | None = None) -> dict:
@@ -194,8 +203,8 @@ def download(candidate: Path, run_id: str | None = None) -> dict:
         except ValueError as exc:
             errors.append(f"run {run['id']}: {exc}")
     if selected is None:
-        raise ValueError("No successful prepared candidate matches this tree. Update/revalidate the PR, "
-                         "or dispatch Benchmark table reproduction with prepare_gallery=true. " + "; ".join(errors))
+        raise ValueError("No successful prepared candidate matches this tree. Rerun Prepare gallery and "
+                         "deploy website on the updated branch. " + "; ".join(errors))
     entries = [manifest["catalog"], *manifest["benchmarks"].values()]
     cached = 0
     portable_download = False

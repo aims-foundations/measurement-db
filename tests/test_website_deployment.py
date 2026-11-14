@@ -9,7 +9,7 @@ import unittest
 import yaml
 
 
-WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/deploy-website.yml"
+WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/prepare-gallery.yml"
 
 
 class WebsiteDeploymentTests(unittest.TestCase):
@@ -116,18 +116,49 @@ class WebsiteDeploymentTests(unittest.TestCase):
 
 
 class GalleryMergeGateTests(unittest.TestCase):
-    def test_gate_requires_validation_and_requested_preview_without_running_fork_code(self):
-        workflow = yaml.safe_load((WORKFLOW.parent / "benchmark-reproduction.yml").read_text())
+    def test_reproduction_is_manual_and_gallery_deploys_after_preparation(self):
+        reproduction = yaml.load((WORKFLOW.parent / "benchmark-reproduction.yml").read_text(), Loader=yaml.BaseLoader)
+        gallery = yaml.load(WORKFLOW.read_text(), Loader=yaml.BaseLoader)
+        deployment = yaml.load((WORKFLOW.parent / "deploy-website.yml").read_text(), Loader=yaml.BaseLoader)
+        self.assertEqual(set(reproduction["on"]), {"workflow_dispatch"})
+        self.assertNotIn("prepare-gallery", reproduction["jobs"])
+        self.assertEqual(set(gallery["on"]), {"pull_request", "push", "workflow_dispatch"})
+        self.assertEqual(gallery["on"]["push"]["branches"], ["main"])
+        self.assertEqual(gallery["jobs"]["prepare-gallery"]["needs"], "changes")
+        self.assertEqual(gallery["jobs"]["deploy"]["needs"], "prepare-gallery")
+        self.assertEqual(gallery["jobs"]["deploy"]["uses"], "./.github/workflows/deploy-website.yml")
+        self.assertEqual(set(deployment["on"]), {"workflow_call", "workflow_dispatch"})
+        preparation = gallery["jobs"]["prepare-gallery"]
+        self.assertIn("head.repo.full_name == github.repository", preparation["if"])
+        self.assertNotIn("benchmark_reproduction", str(preparation["steps"]))
+
+    def test_gallery_cleanup_removes_only_this_runs_scratch(self):
+        workflow = yaml.safe_load(WORKFLOW.read_text())
+        cleanup = workflow["jobs"]["prepare-gallery"]["steps"][-1]
+        self.assertEqual(cleanup["if"], "always()")
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            job = root / "gallery-123-1"
+            job.mkdir()
+            (job / "partial-bundle.tar").write_text("partial")
+            cache = root / "gallery-cache"
+            cache.mkdir()
+            (cache / "verified.tar").write_text("reusable")
+            subprocess.run(["bash", "-e", "-c", cleanup["run"]], check=True,
+                           env={**os.environ, "GALLERY_JOB_DIR": str(job)})
+            self.assertFalse(job.exists())
+            self.assertEqual((cache / "verified.tar").read_text(), "reusable")
+            subprocess.run(["bash", "-e", "-c", cleanup["run"]], check=True,
+                           env={**os.environ, "GALLERY_JOB_DIR": ""})
+
+    def test_gate_requires_requested_preparation_and_deployment(self):
+        workflow = yaml.safe_load(WORKFLOW.read_text())
         steps = workflow["jobs"]["ready"]["steps"]
-        # This job reports a failing gate for forks without checking out code.
         self.assertFalse(any("uses" in step for step in steps))
         script = steps[0]["run"]
-        valid = {"CONTRIBUTOR_BRANCH": "true", "CHANGES": "success", "REPORT": "success",
-                 "PREPARE": "true", "PREPARED": "success", "PREVIEW": "success",
-                 "GITHUB_EVENT_NAME": "pull_request"}
-        cases = [({}, True), ({"PREPARE": "false", "PREPARED": "skipped", "PREVIEW": "skipped"}, True),
-                 ({"CONTRIBUTOR_BRANCH": "false"}, False)]
-        cases += [({key: state}, False) for key in ("CHANGES", "REPORT", "PREPARED", "PREVIEW")
+        valid = {"CHANGES": "success", "REQUIRED": "true", "PREPARED": "success", "DEPLOYED": "success"}
+        cases = [({}, True), ({"REQUIRED": "false", "PREPARED": "skipped", "DEPLOYED": "skipped"}, True)]
+        cases += [({key: state}, False) for key in ("CHANGES", "PREPARED", "DEPLOYED")
                   for state in ("failure", "cancelled", "skipped")]
         for overrides, success in cases:
             with self.subTest(overrides=overrides):

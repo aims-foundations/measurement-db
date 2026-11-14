@@ -122,6 +122,11 @@ def unpack(path: Path, destination: Path, descriptor: dict, identity: dict) -> N
 
 
 def validate_report(report: dict, *, revision: str, sha: str, run_id: str, attempt: int) -> dict:
+    """Check gallery provenance or a legacy reproduction receipt."""
+    kind = report.get("kind", "reproduction")
+    if kind not in {"gallery-preparation", "reproduction"}:
+        raise ValueError("Unknown gallery provenance kind")
+    expected_status = "prepared" if kind == "gallery-preparation" else "passed"
     expected = {"head_sha": sha, "run_id": run_id, "run_attempt": attempt, "hf_revision": revision}
     for key, value in expected.items():
         if report.get(key) != value:
@@ -133,11 +138,11 @@ def validate_report(report: dict, *, revision: str, sha: str, run_id: str, attem
         slug = row["benchmark"]
         if not SLUG.fullmatch(slug) or slug in result:
             raise ValueError("Invalid or duplicate validation result")
-        if row["status"] == "skipped_withheld":
+        if kind == "reproduction" and row["status"] == "skipped_withheld":
             result[slug] = None
             continue
-        if row["status"] != "passed" or not row.get("tables"):
-            raise ValueError(f"{slug}: no successful byte-comparison receipt")
+        if row["status"] != expected_status or not row.get("tables"):
+            raise ValueError(f"{slug}: missing successful {kind} record")
         result[slug] = row["tables"]
     return result
 

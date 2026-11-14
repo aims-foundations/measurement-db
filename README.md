@@ -25,13 +25,17 @@ data refresh, and validation commands. PR workflows prepare viewer data from
 Vercel deployment. Packed lookups are served from Vercel; the existing dynamic
 items, traces, and images retain their pinned canonical HF source reads.
 
-An in-repository PR validates changed benchmark builders against tables already
-published on canonical HF. Missing or mismatched references fail. Parallel
-workers then prepare the gallery, reusing unchanged bundles, and deploy a
-preview. Merging a green PR into `main` promotes that exact validated gallery,
-builds Next.js, and deploys production. No workflow writes canonical HF tables.
-For a later HF release, run **Benchmark table reproduction** with
-`prepare_gallery=true`, then **Deploy website to Vercel** with that run ID.
+The **Prepare gallery and deploy website** workflow runs automatically for
+benchmark or website changes in repository PRs and on `main`. It reads formatted
+tables from a pinned canonical HF revision, prepares or reuses gallery bundles,
+and then deploys a preview or production. Gallery artifacts record the source
+table hashes and preparation run. For an HF data refresh, run this workflow
+manually on the intended branch.
+
+**Benchmark table reproduction** is a separate manual workflow. It rebuilds
+selected benchmarks from archived or upstream inputs and compares their tables
+byte for byte with canonical HF. Gallery preparation and deployment run
+independently of its results. No workflow writes canonical HF tables.
 
 PRs targeting `main` from branches in this repository deploy a preview when they
 change benchmark or website files. Open the **Deploy website to Vercel** check
@@ -363,13 +367,11 @@ checks needed to rebuild and audit the curated tables remain part of the project
 
 ### Checking published table bytes in CI
 
-The `Benchmark table reproduction` workflow checks PR creation, PR updates,
-and branch pushes, and rebuilds the benchmark folders changed under `benchmarks/`.
-It reads the full Git diff instead of GitHub's 300-file path-filter window,
-including metadata, documentation, nested files, renames, and deletions.
-Template changes and new branches check all builders. A manual run can select a
-single benchmark or all benchmarks. Events with no benchmark changes run only
-the offline CI tests and change detection, without accessing HF or rebuilding.
+The `Benchmark table reproduction` workflow runs only by manual dispatch.
+Select one or more benchmark folders with the comma-separated `benchmark`
+input, or leave it empty to check all builders. The default `source_mode` is
+`archive`; choose `upstream` for a fresh author-source check. Gallery preparation
+and website deployment run automatically in their own workflow.
 
 Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
 has access to `aims-foundations/measurement-db`. The dataset is gated; missing
@@ -379,7 +381,7 @@ this token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
 Fork PRs are skipped; their reviewed commits
 need a branch in this repository to run this check with repository secrets.
 
-Selection first reads each changed benchmark's `metadata.yaml`. Withheld
+Selection first reads each selected benchmark's `metadata.yaml`. Withheld
 benchmarks are excluded from the job matrix before build dependency installation,
 source downloads, or reference access. The complete report lists each as
 **SKIPPED (WITHHELD)** with its reason; skips are neither passes nor failures.
