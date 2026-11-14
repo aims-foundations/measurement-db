@@ -45,6 +45,7 @@ async function readRange(
   expanded: number,
   hash: string,
   signal?: AbortSignal,
+  request: typeof fetch = fetch,
 ): Promise<Uint8Array<ArrayBuffer>> {
   if (
     ![start, length, total, expanded].every(Number.isSafeInteger) ||
@@ -56,7 +57,7 @@ async function readRange(
     expanded > MAX_PAYLOAD
   )
     throw new Error("Invalid source record range.");
-  const response = await fetch(url, {
+  const response = await request(url, {
     signal,
     headers: { Range: `bytes=${start}-${start + length - 1}` },
   });
@@ -117,6 +118,7 @@ export async function readPreviewPart(
   preview: RecordPreview,
   range: PreviewRange,
   signal?: AbortSignal,
+  request: typeof fetch = fetch,
 ): Promise<string> {
   const [pack, offset, bytes, expanded, hash] = range;
   if (!Number.isSafeInteger(pack) || pack < 0 || !preview.packs[pack])
@@ -130,6 +132,7 @@ export async function readPreviewPart(
       expanded,
       hash,
       signal,
+      request,
     ),
   );
 }

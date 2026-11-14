@@ -1,7 +1,9 @@
 import { displayTrace, type Trace as StructuredTrace } from "../traces/display";
 import type { Trace } from "./types";
+import type { BoundedTrace } from "./trace-preview";
 
 export type TraceDisplay =
+  | { kind: "paged"; value: BoundedTrace }
   | { kind: "structured"; value: StructuredTrace }
   | { kind: "legacy"; value: Trace };
 
