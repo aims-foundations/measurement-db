@@ -1,0 +1,129 @@
+# Benchmark domain taxonomy.
+#
+# This file is DATA, not code: edit it to add a domain, retire one, or fix an
+# alias, without touching cluster_benchmarks.py.
+#
+#   canonical : the allowed values of benchmark.domain
+#   aliases   : drifted spellings -> canonical (applied automatically)
+#   retired   : values that are not domains at all, with the reason
+#   signals   : regex fragments matched against name + description + tags,
+#               used ONLY to suggest labels for benchmarks that declare none
+#               and to flag disagreements. Never overrides a declared domain.
+
+version: 1
+
+canonical:
+  - agents_and_tool_use
+  - cultural
+  - cybersecurity
+  - education
+  - embodied_and_games
+  - finance
+  - general
+  - human_ai_interaction
+  - knowledge
+  - law
+  - mathematics
+  - medicine
+  - ml_engineering
+  - multilingual
+  - nlp_task
+  - reasoning
+  - reward_modeling
+  - safety
+  - science
+  - software_engineering
+
+aliases:
+  # display-form of the canonical value, e.g. "Agents & Tool Use" from the gallery
+  agents_tool_use: agents_and_tool_use
+  tool_use: agents_and_tool_use
+  gui_agent: agents_and_tool_use
+  agent: agents_and_tool_use
+  agents: agents_and_tool_use
+  coding: software_engineering
+  programming: software_engineering
+  code: software_engineering
+  medical_knowledge: medicine
+  medical: medicine
+  clinical: medicine
+  health: medicine
+  biology: science
+  chemistry: science
+  physics: science
+  preference: reward_modeling
+  preference_evaluation: reward_modeling
+  judging: reward_modeling
+  language: nlp_task
+  nlp: nlp_task
+  nlp_tasks: nlp_task
+  summarization: nlp_task
+  cognition: nlp_task
+  navigation: embodied_and_games
+  planning: embodied_and_games
+  reinforcement_learning: embodied_and_games
+  embodied: embodied_and_games
+  math: mathematics
+  security: cybersecurity
+  legal: law
+  multilinguality: multilingual
+
+retired:
+  computer_vision: "a modality, not a domain - recorded in benchmark.modality"
+  text: "a modality, not a domain"
+  image: "a modality, not a domain"
+  instruction_following: "a task property; use the benchmark's subject-matter domain"
+
+signals:
+  medicine:
+    - \b(medical|clinical|patient|diagnos|physician|nurse|health ?care|EHR|ICD)\b
+    - \b(disease|drug|pharmac|oncolog|radiolog|dental|oral health)\b
+    - \b(medqa|medmcqa|pubmed|usmle)\b
+  science:
+    - \b(scientific|biolog|chemi|molecul|protein|enzyme|genom|cell|atmospher)\b
+    - \b(physics|materials|astronom|climate|experiment design|research paper)\b
+    - \b(simulation|interatomic|segmentation of|microscop)\b
+  mathematics:
+    - \b(math|theorem|proof|olympiad|algebra|geometry|arithmetic|inequalit)\b
+    - \b(AIME|IMO|Putnam|AoPS|Lean|formaliz)\b
+  software_engineering:
+    - \b(code|coding|program|repositor|pull request|patch|bug|compil|refactor)\b
+    - \b(SQL|API|unit test|test suite|SWE-bench|kernel|function)\b
+  agents_and_tool_use:
+    - \b(agent|tool call|function call|scaffold|harness|browser|web ?site)\b
+    - \b(desktop|terminal|shell|workflow|multi-?turn|environment)\b
+  cybersecurity:
+    - \b(security|vulnerab|exploit|CTF|penetration|attack surface|malware)\b
+    - \b(prompt injection|phishing|bounty)\b
+  safety:
+    - \b(harmful|unsafe|refus|toxic|jailbreak|red ?team|adversarial|misuse)\b
+    - \b(bias|stereotype|fairness|sycophan|deceptio|alignment|guardrail)\b
+  education:
+    - \b(student|teacher|classroom|tutor|curricul|homework|exam prep|grading)\b
+    - \b(learning outcome|pedagog|school|feedback on writing)\b
+  finance:
+    - \b(financ|accounting|earnings|investment|stock|market|audit|revenue)\b
+    - \b(business decision|executive)\b
+  law:
+    - \b(legal|law|court|statute|contract|judicial|litigat|attorney)\b
+  multilingual:
+    - \b(multilingual|cross-?lingual|translat|Chinese|Korean|Thai|Arabic|African|Basque)\b
+    - \b(non-?English|language coverage)\b
+  knowledge:
+    - \b(factual|trivia|world knowledge|encyclop|recall|hallucinat|up-?to-?date)\b
+  reasoning:
+    - \b(reason|infer|deduc|multi-?hop|causal|logic|puzzle|chain of thought)\b
+  reward_modeling:
+    - \b(reward model|judge|preference|pairwise|Elo|arena|annotator agreement)\b
+    - \b(rating quality|evaluator)\b
+  nlp_task:
+    - \b(summar|named entity|parsing|classification|retrieval|ranking of documents)\b
+  embodied_and_games:
+    - \b(Minecraft|NetHack|game|robot|embodied|3D environment|navigat|manipulat)\b
+  human_ai_interaction:
+    - \b(human participants|advice|reliance|trust in|user study|crowdworker)\b
+  ml_engineering:
+    - \b(machine learning engineer|training pipeline|data curation|hyperparameter)\b
+    - \b(GPU kernel|model merging|fine-?tun)\b
+  cultural:
+    - \b(cultural|culture|regional norm|local knowledge)\b
